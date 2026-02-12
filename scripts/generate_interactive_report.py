@@ -859,11 +859,12 @@ def prepare_good_bad_data(df):
         for interactive top/bottom bar charts (Section 4.2).
     """
     atlas_configs = [
-        ('cima', 'donor_only', 'CIMA'),
-        ('inflammation_main', 'donor_only', 'Inflam (Main)'),
-        ('scatlas_normal', 'donor_organ', 'scAtlas (Normal)'),
         ('gtex', 'donor_only', 'GTEx'),
         ('tcga', 'donor_only', 'TCGA'),
+        ('cima', 'donor_only', 'CIMA'),
+        ('inflammation', 'donor_only', 'Inflammation Atlas'),
+        ('scatlas_normal', 'donor_organ', 'scAtlas (Normal)'),
+        ('scatlas_cancer', 'donor_organ', 'scAtlas (Cancer)'),
     ]
     result = {}
     for sig_type in ['cytosig', 'secact']:
@@ -1833,12 +1834,15 @@ renderBoxplot('total');
   var gb = DATA.goodBad;
   var atlasSel = document.getElementById('goodbad-atlas-select');
   var sigSel = document.getElementById('goodbad-sig-select');
-  // Populate atlas dropdown from first sig type
+  // Populate atlas dropdown in consistent order matching boxplot (Section 4.2)
   var firstSig = Object.keys(gb)[0];
-  Object.keys(gb[firstSig]).forEach(function(a) {{
-    var opt = document.createElement('option');
-    opt.value = a; opt.textContent = a;
-    atlasSel.appendChild(opt);
+  var availableAtlases = Object.keys(gb[firstSig]);
+  DATA.atlasLabels.forEach(function(a) {{
+    if (availableAtlases.indexOf(a) !== -1) {{
+      var opt = document.createElement('option');
+      opt.value = a; opt.textContent = a;
+      atlasSel.appendChild(opt);
+    }}
   }});
   window.updateGoodBad = function() {{
     var sig = sigSel.value;
