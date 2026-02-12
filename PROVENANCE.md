@@ -7,7 +7,7 @@ How every number in the PI report traces back to raw data.
 ## Pipeline Overview
 
 ```
-Raw H5AD files (6 datasets, ~240M cells)
+Raw H5AD files (4 datasets, ~29M cells)
 │
 ├─ scripts/01_cima_activity.py ──────────────► results/cima/
 ├─ scripts/02_inflam_activity.py ────────────► results/inflammation/

@@ -1030,9 +1030,7 @@ def generate_html(summary_table, boxplot_data, consistency_data, heatmap_data,
   <h1>CytoAtlas</h1>
   <div class="subtitle">Pan-Disease Single-Cell Cytokine Activity Atlas</div>
   <div class="meta">
-    <strong>Report for:</strong> Peng Jiang, Ph.D. &mdash; CDSL, National Cancer Institute<br>
-    <strong>Prepared by:</strong> Seongyong Park<br>
-    <strong>Date:</strong> February 2026
+    <strong>Date:</strong> February 12, 2026
   </div>
 </div>
 
@@ -1041,11 +1039,11 @@ def generate_html(summary_table, boxplot_data, consistency_data, heatmap_data,
 <!-- EXECUTIVE SUMMARY -->
 <h2>Executive Summary</h2>
 
-<p>CytoAtlas is a comprehensive computational resource that maps cytokine and secreted protein signaling activity across <strong>240 million human cells</strong> from six independent datasets spanning healthy donors, inflammatory diseases, cancers, drug perturbations, and spatial transcriptomics. The system uses <strong>linear ridge regression</strong> against experimentally derived signature matrices to infer activity &mdash; producing fully interpretable, conditional z-scores rather than black-box predictions.</p>
+<p>CytoAtlas is a comprehensive computational resource that maps cytokine and secreted protein signaling activity across <strong>29 million human cells</strong> from four independent datasets spanning healthy donors, inflammatory diseases, cancers, and cytokine perturbations. The system uses <strong>linear ridge regression</strong> against experimentally derived signature matrices to infer activity &mdash; producing fully interpretable, conditional z-scores rather than black-box predictions.</p>
 
 <div class="stats-row">
-  <div class="stat-card"><span class="number">240M</span><span class="label">Total Cells</span></div>
-  <div class="stat-card"><span class="number">6</span><span class="label">Datasets</span></div>
+  <div class="stat-card"><span class="number">29M</span><span class="label">Total Cells</span></div>
+  <div class="stat-card"><span class="number">4</span><span class="label">Datasets</span></div>
   <div class="stat-card"><span class="number">1,213</span><span class="label">Signatures</span></div>
   <div class="stat-card"><span class="number">6</span><span class="label">Validation Atlases</span></div>
   <div class="stat-card"><span class="number">262</span><span class="label">API Endpoints</span></div>
@@ -1113,7 +1111,7 @@ CytoAtlas validates at five levels: donor-level pseudobulk, donor &times; cell-t
 
 <div class="figure">
   <img src="figures/fig1_dataset_overview.png" alt="Figure 1: Dataset Overview">
-  <div class="caption"><strong>Figure 1.</strong> CytoAtlas overview. (A) Cell counts across 6 datasets totaling 240M cells. (B) Three signature matrices. (C) Multi-level validation strategy.</div>
+  <div class="caption"><strong>Figure 1.</strong> CytoAtlas overview. (A) Cell counts across 4 datasets totaling 29M cells. (B) Three signature matrices. (C) Multi-level validation strategy.</div>
 </div>
 
 <hr>
@@ -1146,7 +1144,7 @@ CytoAtlas validates at five levels: donor-level pseudobulk, donor &times; cell-t
 <table>
   <tr><th>Matrix</th><th>Targets</th><th>Construction</th><th>Reference</th></tr>
   <tr><td><span class="badge blue">CytoSig</span></td><td>43 cytokines</td><td>Median log2FC across all experimental bulk RNA-seq</td><td>Jiang et al., <em>Nature Methods</em>, 2021</td></tr>
-  <tr><td><span class="badge amber">LinCytoSig</span></td><td>178 (45 cell types &times; 1&ndash;13 cytokines)</td><td>Cell-type-stratified median from CytoSig database (<a href="LINCYTOSIG_METHODOLOGY.html">methodology</a>)</td><td>This work</td></tr>
+  <tr><td><span class="badge amber">LinCytoSig</span></td><td>178 (45 cell types &times; 1&ndash;13 cytokines)</td><td>Cell-type-stratified median from CytoSig database (<a href="methodology.html">methodology</a>)</td><td>This work</td></tr>
   <tr><td><span class="badge green">SecAct</span></td><td>1,170 secreted proteins</td><td>Median global Moran's I across 1,000 Visium datasets</td><td>Ru et al., <em>Nature Methods</em>, 2026 (in press)</td></tr>
 </table>
 
@@ -1457,7 +1455,7 @@ CytoAtlas validates at five levels: donor-level pseudobulk, donor &times; cell-t
   <strong>Gene filter:</strong> LinCytoSig signatures restricted from ~20K to CytoSig&rsquo;s 4,881 curated genes.
   <strong>Best selection:</strong> For each cytokine, test all cell-type-specific LinCytoSig signatures and select the one with the highest bulk RNA-seq correlation. &ldquo;Combined&rdquo; uses pooled GTEx+TCGA; &ldquo;GTEx&rdquo; and &ldquo;TCGA&rdquo; select independently per bulk dataset.
   &ldquo;+filt&rdquo; variants apply the same cell-type selection but restrict to CytoSig gene space.
-  See <a href="LINCYTOSIG_METHODOLOGY.html">LinCytoSig Methodology</a> for details.
+  See <a href="methodology.html">LinCytoSig Methodology</a> for details.
 </p>
 
 <div class="plotly-container">
@@ -1468,7 +1466,7 @@ CytoAtlas validates at five levels: donor-level pseudobulk, donor &times; cell-t
     </select>
   </div>
   <div id="method-boxplot-chart" style="height:600px;"></div>
-  <div class="caption"><strong>Figure 9.</strong> Ten-way signature method comparison at matched (cell type, cytokine) pair level across 4 combined atlases. All 10 methods are evaluated on the <em>same set</em> of matched pairs per atlas (identical n). Use dropdown to view individual atlas boxplots. For LinCytoSig construction, see <a href="LINCYTOSIG_METHODOLOGY.html">LinCytoSig Methodology</a>.</div>
+  <div class="caption"><strong>Figure 9.</strong> Ten-way signature method comparison at matched (cell type, cytokine) pair level across 4 combined atlases. All 10 methods are evaluated on the <em>same set</em> of matched pairs per atlas (identical n). Use dropdown to view individual atlas boxplots. For LinCytoSig construction, see <a href="methodology.html">LinCytoSig Methodology</a>.</div>
 </div>
 
 <div class="callout">

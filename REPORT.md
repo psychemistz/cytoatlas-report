@@ -60,10 +60,8 @@ The system is divided into independent bounded contexts:
 | Inflammation Atlas | 6.3M | 1,047 samples | ~2h | A100 |
 | scAtlas | 6.4M | 781 donors | ~2h | A100 |
 | parse_10M | 9.7M | 1,092 conditions | ~3h | A100 |
-| Tahoe-100M | 100.6M | 14 plates | ~12h | A100 |
-| SpatialCorpus-110M | ~110M | 251 datasets | ~12h | A100 |
 
-**Total: ~240 million cells processed through ridge regression against 3 signature matrices.**
+**Total: ~29 million cells processed through ridge regression against 3 signature matrices.**
 
 > **Figure 1** (`fig1_dataset_overview.png`): Dataset scale, signature matrices, and validation layers.
 
@@ -79,10 +77,8 @@ The system is divided into independent bounded contexts:
 | 2 | **Inflammation Atlas** | 6,340,934 | 1,047 samples | 66+ | Main/Val/Ext cohorts |
 | 3 | **scAtlas** | 6,440,926 | 781 donors | 100+ | 35+ organs + 15+ cancers |
 | 4 | **parse_10M** | 9,697,974 | 12 donors × 91 cytokines | 18 PBMC types | Cytokine perturbation |
-| 5 | **Tahoe-100M** | ~100,600,000 | 50 cell lines × 95 drugs | 50 cell lines | Drug sensitivity |
-| 6 | **SpatialCorpus-110M** | ~110,000,000 | 251 spatial datasets | Variable | 8 technologies |
 
-**Grand total: ~240 million cells, ~2,500+ samples/conditions, 100+ cell types**
+**Grand total: ~29 million cells, ~3,300+ samples/conditions, 100+ cell types**
 
 ### 2.2 Disease and Condition Categories
 
@@ -99,9 +95,6 @@ The system is divided into independent bounded contexts:
 
 **parse_10M perturbations:** 90 cytokines × 12 donors (ground truth for CytoSig validation)
 
-**Tahoe-100M drugs:** 95 compounds across 50 cancer cell lines (kinase inhibitors, HDAC inhibitors, mTOR inhibitors, proteasome inhibitors, etc.)
-
-**SpatialCorpus technologies:** Visium, Xenium, MERFISH, MERSCOPE, CosMx, ISS, Slide-seq — 30+ tissue types
 
 ### 2.3 Signature Matrices
 
@@ -125,7 +118,7 @@ Most single-cell analysis tools use complex models (variational autoencoders, gr
 | **Interpretability** | Every gene's contribution is a coefficient | Feature importance approximated post-hoc |
 | **Conditionality** | Activity conditional on specific gene set | Latent space mixes all features |
 | **Confidence** | Permutation-based z-scores with CI | Often point estimates only |
-| **Generalization** | Tested across 6 independent cohorts | Often tested on held-out splits of same cohort |
+| **Generalization** | Tested across 4 independent cohorts | Often tested on held-out splits of same cohort |
 | **Bias** | Transparent — limited by signature matrix genes | Hidden in architecture and training data |
 
 **The key insight:** CytoAtlas is not trying to replace DNN-based tools. It provides an **orthogonal, complementary signal** that a human scientist can directly inspect. When CytoAtlas says "IFNG activity is elevated in CD8+ T cells from RA patients," you can verify this by checking the IFNG signature genes in those cells.
@@ -136,9 +129,7 @@ Most single-cell analysis tools use complex models (variational autoencoders, gr
 2. **Are cytokine activities consistent across independent cohorts?** → Cross-atlas validation (Figure 6)
 3. **Does cell-type-specific biology matter for cytokine inference?** → LinCytoSig analysis (Figures 9-10)
 4. **Which secreted proteins beyond cytokines show validated activity?** → SecAct novel discoveries (Figure 11)
-5. **How do drugs alter cytokine activity in cancer cells?** → Tahoe-100M drug sensitivity
-6. **What is the spatial organization of cytokine signaling?** → SpatialCorpus neighborhood analysis
-7. **Can we predict treatment response from cytokine activity?** → Inflammation Atlas treatment prediction
+5. **Can we predict treatment response from cytokine activity?** → Inflammation Atlas treatment prediction
 
 ### 3.3 Validation Philosophy
 
@@ -411,9 +402,6 @@ SecAct covers 1,170 secreted proteins vs CytoSig's 43 cytokines. Key advantages:
 
 3. **Perturbation ground truth:** parse_10M provides 90 cytokine perturbations × 12 donors × 18 cell types. When we add exogenous IFNG to PBMCs, does CytoSig correctly predict elevated IFNG activity? (Yes.)
 
-4. **Drug-cytokine interaction:** Tahoe-100M maps how 95 drugs alter cytokine activity in 50 cancer cell lines — connecting pharmacology to immunology.
-
-5. **Spatial context:** SpatialCorpus-110M maps cytokine activity to spatial neighborhoods — answering "which cytokines are active in the tumor-immune boundary?"
 
 ### 6.2 Limitations (Honest Assessment)
 
@@ -429,9 +417,7 @@ SecAct covers 1,170 secreted proteins vs CytoSig's 43 cytokines. Key advantages:
 
 1. **scGPT cohort integration** (~35M cells) — pending
 2. **cellxgene Census integration** — pending
-3. **Drug response prediction models** — using Tahoe-100M activity profiles as features
-4. **Spatial cytokine niches** — defining tumor microenvironment cytokine neighborhoods
-5. **Treatment response biomarkers** — using Inflammation Atlas responder/non-responder labels
+3. **Treatment response biomarkers** — using Inflammation Atlas responder/non-responder labels
 
 ---
 
