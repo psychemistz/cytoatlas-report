@@ -864,7 +864,7 @@ def generate_html(summary_table, boxplot_data, consistency_data, heatmap_data,
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CytoAtlas: PI Report &mdash; Peng Jiang</title>
+<title>CytoAtlas Report</title>
 <script src="https://cdn.plot.ly/plotly-2.35.0.min.js" charset="utf-8"></script>
 <style>
   :root {{
