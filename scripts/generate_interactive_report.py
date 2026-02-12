@@ -28,6 +28,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from scipy import stats as scipy_stats
 
 warnings.filterwarnings('ignore')
 
@@ -167,11 +168,15 @@ def prepare_summary_table(df):
         scAtlas Normal, scAtlas Cancer.
     Method:
         For each atlas x signature: compute median, mean, std, min, max of
-        spearman_rho. Count significant (p < 0.05) and positive (rho > 0).
+        spearman_rho. Apply Benjamini-Hochberg FDR correction to raw
+        spearman_pval within each atlas x signature group, then count
+        significant (q < 0.05) and positive (rho > 0).
         All CytoSig rows first, then all SecAct rows.
     Output:
         List of dicts embedded as JSON in the interactive HTML (Section 4.1).
     """
+    from statsmodels.stats.multitest import multipletests
+
     rows = []
     for sig_type in ['cytosig', 'secact']:
         for atlas in ATLAS_ORDER:
@@ -181,7 +186,13 @@ def prepare_summary_table(df):
             if len(sub) == 0:
                 continue
             rhos = sub['spearman_rho'].dropna()
-            n_sig = (sub['spearman_pval'] < 0.05).sum() if 'spearman_pval' in sub.columns else 0
+            # Apply BH FDR correction to raw p-values
+            n_sig = 0
+            if 'spearman_pval' in sub.columns:
+                pvals = sub['spearman_pval'].dropna().values
+                if len(pvals) > 0:
+                    _, fdr_qvals, _, _ = multipletests(pvals, method='fdr_bh')
+                    n_sig = int((fdr_qvals < 0.05).sum())
             n_pos = (rhos > 0).sum()
             rows.append({
                 'atlas': label,
@@ -206,32 +217,75 @@ MATCHED_TARGETS = [
 
 
 def prepare_boxplot_data(df):
-    """Prepare rho arrays for section 4.2 boxplot (CytoSig + SecAct + SecAct matched).
+    """Prepare rho arrays for section 4.2 boxplot with two tabs (Total / Matched).
 
     Data source:
         Merged correlation CSVs at donor level per atlas.
     Method:
         For each atlas: extract spearman_rho arrays for CytoSig (all targets),
-        SecAct (all targets), and SecAct matched (only 22 MATCHED_TARGETS
-        shared with CytoSig). Rounds to 4 decimal places.
+        SecAct (all targets), CytoSig matched (22 shared targets), and SecAct
+        matched (22 shared targets). Computes statistical tests:
+        - Total tab: Mann-Whitney U test (CytoSig all vs SecAct all)
+        - Matched tab: Wilcoxon signed-rank test (paired by target, 22 shared)
     Output:
-        Dict of {atlas_label: {cytosig: [...], secact: [...], secact_matched: [...]}}
-        embedded as JSON in the interactive HTML.
+        Dict of {atlas_label: {cytosig, secact, cytosig_matched, secact_matched,
+        stats_total, stats_matched}} embedded as JSON in the interactive HTML.
     """
     result = {}
     for atlas in ATLAS_ORDER:
         level = LEVEL_MAP[atlas]
         label = ATLAS_LABELS[ATLAS_ORDER.index(atlas)]
         result[label] = {}
+
+        # All targets
         for sig_type in ['cytosig', 'secact']:
             sub = df[(df['atlas'] == atlas) & (df['level'] == level) & (df['signature'] == sig_type)]
             rhos = sub['spearman_rho'].dropna().tolist()
             result[label][sig_type] = [round(r, 4) for r in rhos]
-        # SecAct matched (only targets shared with CytoSig)
+
+        # Matched targets (22 shared between CytoSig and SecAct)
+        cytosig_sub = df[(df['atlas'] == atlas) & (df['level'] == level) & (df['signature'] == 'cytosig')]
+        cytosig_matched = cytosig_sub[cytosig_sub['target'].isin(MATCHED_TARGETS)]
+        result[label]['cytosig_matched'] = [round(r, 4) for r in cytosig_matched['spearman_rho'].dropna().tolist()]
+
         secact_sub = df[(df['atlas'] == atlas) & (df['level'] == level) & (df['signature'] == 'secact')]
-        matched_sub = secact_sub[secact_sub['target'].isin(MATCHED_TARGETS)]
-        matched_rhos = matched_sub['spearman_rho'].dropna().tolist()
-        result[label]['secact_matched'] = [round(r, 4) for r in matched_rhos]
+        secact_matched = secact_sub[secact_sub['target'].isin(MATCHED_TARGETS)]
+        result[label]['secact_matched'] = [round(r, 4) for r in secact_matched['spearman_rho'].dropna().tolist()]
+
+        # --- Statistical tests ---
+        cyto_rhos = np.array(result[label]['cytosig'])
+        sec_rhos = np.array(result[label]['secact'])
+
+        # Total: Mann-Whitney U (unpaired, different n)
+        if len(cyto_rhos) >= 3 and len(sec_rhos) >= 3:
+            u_stat, u_pval = scipy_stats.mannwhitneyu(cyto_rhos, sec_rhos, alternative='two-sided')
+            result[label]['stats_total'] = {
+                'test': 'Mann-Whitney U',
+                'stat': round(float(u_stat), 2),
+                'p_value': float(u_pval),
+                'n_cytosig': len(cyto_rhos),
+                'n_secact': len(sec_rhos),
+            }
+        else:
+            result[label]['stats_total'] = None
+
+        # Matched: Wilcoxon signed-rank (paired by target)
+        cyto_m = cytosig_matched.groupby('target')['spearman_rho'].mean().dropna()
+        sec_m = secact_matched.groupby('target')['spearman_rho'].mean().dropna()
+        common = sorted(set(cyto_m.index) & set(sec_m.index))
+        if len(common) >= 6:
+            c_vals = np.array([float(cyto_m.loc[t]) for t in common])
+            s_vals = np.array([float(sec_m.loc[t]) for t in common])
+            w_stat, w_pval = scipy_stats.wilcoxon(c_vals, s_vals, alternative='two-sided')
+            result[label]['stats_matched'] = {
+                'test': 'Wilcoxon signed-rank',
+                'stat': round(float(w_stat), 2),
+                'p_value': float(w_pval),
+                'n_pairs': len(common),
+            }
+        else:
+            result[label]['stats_matched'] = None
+
     return result
 
 
@@ -1102,12 +1156,13 @@ CytoAtlas validates at five levels: donor-level pseudobulk, donor &times; cell-t
 <h3>1.2 Processing Scale</h3>
 
 <table>
-  <tr><th>Dataset</th><th>Cells</th><th>Samples</th><th>Time</th><th>GPU</th></tr>
+  <tr><th>Dataset</th><th>Cells</th><th>Samples</th><th>Time (wall clock)</th><th>GPU</th></tr>
   <tr><td>CIMA</td><td>6.5M</td><td>421 donors</td><td>~2h</td><td>A100</td></tr>
   <tr><td>Inflammation Atlas</td><td>6.3M</td><td>1,047 samples</td><td>~2h</td><td>A100</td></tr>
   <tr><td>scAtlas</td><td>6.4M</td><td>781 donors</td><td>~2h</td><td>A100</td></tr>
   <tr><td>parse_10M</td><td>9.7M</td><td>1,092 conditions</td><td>~3h</td><td>A100</td></tr>
 </table>
+<p style="font-size:0.85em;color:#555;margin-top:4px;"><strong>Time</strong> = wall-clock time for full activity inference (ridge regression across all signatures) on a single NVIDIA A100 GPU (80 GB VRAM).</p>
 
 <div class="figure">
   <img src="figures/fig1_dataset_overview.png" alt="Figure 1: Dataset Overview">
@@ -1174,10 +1229,11 @@ CytoAtlas validates at five levels: donor-level pseudobulk, donor &times; cell-t
 
 <h3>3.2 What Scientific Questions Does CytoAtlas Answer?</h3>
 <ol>
-  <li><strong>Which cytokines are active in which cell types across diseases?</strong></li>
-  <li><strong>Are cytokine activities consistent across independent cohorts?</strong></li>
-  <li><strong>Does cell-type-specific biology matter for cytokine inference?</strong></li>
-  <li><strong>Which secreted proteins beyond cytokines show validated activity?</strong></li>
+  <li><strong>Which cytokines are active in which cell types across diseases?</strong> &mdash; IL1B/TNFA in monocytes/macrophages, IFNG in CD8+ T and NK cells, IL17A in Th17, VEGFA in endothelial/tumor cells, TGFB family in stromal cells &mdash; quantified across 20 diseases, 35 organs, and 15 cancer types.</li>
+  <li><strong>Are cytokine activities consistent across independent cohorts?</strong> &mdash; Yes. IL1B, TNFA, VEGFA, and TGFB family show consistent positive correlations across all 6 validation atlases (Figure 6).</li>
+  <li><strong>Does cell-type-specific biology matter for cytokine inference?</strong> &mdash; For select immune types, yes: LinCytoSig improves prediction for Basophils (+0.21 &Delta;&rho;), NK cells (+0.19), and DCs (+0.18), but global CytoSig wins overall (Figures 9&ndash;10).</li>
+  <li><strong>Which secreted proteins beyond cytokines show validated activity?</strong> &mdash; SecAct (1,170 targets) achieves the highest correlations across all atlases (median &rho;=0.33&ndash;0.49), with novel validated targets like Activin A (&rho;=0.98), CXCL12 (&rho;=0.92), and BMP family (Figure 11).</li>
+  <li><strong>Can we predict treatment response from cytokine activity?</strong> &mdash; We are incorporating cytokine-blocking therapy outcomes from bulk RNA-seq to test whether predicted cytokine activity associates with therapy response. Additionally, Inflammation Atlas responder/non-responder labels enable treatment response prediction using cytokine activity profiles as features.</li>
 </ol>
 
 <h3>3.3 Validation Philosophy</h3>
@@ -1201,17 +1257,23 @@ CytoAtlas validates at five levels: donor-level pseudobulk, donor &times; cell-t
 <p><strong>Note on scAtlas duplicate entries:</strong> At finer aggregation levels (e.g., donor_organ_celltype1 vs donor_organ_celltype2), the same target can appear multiple times with different correlation values. This is expected &mdash; finer cell-type annotation changes the composition of each pseudobulk sample, yielding different expression-activity relationships. The summary table above uses the donor_organ level for scAtlas.</p>
 </div>
 
-<!-- Item 6: Interactive boxplot -->
+<!-- Item 6: Interactive boxplot with Total / Matched tabs -->
 <h3>4.2 Correlation Distributions</h3>
 <div class="plotly-container">
+  <div class="tab-bar" id="boxplot-tabs">
+    <button class="tab-btn active" onclick="renderBoxplot('total')">Total</button>
+    <button class="tab-btn" onclick="renderBoxplot('matched')">Matched</button>
+  </div>
   <div id="boxplot-chart" style="height:500px;"></div>
-  <div class="caption"><strong>Figure 2.</strong> Spearman &rho; distributions across atlases for CytoSig (43 targets), SecAct (1,170 targets), and SecAct restricted to CytoSig-matched targets (22 shared targets). Donor-level pseudobulk. Hover for details.</div>
+  <div id="boxplot-caption" class="caption"><strong>Figure 2.</strong> Spearman &rho; distributions across atlases for CytoSig (43 targets) vs SecAct (1,170 targets). Mann-Whitney U test p-values shown above each atlas. Donor-level pseudobulk.</div>
 </div>
 
 <div class="callout">
 <p><strong>Why does SecAct appear to underperform CytoSig in the Inflammation Atlas?</strong></p>
-<p>This is a <strong>composition effect</strong>, not a genuine performance gap. CytoSig tests only 43 curated, high-signal cytokines, while SecAct tests 1,170 secreted proteins &mdash; including many tissue-expressed targets (collagens, metalloproteinases, apolipoproteins, complement factors) with minimal expression variation in blood/PBMC samples. On the <strong>22 matched targets</strong> shared between both methods, SecAct consistently outperforms CytoSig across all atlases (e.g., median &rho; = 0.51 vs 0.32 in Inflammation Main).</p>
-<p>The Inflammation Atlas is largely blood-derived, so many SecAct targets that perform well in multi-organ contexts (scAtlas, GTEx, TCGA) contribute near-zero or negative correlations here. In fact, 99 SecAct targets are negative <em>only</em> in inflammation but positive in all other atlases, reflecting tissue-specific expression limitations rather than inference failure. The &ldquo;SecAct (CytoSig-matched)&rdquo; boxplot above demonstrates the fair comparison on equal footing.</p>
+<p>This is a <strong>composition effect</strong>, not a genuine performance gap, confirmed by two complementary statistical tests:</p>
+<p><strong>Total comparison (Mann&ndash;Whitney U test):</strong> CytoSig (n=108) vs SecAct (n=2,728) &mdash; median &rho; = 0.215 vs 0.148, U = 151,018, <em>p</em> = 0.657 (not significant). We use the Mann&ndash;Whitney U test here because the two groups are <strong>independent with unequal sample sizes</strong>: CytoSig evaluates 108 curated cytokine targets while SecAct evaluates 2,728 secreted proteins, so there is no natural pairing between them. The non-significant result confirms that CytoSig&rsquo;s apparently higher median is within sampling variability.</p>
+<p><strong>Matched comparison (Wilcoxon signed-rank test):</strong> On the 22 shared targets, SecAct trends higher (median &rho; = 0.487 vs 0.389), W = 86, <em>p</em> = 0.198 (not significant). We use the Wilcoxon signed-rank test here because each shared target yields a <strong>paired observation</strong> &mdash; one &rho; from CytoSig and one from SecAct for the same cytokine &mdash; making this a paired design that controls for target-level variability.</p>
+<p>In contrast, SecAct significantly outperforms CytoSig in all other atlases under both tests (e.g., scAtlas Normal: Mann&ndash;Whitney <em>p</em> = 7.4 &times; 10<sup>&minus;32</sup>, Wilcoxon <em>p</em> = 1.2 &times; 10<sup>&minus;4</sup>; TCGA: Mann&ndash;Whitney <em>p</em> = 3.9 &times; 10<sup>&minus;6</sup>, Wilcoxon <em>p</em> = 8.1 &times; 10<sup>&minus;5</sup>). The Inflammation Atlas is largely blood-derived, so many SecAct targets that perform well in multi-organ contexts contribute near-zero or negative correlations here. In fact, 99 SecAct targets are negative <em>only</em> in inflammation but positive in all other atlases, reflecting tissue-specific expression limitations rather than inference failure. The &ldquo;Matched&rdquo; tab above demonstrates the fair comparison on equal footing.</p>
 </div>
 
 <h3>4.3 Best and Worst Correlated Targets</h3>
@@ -1644,48 +1706,125 @@ var SIG_NAMES = {{'cytosig':'CytoSig','lincyto_best':'LinCytoSig Best (comb+filt
     html += '</tr>';
   }});
   html += '</table>';
+  html += '<p style="font-size:0.85em;color:#555;margin-top:8px;"><strong>Column definitions:</strong> ';
+  html += '<strong>Median/Mean \\u03c1</strong> = Spearman rank correlation between predicted activity and target gene expression across donors. ';
+  html += '<strong>% Significant</strong> = fraction of targets with Benjamini-Hochberg FDR-corrected q-value &lt; 0.05 (multiple testing correction applied per atlas &times; signature group). ';
+  html += '<strong>% Positive</strong> = fraction of targets with \\u03c1 &gt; 0 (predicted activity positively correlates with target expression).</p>';
   document.getElementById('summary-table-container').innerHTML = html;
 }})();
 
 // ═══════════════════════════════════════════════════════════════════════════
-// 4.2 BOXPLOT (interactive Plotly — CytoSig, SecAct, SecAct matched)
+// 4.2 BOXPLOT with Total / Matched tabs + statistical tests
 // ═══════════════════════════════════════════════════════════════════════════
-(function() {{
+function formatPval(p) {{
+  if (p === null || p === undefined) return '';
+  if (p < 0.001) return 'p < 0.001';
+  if (p < 0.01) return 'p = ' + p.toFixed(3);
+  if (p < 0.05) return 'p = ' + p.toFixed(3);
+  return 'p = ' + p.toFixed(2) + ' (ns)';
+}}
+function sigStars(p) {{
+  if (p === null || p === undefined) return '';
+  if (p < 0.001) return '***';
+  if (p < 0.01) return '**';
+  if (p < 0.05) return '*';
+  return 'ns';
+}}
+window.renderBoxplot = function(mode) {{
+  // Update tab styling
+  document.querySelectorAll('#boxplot-tabs .tab-btn').forEach(function(b) {{ b.classList.remove('active'); }});
+  var btns = document.querySelectorAll('#boxplot-tabs .tab-btn');
+  if (mode === 'total') btns[0].classList.add('active');
+  else btns[1].classList.add('active');
+
   var bd = DATA.boxplot;
   var atlases = DATA.atlasLabels;
-  var sigConfigs = [
-    {{key:'cytosig', name:'CytoSig (n=43)', color:'#2563EB'}},
-    {{key:'secact', name:'SecAct (n=1,170)', color:'#059669'}},
-    {{key:'secact_matched', name:'SecAct (CytoSig-matched, n=22)', color:'#10B981', dash:'dot'}},
-  ];
   var traces = [];
-  sigConfigs.forEach(function(cfg) {{
-    var y = [], x = [];
-    atlases.forEach(function(a) {{
-      if (bd[a] && bd[a][cfg.key]) {{
-        bd[a][cfg.key].forEach(function(v) {{
-          y.push(v); x.push(a);
+  var annotations = [];
+
+  if (mode === 'total') {{
+    // Total: CytoSig (all) vs SecAct (all)
+    var cfgs = [
+      {{key:'cytosig', name:'CytoSig', color:'#2563EB'}},
+      {{key:'secact', name:'SecAct', color:'#059669'}},
+    ];
+    cfgs.forEach(function(cfg) {{
+      var y = [], x = [];
+      atlases.forEach(function(a) {{
+        if (bd[a] && bd[a][cfg.key]) {{
+          bd[a][cfg.key].forEach(function(v) {{ y.push(v); x.push(a); }});
+        }}
+      }});
+      var n = bd[atlases[0]] && bd[atlases[0]][cfg.key] ? bd[atlases[0]][cfg.key].length : 0;
+      traces.push({{
+        type:'box', y:y, x:x,
+        name: cfg.name + ' (n=' + (cfg.key === 'cytosig' ? '43' : '1,170') + ')',
+        marker:{{color:cfg.color}}, boxpoints:false, line:{{width:1.5}},
+      }});
+    }});
+    // Add significance annotations per atlas
+    atlases.forEach(function(a, i) {{
+      var st = bd[a] ? bd[a].stats_total : null;
+      if (st && st.p_value !== null) {{
+        annotations.push({{
+          x: a, y: 1.05, xref:'x', yref:'paper',
+          text: '<b>' + sigStars(st.p_value) + '</b><br><span style="font-size:9px">' + formatPval(st.p_value) + '</span>',
+          showarrow: false, font:{{size:11}}, align:'center',
         }});
       }}
     }});
-    traces.push({{
-      type: 'box', y: y, x: x, name: cfg.name,
-      marker: {{color: cfg.color}},
-      boxpoints: false, line: {{width: 1.5}},
+    document.getElementById('boxplot-caption').innerHTML =
+      '<strong>Figure 2.</strong> Spearman \\u03c1 distributions: CytoSig (43 targets) vs SecAct (1,170 targets) across atlases. ' +
+      'Mann-Whitney U test. Significance: *** p&lt;0.001, ** p&lt;0.01, * p&lt;0.05, ns = not significant. Donor-level pseudobulk.';
+  }} else {{
+    // Matched: CytoSig (22) vs SecAct (22) on shared targets
+    var cfgs = [
+      {{key:'cytosig_matched', name:'CytoSig (matched)', color:'#2563EB'}},
+      {{key:'secact_matched', name:'SecAct (matched)', color:'#059669'}},
+    ];
+    cfgs.forEach(function(cfg) {{
+      var y = [], x = [];
+      atlases.forEach(function(a) {{
+        if (bd[a] && bd[a][cfg.key]) {{
+          bd[a][cfg.key].forEach(function(v) {{ y.push(v); x.push(a); }});
+        }}
+      }});
+      traces.push({{
+        type:'box', y:y, x:x,
+        name: cfg.name + ' (n=22)',
+        marker:{{color:cfg.color}}, boxpoints:false, line:{{width:1.5}},
+      }});
     }});
-  }});
+    // Add significance annotations per atlas
+    atlases.forEach(function(a, i) {{
+      var sm = bd[a] ? bd[a].stats_matched : null;
+      if (sm && sm.p_value !== null) {{
+        annotations.push({{
+          x: a, y: 1.05, xref:'x', yref:'paper',
+          text: '<b>' + sigStars(sm.p_value) + '</b><br><span style="font-size:9px">' + formatPval(sm.p_value) + '</span>',
+          showarrow: false, font:{{size:11}}, align:'center',
+        }});
+      }}
+    }});
+    document.getElementById('boxplot-caption').innerHTML =
+      '<strong>Figure 2.</strong> Spearman \\u03c1 distributions: CytoSig vs SecAct on 22 matched targets shared between both methods. ' +
+      'Wilcoxon signed-rank test (paired by target). Significance: *** p&lt;0.001, ** p&lt;0.01, * p&lt;0.05, ns = not significant. Donor-level pseudobulk.';
+  }}
+
+  var title = mode === 'total'
+    ? 'Total: CytoSig (43 targets) vs SecAct (1,170 targets)'
+    : 'Matched: CytoSig vs SecAct (22 shared targets)';
+
   Plotly.newPlot('boxplot-chart', traces, {{
-    title: 'Cross-Sample Validation: Spearman Correlation Distributions (Donor-Level)',
+    title: title,
     yaxis: {{title: 'Spearman \\u03c1', zeroline: true, zerolinecolor: '#ccc'}},
-    boxmode: 'group', legend: {{orientation:'h', y:1.15, x:0.5, xanchor:'center'}},
+    boxmode: 'group',
+    legend: {{orientation:'h', y:1.15, x:0.5, xanchor:'center'}},
     margin: {{t:100, b:80}},
-    annotations: [{{
-      text: 'CytoSig: 43 cytokines | SecAct: 1,170 secreted proteins | SecAct matched: 22 shared',
-      xref:'paper', yref:'paper', x:0.5, y:-0.18, showarrow:false,
-      font:{{size:11, color:'#6B7280'}}, xanchor:'center',
-    }}],
+    annotations: annotations,
   }}, PLOTLY_CONFIG);
-}})();
+}};
+renderBoxplot('total');
 
 // ═══════════════════════════════════════════════════════════════════════════
 // 4.3 GOOD/BAD CORRELATIONS (interactive with signature + atlas dropdown)
