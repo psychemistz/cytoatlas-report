@@ -1339,7 +1339,7 @@ CytoAtlas validates at five levels: donor-level pseudobulk, donor &times; cell-t
 </table>
 
 <div class="callout">
-<p><strong>Key insight:</strong> None of these targets have isoforms or subunits mapping to different gene IDs that would cause gene ID confusion. The poor correlations are supposedly driven by <strong>post-translational regulation</strong> (membrane shedding, proteolytic activation, decoy receptor sequestration), <strong>paracrine signaling topology</strong> (producer and responder cells are different cell types), and <strong>heteromeric complex dependence</strong> (LTA requires LTB). These represent fundamental limitations of using ligand mRNA abundance as validation strategy of cytokine activity prediction model.</p>
+<p><strong>Key insight:</strong> None of these targets have isoforms or subunits mapping to different gene IDs that would cause gene ID confusion. The poor correlations are supposedly driven by <strong>post-translational regulation</strong> (membrane shedding, proteolytic activation, decoy receptor sequestration), <strong>paracrine signaling topology</strong> (producer and responder cells are different cell types), and <strong>heteromeric complex dependence</strong> (LTA requires LTB). These represent fundamental limitations of correlating ligand mRNA abundance and predicted activity as validation strategy of cytokine activity prediction model.</p>
 </div>
 
 <div class="callout amber">
