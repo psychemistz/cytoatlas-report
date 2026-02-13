@@ -29,7 +29,7 @@ Every data-cleaning decision flows from this goal: each sample unit must be inde
 | Inflammation Ext | scRNA-seq | 572,872 | ? | 86 | sampleID | Same issue; different gene space (37K vs 23K genes) |
 | scAtlas Normal | scRNA-seq | 2,293,951 | 317 | 706 | donor × organ | 115 donors have multiple samples from different organs |
 | scAtlas Cancer | scRNA-seq | 4,146,975 | 717 | 1,062 | donor × tissue | 82 donors have multiple samples (tumor + adjacent + metastasis) |
-| GTEx | Bulk RNA-seq | — | ~1,400 | 19,788 | sample (tissue biopsy) | Multi-tissue per donor (up to 39 tissues); NOT pseudobulk |
+| GTEx | Bulk RNA-seq | — | 946 | 19,788 | sample (tissue biopsy) | Multi-tissue per donor (1–39 samples/donor); NOT pseudobulk |
 | TCGA | Bulk RNA-seq | — | 10,274 | 11,069 | sample (tumor biopsy) | Mostly 1:1 donor:sample; some donors have normal+tumor pairs |
 
 ---
@@ -273,34 +273,158 @@ HCC (88), PAAD (75), CRC (65), ESCA (60), LUAD (59), BRCA (49), HNSC (46), NPC (
 ### 2.5 GTEx (Bulk RNA-seq)
 
 **Source:** GTEx Consortium, v11
-**File:** `GTEx_Analysis_2025-08-22_v11_RNASeQCv2.4.3_gene_tpm.parquet`
+**File:** `GTEx_Analysis_2025-08-22_v11_RNASeQCv2.4.3_gene_tpm.parquet` (4.1 GB)
 
 | Property | Value |
 |----------|-------|
 | Samples | 19,788 |
-| Donors | ~1,400 |
-| Genes | 74,628 (ENSG IDs → ~20K after HGNC mapping) |
-| Tissues | 31 |
+| Donors | 946 |
+| Genes (raw) | 74,628 ENSG IDs (all GENCODE features: protein-coding + lncRNA + pseudogenes + small RNA) |
+| Genes (mapped) | 72,930 unique HGNC symbols (after dedup; ~20K protein-coding, rest non-coding/pseudo) |
+| Tissues (SMTS) | 30 |
+| Tissue subtypes (SMTSD) | 68 |
 | Data type | TPM (Transcripts Per Million) |
 | Transform | log2(TPM + 1) |
 
 **This is true bulk RNA-seq, NOT pseudobulk.** No cell-type information.
 
-**Multi-tissue per donor:** Up to 39 samples per donor across different tissues (brain, skin, heart, liver, etc.)
+#### Expression Value Characterization
 
-**Top tissues:** Brain (1,152), Skin (812), Esophagus (653), Blood Vessel (606), Adipose (515), Blood (444)
+The file contains **TPM** values computed by RNASeQC v2.4.3.
 
-**Critical issue for correlation:** Same as scAtlas Normal — multiple samples per donor are not independent.
+**Evidence (in log2(TPM+1) space after transform):**
+- Value range: 0.0 to 19.4 (corresponding to 0–697K TPM)
+- Mean: ~0.87, median: 0.0
+- **51% of values are zero** — expected for tissue-specific gene expression (many genes silent in any given tissue)
+- **No negative values** — clean TPM, no batch correction artifacts (unlike TCGA RSEM)
 
-**Cleaning options:**
+**Pipeline handling (`15_bulk_validation.py`):**
+- No preprocessing needed (TPM is always ≥ 0)
+- Applies `log2(TPM + 1)` directly
+- Data format tracked in output H5AD metadata (`uns['data_format']`, `uns['transform']`)
 
-1. **All samples pooled (current, N=19,788):** Treats each tissue biopsy as independent. Very high N gives high power but inflated significance due to within-donor correlation.
+#### Gene ID Mapping
 
-2. **Per-tissue correlations:** Within each tissue, correlate across donors. Each donor contributes at most one sample per tissue. Truly independent.
+**Source gene IDs:** Versioned ENSG (e.g., `ENSG00000223972.6`)
+**Probemap:** GENCODE v23 (`gencode.v23.annotation.gene.probemap`, 60,498 entries → 58,581 unique gene symbols)
 
-3. **One sample per donor:** Pick one tissue per donor (e.g., whole blood for consistency). N drops to ~1,400 but samples are independent.
+**3-tier mapping cascade** (in `_map_ensg_to_symbols()`):
+1. Probemap lookup with full versioned ENSG ID
+2. Probemap lookup with base ENSG (strip `.version`)
+3. Fallback to `Description` column in parquet (contains HGNC symbols directly)
 
-**Recommendation:** Per-tissue correlations as primary (biologically meaningful, donors independent within tissue). Pooled as supplementary with clear caveat about non-independence.
+**Mapping results:**
+- 25,687 mapped via probemap (versioned ENSG match)
+- 26,841 mapped via probemap (base ENSG, version stripped)
+- 22,100 mapped via Description column fallback (newer genes not in GENCODE v23 probemap)
+- **0 unmapped** — 100% mapping rate (unlike a probemap-only approach which would lose 22K genes)
+- 74,628 mapped rows → 72,930 unique symbols after averaging 231 duplicate symbols
+
+**Why 72,930 genes and not ~20K?** The raw GTEx v11 parquet contains ALL GENCODE features (protein-coding + lncRNA + pseudogenes + small RNAs). Only ~20K are protein-coding. The non-coding genes are harmlessly carried through — they get silently excluded during the gene intersection step of ridge regression, which keeps only genes present in both expression data AND signature matrix. Effective gene counts used for inference: CytoSig 4,859, SecAct 7,451.
+
+**Note:** The download script (`15a_download_bulk_data.sh`) downloads GENCODE v23 probemap and GTEx **v8** sample attributes, but the pipeline uses GTEx **v11** parquet and v11 sample attributes (obtained separately from GTEx Portal). The GENCODE v23 probemap remains valid for v11 gene mapping.
+
+#### Donor Independence
+
+| Samples/donor | Donors | Cumulative % |
+|---------------|--------|-------------|
+| 1–5 | 12 | 1.3% |
+| 6–10 | 48 | 6.3% |
+| 11–15 | 131 | 20.2% |
+| 16–20 | 230 | 44.5% |
+| 21–25 | 267 | 72.7% |
+| 26–30 | 143 | 87.8% |
+| 31–35 | 67 | 94.9% |
+| 36–39 | 48 | 100% |
+
+- **All 946 donors contribute multiple tissues** (only 1 donor has a single sample)
+- Median: ~20 samples per donor
+- Maximum: 39 samples (donor GTEX-15ER7)
+- **Every correlation in the pooled analysis is inflated** by within-donor tissue correlation
+
+#### Tissue Breakdown (30 tissues, SMTS level)
+
+| Tissue | Samples | Tissue | Samples |
+|--------|---------|--------|---------|
+| Brain | 3,234 | Stomach | 491 |
+| Skin | 2,057 | Testis | 414 |
+| Esophagus | 1,578 | Pancreas | 384 |
+| Blood Vessel | 1,431 | Pituitary | 313 |
+| Adipose Tissue | 1,301 | Adrenal Gland | 295 |
+| Blood | 1,130 | Liver | 282 |
+| Colon | 925 | Prostate | 282 |
+| Heart | 913 | Spleen | 277 |
+| Muscle | 818 | Small Intestine | 226 |
+| Thyroid | 684 | Ovary | 193 |
+| Nerve | 670 | Salivary Gland | 181 |
+| Lung | 604 | Vagina | 170 |
+| Breast | 514 | Uterus | 153 |
+| | | Kidney | 115 |
+| | | Bladder | 77 |
+| | | Cervix Uteri | 47 |
+| | | Fallopian Tube | 29 |
+
+All 30 tissues have ≥29 samples. At min_samples=30, Fallopian Tube is excluded → **29 tissues in stratified analysis**.
+
+**Tissue detail (SMTSD level):** 68 subtypes (e.g., Brain splits into 13 regions: Cortex, Cerebellum, Hippocampus, etc.). The by_tissue stratification uses SMTS (coarse), not SMTSD.
+
+#### Decision: Compute Two Levels
+
+**Level 1 — All samples pooled (donor_only):**
+- N = 19,788 samples from 946 donors
+- **Severe non-independence:** every donor contributes ~20 samples across tissues
+- Exists: `gtex_donor_only_*` ✓
+- Useful as a sensitivity check but NOT a valid independent correlation
+
+**Level 2 — Per-tissue (by_tissue):**
+- Within each of 29 tissues (≥30 samples), correlate across donors
+- Each donor contributes at most one sample per tissue → **truly independent within tissue**
+- N per tissue: 47–3,234 (after dropping Fallopian Tube)
+- Exists: `gtex_by_tissue_*` ✓
+
+**Recommendation:** Level 2 (per-tissue) as primary — biologically meaningful and statistically valid. Level 1 (pooled) as supplementary with explicit caveat about non-independence.
+
+#### Existing Processed Data Verification
+
+**Location:** `/data/parks34/projects/2cytoatlas/results/cross_sample_validation/gtex/`
+
+| Level | Expression | CytoSig (43) | LinCytoSig (178) | SecAct (1,170) | Match? |
+|-------|-----------|-------------|-----------------|---------------|--------|
+| donor_only (all) | 19,788 × 72,930 | 19,788 × 43 | 19,788 × 178 | 19,788 × 1,170 | Yes |
+| by_tissue (29 tissues) | 19,759 × 72,930 | 19,759 × 43 | 19,759 × 178 | 19,759 × 1,170 | Yes |
+
+**Gene coverage per signature:**
+
+| Signature | Common genes | Total sig genes | Coverage |
+|-----------|-------------|----------------|---------|
+| CytoSig | 4,859 | 4,881 | 99.5% |
+| LinCytoSig | 18,639 | 19,918 | 93.6% |
+| SecAct | 7,451 | 7,919 | 94.1% |
+
+**Note on by_tissue sample count:** 19,759 = 19,788 − 29 (Fallopian Tube samples excluded by min_samples=30 filter).
+
+**Metadata gap:** Existing H5ADs were generated before the `data_format` metadata field was added. They have `uns['transform'] = 'log2(TPM+1)'` but lack `uns['data_format']`. Regeneration will add this field.
+
+#### Correlation Approach Comparison
+
+The existing `gtex_correlations.csv` contains correlations computed at two levels with very different properties:
+
+| Approach | N | Median rho (CytoSig) | Independence | Notes |
+|----------|---|---------------------|-------------|-------|
+| donor_only (pooled) | 19,788 | 0.211 | **No** | Cross-tissue variation inflates rho |
+| by_tissue "all" | 19,759 | 0.106 | **No** | Within-tissue centered, same donors across tissues |
+| per-tissue (median) | 47–3,234 | 0.150 | **Yes** | Gold standard |
+
+**Why donor_only rho is inflated:** Tissue differences dominate. Liver samples have high albumin expression AND high albumin activity; brain samples have low both. This cross-tissue variation creates strong correlations that don't reflect within-tissue donor variation.
+
+**Why by_tissue "all" is different from donor_only:** Activity was inferred with within-tissue mean centering (each tissue group centered separately before ridge regression), removing tissue-level variation. The "all" row then correlates across all samples using these tissue-adjusted values.
+
+**Proper approach: per-tissue correlations.**
+- Donors are truly independent within each tissue (at most one sample per donor per tissue)
+- Each ridge regression is mean-centered within tissue, asking: "Within lung, does the donor with higher X expression also show higher X activity?"
+- Report median rho across tissues, with per-tissue rho distributions
+
+**Self-referential consideration:** Both expression and activity come from the same matrix. However, the activity z-score is derived from ridge regression across the full signature matrix (~4,859 genes for CytoSig). The target gene contributes only 1/4,859 of the signal, so the self-referential bias is minimal.
 
 ---
 
@@ -430,7 +554,7 @@ The core question for every dataset:
 | Inflammation Main | sampleID | 817 | Unknown (need to verify donor identity) |
 | scAtlas Normal | donor × organ | 706 | No (115 donors share across organs) |
 | scAtlas Cancer | donor × tissue_type | ~800 | No (82 donors share across tissue types) |
-| GTEx | tissue biopsy | 19,788 | No (~1,400 donors × multiple tissues) |
+| GTEx | tissue biopsy | 19,788 | No (946 donors × multiple tissues) |
 | TCGA | tumor biopsy | ~10,000 | Mostly yes (after removing matched normals) |
 
 ### 3.2 Cell Exclusion (Single-Cell Datasets)
@@ -499,6 +623,31 @@ Spearman correlation requires sufficient N for reliable estimates:
 | TCGA | `symbol\|entrezID` (e.g., `TP53\|7157`) | Split on `\|`, take symbol; no probemap needed |
 
 CytoSig target aliases: TNFA→TNF, GMCSF→CSF2, IFNA→IFNA1, etc. Must resolve before correlation.
+
+### 3.5b Duplicate Gene Symbol Handling
+
+After gene ID mapping, multiple source IDs can map to the same HGNC symbol. Both bulk pipelines resolve this with `groupby(level=0).mean()`.
+
+**Duplicate counts per dataset:**
+
+| Dataset | Raw IDs | After `?` removal | Unique symbols | Duplicated symbols | Duplicated rows |
+|---------|---------|-------------------|----------------|-------------------|----------------|
+| GTEx | 74,628 ENSG | 72,930 mapped | ~72,700 | 231 | 1,538 |
+| TCGA | 20,531 | 20,502 | 20,501 | 1 (SLC35E2) | 2 |
+| Single-cell | N/A | N/A | N/A | N/A | N/A (already HGNC) |
+
+**GTEx duplicates are overwhelmingly non-coding RNAs:**
+- Y_RNA (727 ENSG IDs → 1 symbol), Metazoa_SRP (167), U3 (43), U6 (33), SNORA70 (25), ...
+- These are absent from CytoSig/SecAct signature matrices, so averaging has no impact on activity inference
+
+**Resolution method:** `pandas.DataFrame.groupby(level=0).mean()`
+- Averages expression values across all rows mapping to the same symbol
+- **NaN handling:** `skipna=True` by default — NaN values are excluded from the mean, not propagated. If all values for a gene+sample are NaN, the result is NaN (later replaced by `np.nan_to_num(Y, nan=0.0)` during ridge regression input preparation).
+- This is conservative: averaging smooths rather than inflates, and the affected genes are mostly non-coding.
+
+**TCGA has essentially no duplicates** (1 gene: SLC35E2 with 2 entrezIDs). The averaging is trivially correct.
+
+**Single-cell datasets** use HGNC symbols natively — no gene mapping or deduplication needed.
 
 ### 3.6 Expression Normalization
 
@@ -582,7 +731,7 @@ For each dataset, report:
 - [ ] **Inflammation Atlas:** Investigate sampleID naming convention to determine if donors can be identified. Check original publication or metadata files for donor–sample mapping.
 - [ ] **scAtlas Normal:** Decide on primary aggregation level (donor-only vs donor×organ)
 - [ ] **scAtlas Cancer:** Decide on tissue-type filtering (tumor-only vs all)
-- [ ] **GTEx:** Decide on stratification (pooled vs per-tissue)
+- [x] **GTEx:** Decided on stratification — per-tissue (by_tissue) as primary, pooled (donor_only) as supplementary with non-independence caveat
 - [ ] **TCGA:** Decide on sample filtering (all vs tumor-only)
 
 ### Reprocessing
@@ -591,8 +740,9 @@ For each dataset, report:
 - [ ] Keep two-stage threshold design: no min_cells at generation, min_cells=10 at validation (Section 3.3, 3.8)
 - [ ] Keep context-appropriate min_samples: 10 for single-cell, 30 for bulk stratified (Section 3.4, 3.8)
 - [ ] Regenerate TCGA data with negative clipping (Section 3.6; pipeline updated)
+- [ ] Regenerate GTEx H5ADs to add `data_format` metadata (pipeline code updated, data predates change)
 - [ ] Generate TCGA Level 2 (primary-only) and Level 3 (per-cancer from primary) — `15b_tcga_primary_filter.py`
-- [ ] Recompute correlations for updated datasets
+- [ ] Recompute correlations for updated datasets — use per-tissue (GTEx) and per-cancer (TCGA) as primary
 - [ ] Rebuild figures and tables from new correlations
 
 ### Documentation
