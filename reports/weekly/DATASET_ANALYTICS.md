@@ -150,22 +150,119 @@ Resampled (bootstrap) versions also exist for L1-L4.
 
 **Obs columns:** `libraryID`, `sampleID`, `Level1`/`Level1pred`, `Level2`/`Level2pred`
 
-**Critical issue: No `donorID` column.**
+**Gene IDs:** Ensembl IDs (ENSG*) as var_names, HGNC symbols in `var['symbol']` (22,826 unique symbols, 0 NaN). Gene matching for activity inference and correlation uses `var['symbol']`.
+
+#### Cohort Overlap Analysis
+
+| Metric | Main ↔ Val | Main ↔ Ext | Val ↔ Ext |
+|--------|-----------|-----------|----------|
+| Shared sampleIDs | 0 | 0 | 0 |
+| Shared libraryIDs | 217 | 0 | 0 |
+| Shared donors | 0 | 0 | 0 |
+
+The 217 shared libraryIDs between Main and Val come from multiplexed 10x experiments (CellPlex/hashtag). The same physical library contains cells from multiple donors, but different donors were assigned to Main vs Val during the cohort split. Zero shared cells or donors — the shared libraryIDs mean shared sequencing run only (mild batch correlation, not data duplication).
+
+#### Decision: Analyze Separately (Option C — CONFIRMED)
+
+**Main (817 samples)** as primary for cross-donor correlation analysis:
+- Expert-curated cell type annotations (Level1, Level2)
+- 22,838 genes (shared with Val)
+- Sufficient power: 817 samples, 30,227 pseudobulk groups at L2
+
+**Validation (144 samples)** as internal replication:
+- Predicted annotations (Level2pred) — noisier
+- Same gene space as Main
+- Checks whether correlation patterns hold
+
+**External (86 samples)** as independent validation:
+- Predicted annotations
+- Different gene space (37,169 vs 22,838)
+- Smallest cohort, truly independent
+
+Report clearly as "samples" not "donors" until donor identity is resolved.
+
+#### Critical Issue: No `donorID` Column
+
 - Only `sampleID` is available
 - Unknown whether multiple sampleIDs can map to the same donor (e.g., pre/post treatment, multiple timepoints)
 - If some donors contributed multiple samples, treating each sampleID as independent inflates correlation N and may introduce within-donor correlations
+- **Mitigation:** Treat each sampleID as an independent unit; report N as "samples" not "donors"
 
-**Additional issues:**
-- Val/Ext use `Level1pred`/`Level2pred` (predicted, not curated annotations) — noisier
-- External cohort has a different gene space (37,169 vs 22,838 genes)
-- `LowQuality_cells` and `Doublets` appear in Level1 — **exclude**
+#### Cell Exclusion Issue (REQUIRES REGENERATION)
 
-**Cleaning decision needed:**
-1. **Option A (current):** Treat each sampleID as independent. Report as "1,047 samples" not "1,047 donors."
-2. **Option B (conservative):** Investigate sampleID naming conventions. If pattern like `I57.3P_T0` encodes donor + timepoint, deduplicate to one sample per donor (e.g., take T0 only).
-3. **Option C (stratified):** Analyze Main/Val/Ext separately. Use Main (817 samples, curated annotations) as primary. Val/Ext as replication.
+The Level1 annotation in the raw data contains non-cell categories that **must be excluded** before pseudobulk aggregation:
 
-**Recommendation:** Option C — analyze Main as primary (curated L1/L2), then replicate in Val/Ext. Report clearly as "samples" not "donors" until donor identity is resolved.
+**Main dataset Level1 types (17 total):**
+
+| Type | Status | Notes |
+|------|--------|-------|
+| B, DC, ILC, Mono, Plasma, Platelets, Progenitors, RBC | Keep | Real cell types |
+| T_CD4_Naive, T_CD4_NonNaive, T_CD8_Naive, T_CD8_NonNaive, UTC | Keep | Real cell types |
+| Cycling_cells, pDC | Keep | Real cell types |
+| **Doublets** | **EXCLUDE** | Artifact: 780 sample-groups at L1 |
+| **LowQuality_cells** | **EXCLUDE** | Artifact: 776 sample-groups at L1 |
+
+**Level2 also contains:**
+- `Doublets` — exclude
+- `LowQuality_cells` — exclude
+- `NK_lowRibocontent` — keep (real cell type with quality caveat, 956 correlation rows)
+
+**Impact of NOT excluding (current state):**
+- **donor_only level:** Doublet and LowQuality cells are **mixed into every donor's pseudobulk profile**, contaminating expression data. Effect is moderate (~1-5% of cells per donor) but systematic.
+- **L1/L2 levels:** They form their own cell type strata. Correlations computed for "Doublets" and "LowQuality_cells" cell types are meaningless (1,922 correlation rows each in `inflammation_main_correlations.csv`).
+
+#### Existing Processed Data Verification
+
+**Location:** `/data/parks34/projects/2cytoatlas/results/cross_sample_validation/inflammation_main/`
+
+| Level | Pseudobulk | CytoSig (43) | LinCytoSig (178) | SecAct (1,170) | Match? |
+|-------|-----------|-------------|-----------------|---------------|--------|
+| donor_only | 817 × 22,838 | 817 × 43 | 817 × 178 | 817 × 1,170 | Yes |
+| donor × L1 | 11,327 × 22,838 | 11,327 × 43 | 11,327 × 178 | 11,327 × 1,170 | Yes |
+| donor × L2 | 30,227 × 22,838 | 30,227 × 43 | 30,227 × 178 | 30,227 × 1,170 | Yes |
+
+**Existing correlation statistics (BEFORE cell exclusion — will change after regeneration):**
+
+| Level | Signature | Median ρ | N targets | n_samples range |
+|-------|-----------|---------|-----------|----------------|
+| donor_only | CytoSig | 0.321 | 33 | 817 |
+| donor_only | SecAct | 0.188 | 805 | 817 |
+| donor_l1 | CytoSig | 0.065 | 580 | 59–11,327 |
+| donor_l1 | SecAct | 0.081 | 14,276 | 59–11,327 |
+| donor_l2 | CytoSig | 0.045 | 1,957 | 5–30,227 |
+| donor_l2 | SecAct | 0.050 | 48,760 | 5–30,227 |
+
+**Note:** L2 has n_samples as low as 5, below the documented min_samples=10 threshold. The original correlation script (`13_cross_sample_correlation_analysis.py`, now deleted) used min_samples=5 for per-celltype and min_samples=10 for overall. Regeneration should use min_samples=10 consistently.
+
+**Note:** Inflammation donor_only median ρ (0.321 CytoSig) is substantially higher than CIMA (0.114 CytoSig). This is expected: inflammation samples span healthy + 20 disease conditions, creating much wider biological variance that inflates cross-sample correlations. CIMA is healthy-only with less variance.
+
+#### Comparison with CIMA (Gold Standard)
+
+| Property | CIMA | Inflammation Main |
+|----------|------|------------------|
+| Sample unit | donor (1:1) | sampleID (donor mapping unknown) |
+| Donor/Sample count | 421 | 817 |
+| Gene ID format | HGNC symbols (var_names) | Ensembl IDs (var_names), symbols in var['symbol'] |
+| Cell exclusion needed | No (pre-QC'd upstream) | **Yes (Doublets, LowQuality_cells)** |
+| Annotation quality | Curated (L1–L4) | Curated L1/L2 (Main); predicted (Val/Ext) |
+| Cell type levels | L1(6), L2(27), L3(38), L4(72) | L1(17→15 after exclusion), L2(66→63) |
+| Population | Healthy only | Healthy + 20 disease conditions |
+
+#### Pipeline Comparison: 02_inflam_activity.py vs 11_donor_level_pipeline.py
+
+Two separate scripts generate inflammation pseudobulk with **different normalization approaches**:
+
+| Property | `02_inflam_activity.py` | `11_donor_level_pipeline.py` |
+|----------|------------------------|------------------------------|
+| Output location | `results/inflammation/` | `results/cross_sample_validation/inflammation_main/` |
+| Normalization | Sum raw counts → CPM → log2(x+1) | Per-cell CPM → log1p → mean across cells |
+| Min cells filter | None (all groups) | 10 (at generation) |
+| Cell exclusion | None | Doublets + LowQuality_cells via `exclude_celltypes` config (**FIXED**) |
+| Used for | Disease differential, treatment response | **Cross-donor correlation validation** |
+
+The cross-sample validation data (from `11_donor_level_pipeline.py`) is what we use for cross-donor correlations. Both CIMA and Inflammation were processed through the same pipeline, ensuring internal consistency.
+
+**Normalization note:** The mean-of-log approach (averaging per-cell log1p(CPM) values) differs from the standard pseudobulk approach (summing raw counts, then normalizing). For Spearman correlation (rank-based), both approaches produce valid rankings. Since all single-cell atlases (CIMA, Inflammation, scAtlas) use the same 11_donor_level_pipeline.py, they are internally consistent.
 
 ---
 
@@ -619,8 +716,8 @@ Spearman correlation requires sufficient N for reliable estimates:
 
 | Dataset | Gene ID format | Mapping needed |
 |---------|---------------|----------------|
-| CIMA | HGNC symbols | Direct match to signatures |
-| Inflammation | HGNC symbols | Direct match |
+| CIMA | HGNC symbols (var_names) | Direct match to signatures |
+| Inflammation | Ensembl IDs (var_names), HGNC in var['symbol'] | Symbol column used for matching (22,826 unique symbols) |
 | scAtlas Normal | HGNC symbols | Direct match |
 | scAtlas Cancer | HGNC symbols | Direct match |
 | GTEx | ENSG (versioned) | GENCODE v23 probemap → HGNC (3-tier: versioned → unversioned → Description column) |
@@ -638,7 +735,8 @@ After gene ID mapping, multiple source IDs can map to the same HGNC symbol. Both
 |---------|---------|-------------------|----------------|-------------------|----------------|
 | GTEx | 74,628 ENSG | 72,930 mapped | ~72,700 | 231 | 1,538 |
 | TCGA | 20,531 | 20,502 | 20,501 | 1 (SLC35E2) | 2 |
-| Single-cell | N/A | N/A | N/A | N/A | N/A (already HGNC) |
+| CIMA / scAtlas | N/A | N/A | N/A | N/A | N/A (already HGNC symbols) |
+| Inflammation | 22,838 ENSG | N/A | 22,826 symbols via var['symbol'] | 12 (symbol collisions) | Handled by `11_donor_level_pipeline.py` via gene_symbols parameter |
 
 **GTEx duplicates are overwhelmingly non-coding RNAs:**
 - Y_RNA (727 ENSG IDs → 1 symbol), Metazoa_SRP (167), U3 (43), U6 (33), SNORA70 (25), ...
@@ -655,10 +753,21 @@ After gene ID mapping, multiple source IDs can map to the same HGNC symbol. Both
 
 ### 3.6 Expression Normalization
 
-**Single-cell datasets (pseudobulk):**
-1. Sum raw counts per group (donor or donor×celltype)
-2. CPM normalize: (counts / total_counts) × 1e6
-3. Log transform: log1p(CPM)
+**Single-cell datasets — two pipelines with different normalization:**
+
+*Activity scripts (`01_cima_activity.py`, `02_inflam_activity.py`):*
+1. Sum raw counts per group (sample × celltype)
+2. CPM normalize on summed counts: (counts / total_counts) × 1e6
+3. Log2 transform: log2(CPM + 1)
+4. Used for: disease differential, treatment response analyses
+
+*Donor-level pipeline (`11_donor_level_pipeline.py`):*
+1. Per-cell: CPM normalize → log1p (natural log)
+2. Mean of per-cell log1p(CPM) values across cells in group
+3. Used for: **cross-donor correlation validation** (the main validation analysis)
+4. All single-cell atlases use this same pipeline → internally consistent
+
+Note: Mean-of-log ≠ log-of-mean (Jensen's inequality), but for Spearman correlation (rank-based), both approaches produce valid rankings. The key requirement is consistency across atlases, which is satisfied.
 
 **Bulk datasets (format-specific preprocessing):**
 
@@ -732,13 +841,60 @@ For each dataset, report:
 
 ### Immediate (before reprocessing)
 
-- [ ] **Inflammation Atlas:** Investigate sampleID naming convention to determine if donors can be identified. Check original publication or metadata files for donor–sample mapping.
+- [x] **Inflammation Atlas cohort decision:** Analyze Main/Val/Ext separately. Main as primary (curated annotations), Val for internal replication, Ext for independent validation.
+- [x] **Inflammation Atlas overlap analysis:** 0 shared sampleIDs across all cohorts. 217 shared libraryIDs between Main↔Val (multiplexed sequencing, no shared cells/donors). Safe to analyze separately.
+- [ ] **Inflammation Atlas donor identity:** Investigate sampleID naming convention to determine if donors can be identified. Low priority — treat sampleIDs as independent for now.
 - [ ] **scAtlas Normal:** Decide on primary aggregation level (donor-only vs donor×organ)
 - [ ] **scAtlas Cancer:** Decide on tissue-type filtering (tumor-only vs all)
 - [x] **GTEx:** Decided on stratification — per-tissue (by_tissue) as primary, pooled (donor_only) as supplementary with non-independence caveat
 - [x] **TCGA:** Decided on sample filtering — primary tumor (01) + blood cancer (03); implemented in `15b_tcga_primary_filter.py`
 
-### Reprocessing
+### Inflammation Regeneration (PRIORITY)
+
+The existing inflammation cross_sample_validation data contains Doublets and LowQuality_cells in the pseudobulk. This requires regeneration:
+
+**Step 1: Add cell exclusion to pseudobulk generation scripts** ✅ DONE
+- Modified `11_donor_level_pipeline.py`: Added `exclude_celltypes` config to inflammation atlas entries. Exclusion logic marks cells as NaN (preserving positional alignment with adata.X) so they are skipped during batch accumulation.
+- Modified `12_cross_sample_correlation.py`: Same `exclude_celltypes` config. Exclusion sets `sample_col` to NaN → cells become `__INVALID__` in group keys. This script handles all levels including `donor_only`.
+- Both scripts restored from `archive/scripts/early_pipeline/` to `scripts/`
+- Main: `{'Level1': ['Doublets', 'LowQuality_cells']}`
+- Val/Ext: `{'Level1pred': ['Doublets', 'LowQuality_cells']}` (defensive — these files are already QC'd and contain neither category)
+- Does NOT exclude `NK_lowRibocontent` (real cell type with quality caveat)
+
+**Step 2: Regenerate pseudobulk + activity for all 3 cohorts**
+Use `12_cross_sample_correlation.py` (handles all levels including donor_only):
+```bash
+python scripts/12_cross_sample_correlation.py --atlas inflammation_main inflammation_val inflammation_ext --force
+```
+Note: `--force` overwrites existing files. The script generates pseudobulk H5ADs, computes activity for all 3 signatures, AND computes correlations in one pass. Runs sequentially through all 3 cohorts.
+
+**Step 3: Recompute correlations** ✅ DONE (code ready)
+- Fixed min_samples threshold in `13_cross_sample_correlation_analysis.py`: per-celltype changed from 5 → 10 to match overall threshold
+- Added TCGA primary-only levels (`primary_only`, `primary_by_cancer`) to `13_` ATLAS_CONFIGS
+- Both `12_` and `13_` restored from archive to `scripts/`
+- `12_` computes correlations inline during pseudobulk generation (Step 2)
+- `13_` can be run standalone to recompute only correlations without regenerating pseudobulk:
+```bash
+python scripts/13_cross_sample_correlation_analysis.py --atlas inflammation_main
+python scripts/13_cross_sample_correlation_analysis.py --atlas inflammation_val
+python scripts/13_cross_sample_correlation_analysis.py --atlas inflammation_ext
+```
+
+**Step 4: Update resampled validation**
+```bash
+python scripts/16_resampled_validation.py --atlas inflammation_main
+python scripts/16_resampled_validation.py --atlas inflammation_val
+python scripts/16_resampled_validation.py --atlas inflammation_ext
+```
+
+**Expected changes after regeneration:**
+- donor_only: expression profiles slightly cleaner (Doublets/LQ cells removed from per-donor aggregation)
+- L1: 15 cell types instead of 17 (Doublets and LowQuality_cells removed)
+- L2: 63 cell types instead of 65 (Doublets and LowQuality_cells removed)
+- Correlation CSVs: ~3,844 fewer rows (1,922 Doublets + 1,922 LowQuality_cells)
+- Median rho at donor_only may shift slightly (cleaner expression profiles)
+
+### Other Reprocessing
 
 - [ ] Standardize cell exclusion criteria across all single-cell datasets (Section 3.2)
 - [ ] Keep two-stage threshold design: no min_cells at generation, min_cells=10 at validation (Section 3.3, 3.8)
@@ -751,7 +907,8 @@ For each dataset, report:
 
 ### Documentation
 
-- [ ] Record every filtering decision with rationale
+- [x] Record inflammation cohort overlap analysis and decision rationale
+- [x] Document cell exclusion issue in inflammation data
 - [ ] Report sample independence status for each dataset
 - [ ] Create a provenance chain: raw H5AD → filtered cells → pseudobulk → activity → correlation → figure
 
