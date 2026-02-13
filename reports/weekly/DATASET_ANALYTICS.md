@@ -28,7 +28,7 @@ Every data-cleaning decision flows from this goal: each sample unit must be inde
 | Inflammation Val | scRNA-seq | 849,922 | ? | 144 | sampleID | Same issue; cell type labels are predicted (Level2pred) |
 | Inflammation Ext | scRNA-seq | 572,872 | ? | 86 | sampleID | Same issue; different gene space (37K vs 23K genes) |
 | scAtlas Normal | scRNA-seq | 2,293,951 | 317 | 706 | donor × organ | 115 donors have multiple samples from different organs |
-| scAtlas Cancer | scRNA-seq | 4,146,975 | 717 | 1,062 | donor × tissue | 82 donors have multiple samples (tumor + adjacent + metastasis) |
+| scAtlas Cancer | scRNA-seq | 4,146,975 | 717 | 1,062 | donorID (tumor-only) | 197 donors (27.5%) have >1 sample; tumor-only filter → 601 donors |
 | GTEx | Bulk RNA-seq | — | 946 | 19,788 | sample (tissue biopsy) | Multi-tissue per donor (1–39 samples/donor); NOT pseudobulk |
 | TCGA | Bulk RNA-seq | — | 10,274 | 11,069 | sample (tumor biopsy) | Mostly 1:1 donor:sample; some donors have normal+tumor pairs |
 
@@ -490,38 +490,232 @@ Per-tissue correlations can be directly compared: same tissue, same biological q
 
 **Obs columns:** `donorID`, `sampleID`, `cancerType`, `sub_cancerType`, `tissue`, `treatment`, `treatmentResponse`, `treatmentPhase`, `cellType1`, `cellType2`, ...
 
-**Multi-sample donors (82 donors with >2 samples):**
-- All 82 have the SAME cancer type across samples
-- Multiple samples come from: tumor vs adjacent normal, multiple tumor regions, blood, metastasis
-- Example: CRC patients with 5-8 biopsies (multiple tumor regions + 1 adjacent)
-- Example: TNBC patients with blood + metastasis at pre/post/progression timepoints
+**Critical issue with existing pipeline outputs:** Current config uses `sampleID` (1,062 values) instead of `donorID` (717 values) and includes ALL tissue types without filtering. This is analogous to running TCGA without the primary_only filter — all existing outputs need regeneration.
 
-**Top cancer types by donor count:**
-HCC (88), PAAD (75), CRC (65), ESCA (60), LUAD (59), BRCA (49), HNSC (46), NPC (39), STAD (39), KIRC (35), ICC (30)
+#### 2.4.1 Basic Metadata
 
-**Tissue breakdown for donors with ≤2 samples (635 donors):**
-- Tumor only: 438
-- Unlabeled: 82
-- Tumor + Adjacent: 63
-- Metastasis only: 53
-- PreLesion only: 38
-- Tumor + Blood: 22
-- Others: 12
+**Multi-sample donors:** 197 donors (27.5%) have >1 sample — substantially more than the 82 donors with >2 samples previously noted. All multi-sample donors have the SAME cancer type across their samples. Multiple samples come from: tumor vs adjacent normal, multiple tumor regions, blood, metastasis, or longitudinal timepoints.
 
-**Cleaning decisions:**
+**Tissue breakdown:**
 
-1. **Tissue type filtering:** Should we include adjacent normal, metastasis, blood, pre-lesion samples alongside tumor samples in the same correlation?
-   - **Problem:** Mixing tumor and adjacent normal samples from the SAME donor creates within-donor pairs that are not independent but are biologically very different
-   - **Recommendation:** Stratify by tissue type. Primary analysis on Tumor-only. Separate analyses for Adjacent, Metastasis.
+| Tissue | Donors | Samples | Notes |
+|--------|--------|---------|-------|
+| Tumor | 601 | ~750 | Primary analysis target |
+| Adjacent | ~130 | ~140 | Matched normals (same donor as tumor) |
+| Blood | ~60 | ~70 | Peripheral blood |
+| Metastasis | ~55 | ~60 | Distant sites |
+| PreLesion | ~40 | ~40 | Pre-malignant |
+| PleuralFluids | ~5 | ~5 | Rare |
 
-2. **Cancer-type stratification:**
-   - **Option A:** Pool all cancer types (N=717 donors, higher power, but heterogeneous)
-   - **Option B:** Per-cancer-type correlations (HCC: N=88, PAAD: N=75, etc.)
-   - **Recommendation:** Both. Pooled as primary (more power), per-cancer as sensitivity analysis. Exclude cancer types with <20 donors.
+**Per-cancer-type donor counts (all 29 types):**
 
-3. **Multi-region tumor samples:**
-   - For donors with multiple tumor biopsies (e.g., CRC with 5-7 tumor samples): average across tumor samples per donor, or pick one
-   - **Recommendation:** Average across same-tissue samples per donor → one value per (donor × tissue_type × cancer_type)
+| Cancer type | Total donors | Tumor-only donors | Tier |
+|-------------|-------------|-------------------|------|
+| HCC (Hepatocellular Carcinoma) | 88 | 88 | A |
+| PAAD (Pancreatic Adenocarcinoma) | 75 | 58 | A |
+| CRC (Colorectal Cancer) | 65 | 51 | A |
+| ESCA (Esophageal Carcinoma) | 60 | 48 | A |
+| LUAD (Lung Adenocarcinoma) | 59 | 36 | A |
+| BRCA (Breast Cancer) | 49 | 30 | A |
+| HNSC (Head & Neck SCC) | 46 | 39 | A |
+| NPC (Nasopharyngeal Carcinoma) | 39 | 36 | A |
+| STAD (Stomach Adenocarcinoma) | 39 | 27 | B |
+| KIRC (Kidney Clear Cell Carcinoma) | 35 | 31 | A |
+| ICC (Intrahepatic Cholangiocarcinoma) | 30 | 29 | B |
+| TNBC (Triple-Negative Breast Cancer) | 22 | — | — |
+| LSCC (Lung Squamous Cell Carcinoma) | 17 | — | C |
+| cSCC (Cutaneous SCC) | 14 | — | C |
+| ALM (Acral Lentiginous Melanoma) | 14 | — | C |
+| BLCA (Bladder Cancer) | 12 | — | C |
+| CHC (Combined HCC-Cholangiocarcinoma) | 10 | — | C |
+| LYM (Lymphoma) | 8 | — | D |
+| NET (Neuroendocrine Tumor) | 7 | — | D |
+| Others (10 types with <7 donors each) | ~35 | — | D |
+
+**Tier definitions (based on tumor-only donor count):** A (≥30): 9 types, adequate for primary analysis. B (20–29): ICC/STAD, included with caveat. C (10–19): 5 types, exploratory only. D (<10): excluded from per-cancer analysis.
+
+#### 2.4.2 Cell Type Annotation Audit
+
+**cellType1** (162 values): Severe annotation heterogeneity across cancer types. Unlike CIMA (centrally curated) or scAtlas Normal (structured subCluster naming), scAtlas Cancer annotations come from individual study groups with no harmonization.
+
+**Annotation completeness by cancer type:**
+
+| Category | Cancer types | % Unknown cells |
+|----------|-------------|----------------|
+| Fully annotated (0% Unknown) | HCC, cSCC, CHC, LYM | 0% |
+| Partially annotated | CRC (14%), ICC (14%), LUAD (36%) | 14–36% |
+| Mostly unannotated | PAAD (84%), HNSC (83%), KIRC (90%) | 83–90% |
+| Completely unannotated | NPC, BRCA, STAD | 100% |
+| Deceptive | ESCA | 0% Unknown but all cells = "annotated_type" placeholder |
+
+**Overall:** 59% of all cells across the dataset are cellType1 = "Unknown".
+
+**Annotation inconsistencies (5 groups):**
+
+| Variant A | Variant B | Root cause |
+|-----------|-----------|------------|
+| Fibroblast | Fibroblasts | HNSC uses plural |
+| Macrophage | Macrophages | HNSC uses plural |
+| Myocyte | Myocytes | HNSC uses plural |
+| Endothelial Cell | Endothelial cells | Case difference |
+| PDC | pDC | cSCC vs CRC convention |
+
+These are dataset-level convention differences (each study group used their own naming), not random errors. **Decision:** Do NOT normalize — per-cancer analysis inherently keeps variants separate since each cancer type uses one convention consistently.
+
+**cellType2** (153 values): 92% of cells are "Unknown" — not viable for any stratification. Ignored for correlation design.
+
+#### 2.4.3 Multi-Sample Donor Analysis
+
+**Tissue combinations for multi-sample donors:**
+- Adjacent + Tumor: 96 donors (paired normal-tumor, most common)
+- Blood + Tumor: 29 donors
+- Multiple Tumor regions: 59 donors (mostly CRC with 5-8 biopsies)
+- Metastasis + Tumor: 19 donors
+- Others (3+ tissue types): various combinations
+
+**Longitudinal donors:** 21 donors (all TNBC/ALM) with Baseline → After → Progression timepoints. Critically, ALL longitudinal samples are from Blood or Metastasis tissue only — filtering to Tumor-only eliminates this independence concern entirely.
+
+**Multi-region tumor donors:** 59 donors (mostly CRC) with multiple tumor biopsies from different regions. Handled by donorID aggregation, which pools all same-tissue samples per donor into one pseudobulk profile.
+
+#### 2.4.4 Correlation Strategy Design
+
+**The TCGA analogy:** scAtlas Cancer is structurally analogous to TCGA — multiple cancer types requiring per-cancer stratification, with a tissue filter needed (tumor-only vs all sample types). The key difference: scAtlas Cancer has cell-type resolution that TCGA lacks, plus paired tumor-adjacent samples.
+
+**Multi-level strategy (4 levels mirroring TCGA three-level design):**
+
+| Level | Unit | N | Filter | Mean-centering | Independence | Status | Analogy |
+|-------|------|---|--------|----------------|-------------|--------|---------|
+| 0. donor_only | donorID | 717 | None | Global | Fully independent | Supplementary | TCGA donor_only |
+| 1. tumor_only | donorID, tumor tissue | 601 | tissue='Tumor' | Global | Fully independent | Supplementary | TCGA primary_only |
+| 2. tumor_by_cancer (PRIMARY) | donorID per cancer, tumor | 27–88 per type | tissue='Tumor', per-cancer | Within-cancer | Fully independent | **Primary** | **TCGA primary_by_cancer** |
+| 3. tumor_by_cancer_celltype1 | donorID per (cancer × cellType1), tumor | HCC/ICC only viable | Tumor, per-cancer, per-cellType1 | Within-cellType1-within-cancer | Fully independent | Exploratory | scAtlas Normal by_organ_subCluster |
+
+**Level 0 (donor_only):** Aggregate ALL cells per donor → 717 profiles. Mixes tissue types (tumor + adjacent + blood) and cancer types. Supplementary with explicit caveat. Analogous to TCGA donor_only (all sample types pooled). **Critical issue with existing outputs:** Current config uses `sampleID` (1,062 values) instead of `donorID` (717 values) → existing Level 0 outputs are actually sample-level, not donor-level.
+
+**Level 1 (tumor_only):** Filter to tissue='Tumor', aggregate per donorID → 601 profiles. Removes adjacent, blood, metastasis, pre-lesion. Analogous to TCGA primary_only (removes matched normals and metastatic). Supplementary — still mixes cancer types.
+
+**Level 2 (tumor_by_cancer) — PRIMARY:** For each cancer type with ≥20 tumor-only donors (11 types: 9 Tier A + 2 Tier B), aggregate all tumor cells per donor within that cancer type, run within-cancer mean-centered ridge regression, correlate across donors. This is the direct analogue of TCGA primary_by_cancer. Each donor contributes at most one point per cancer type → fully independent within each cancer-type correlation. Report Tier A (≥30 tumor donors, 9 types) as high-confidence and Tier B (20–29, ICC/STAD) as adequate-confidence separately.
+
+**Level 3 (tumor_by_cancer_celltype1) — Exploratory:** For HCC and ICC only, further stratify by cellType1 within the cancer type. Feasible because both have excellent annotation completeness and sufficient donors per cell type group. Not viable for other cancer types due to annotation sparsity (59% Unknown cells overall). This mirrors scAtlas Normal's Level 3 (by_organ_subCluster) where only Breast and Lung were viable.
+
+**Threshold rationale:**
+- **min_samples=20** for Level 2 primary: 11 cancer types pass (9 Tier A with ≥30 + ICC at 29 and STAD at 27). At N=20, Spearman has reasonable power to detect rho ≥ 0.45 (p < 0.05). Consistent with scAtlas Normal by_organ threshold.
+- **min_samples=10** for Level 2 exploratory: 6 additional cancer types (Tier C) become available
+- **min_samples=20** for Level 3 HCC/ICC primary cell type groups
+- **min_samples=10** for Level 3 CRC/LUAD exploratory cell type groups
+
+**Level 3 viability (cell type sparsity within cancer types):**
+
+Only cancer types with good annotation completeness AND sufficient donors can support cellType1-stratified analysis:
+
+| Cancer | Tumor donors | cellType1 groups ≥20 donors | ≥10 donors | Annotation quality |
+|--------|-------------|----------------------------|-----------|-------------------|
+| HCC | 88 | 51 | 63 | Excellent (0% Unknown) |
+| ICC | 29 | 9 | 38 | Excellent (14% Unknown) |
+| CRC | 51 | 8 | 10 | Good (14% Unknown, coarse labels) |
+| LUAD | 36 | 0 | 18 | Moderate (36% Unknown) |
+| All others | — | — | — | Too sparse or ≥83% unannotated |
+
+**Conclusion:** Level 3 is viable only for HCC (excellent) and ICC (good). CRC/LUAD are marginal exploratory candidates. All other cancer types either lack annotations or have too few donors.
+
+#### 2.4.5 Decision Resolutions
+
+All 8 design decisions resolved with data-backed rationale:
+
+**1. Tissue filter → Tumor-only for primary analysis**
+- Mixing tumor and adjacent normal from the SAME donor creates within-donor pairs that are not independent
+- Blood and metastasis samples represent different biology from primary tumor
+- Analogous to TCGA primary_only filter (removing matched normals and metastatic)
+- Adjacent/Blood/Metastasis data preserved for potential separate analyses
+
+**2. Per-cancer stratification → tumor_by_cancer as PRIMARY**
+- Different cancer types have vastly different biology — pooling inflates rho via cross-cancer variation (same inflation seen in GTEx pooled vs by_tissue)
+- Analogous to TCGA primary_by_cancer, which is the most informative TCGA level
+- 11 cancer types viable at min_samples=20 (9 Tier A + 2 Tier B)
+
+**3. Cell type × cancer type → Per (cancer × cellType1) for HCC/ICC only**
+- Macrophage in HCC ≠ macrophage in CRC (different microenvironment, different transcriptional programs)
+- Pooling cell types across cancer types would conflate biological differences
+- Only HCC and ICC have both sufficient donors AND good annotation completeness
+- CRC/LUAD are marginal exploratory candidates
+
+**4. 59% Unknown cells → Contribute to donor-level pseudobulk; form own stratum at Level 3**
+- Unknown cells are real cells with valid transcriptomes — they contribute to donor-level (Level 0-2) pseudobulk accurately
+- At Level 3, Unknown cells form their own cellType1 stratum — correlations computed transparently
+- Do NOT discard: removing 59% of cells would severely degrade pseudobulk quality
+
+**5. Annotation normalization → Not needed**
+- Per-cancer analysis inherently keeps naming variants separate (Fibroblast vs Fibroblasts never appear in the same cancer type)
+- Normalizing could introduce errors if variants represent genuinely different cell populations across studies
+- Consistent with scAtlas Normal decision to use standardized `subCluster` rather than fixing `cellType1`
+
+**6. Multi-sample donors → Filter to Tumor, aggregate per donorID**
+- donorID aggregation pools multi-region tumor biopsies (59 CRC donors with 5-8 biopsies → 1 profile each)
+- Tumor filter removes non-tumor samples that would create within-donor non-independence
+- Result: one pseudobulk profile per donor per cancer type → fully independent
+
+**7. Longitudinal donors → No special handling needed**
+- 21 longitudinal donors (TNBC/ALM) have Baseline → After → Progression timepoints
+- ALL longitudinal samples are from Blood or Metastasis tissue — excluded by Tumor filter
+- No longitudinal donors contribute multiple Tumor samples → no temporal non-independence at Level 2
+
+**8. donor_col → Must add `donor_col='donorID'` to config**
+- Current config uses `sampleID` as the sample unit (1,062 values) instead of `donorID` (717 values)
+- This is the same fix applied to scAtlas Normal (where `sampleID` is per donor×organ, not per donor)
+- All existing outputs (30 H5AD files, ~970MB) are based on `sampleID` → need regeneration with `donorID`
+
+#### 2.4.6 Cross-Platform Cancer Type Mapping
+
+8 scAtlas Cancer types map directly to TCGA cancer types, enabling cross-platform validation (single-cell pseudobulk vs bulk RNA-seq):
+
+| scAtlas Cancer | TCGA Cancer Type | scAtlas tumor donors | TCGA primary samples | Cross-platform viable? |
+|---------------|-----------------|---------------------|---------------------|----------------------|
+| HCC | Liver Hepatocellular Carcinoma | 88 | 422 | Yes (both ≥30) |
+| PAAD | Pancreatic Adenocarcinoma | 58 | 183 | Yes |
+| CRC | Colon + Rectum Adenocarcinoma | 51 | 331 + 103 = 434 | Yes |
+| HNSC | Head & Neck Squamous Cell Carcinoma | 39 | 564 | Yes |
+| LUAD | Lung Adenocarcinoma | 36 | 573 | Yes |
+| KIRC | Kidney Clear Cell Carcinoma | 31 | 603 | Yes |
+| BRCA | Breast Invasive Carcinoma | 30 | 1,212 | Yes |
+| STAD | Stomach Adenocarcinoma | 27 | 447 | Marginal (scAtlas N=27) |
+| ICC | Cholangiocarcinoma | 29 | 45 | Marginal (TCGA N=45) |
+| ESCA | Esophageal Carcinoma | 48 | 193 | **No** (ESCA annotations deceptive) |
+
+Per-cancer correlations can be directly compared: same cancer type, same biological question, independent data, different technology (pseudobulk scRNA-seq vs bulk RNA-seq). This gives 7–9 independent cancer-type comparison points — analogous to the 11 tissue-level GTEx↔scAtlas Normal comparisons.
+
+#### 2.4.7 Existing Pipeline Issues
+
+The current scAtlas Cancer pipeline outputs have several critical issues that require regeneration:
+
+**1. `sampleID` instead of `donorID`:**
+- Config uses `sample_col='sampleID'` → 1,062 pseudobulk profiles instead of 717
+- Multi-sample donors are treated as independent samples → inflated N and within-donor correlations
+- **Fix:** Add `donor_col='donorID'` to scatlas_cancer config in `12_cross_sample_correlation.py`
+
+**2. No tissue filter:**
+- All tissue types (Tumor, Adjacent, Blood, Metastasis, PreLesion) are pooled together
+- Adjacent normal from the same donor as tumor creates within-donor non-independence
+- **Fix:** Add tissue filter support to `12_cross_sample_correlation.py` (analogous to `15b_tcga_primary_filter.py`)
+
+**3. Column detection in `13_` correlation script:**
+- For `donor_cancertype_celltype1` level, the script detects `cancerType` column first → produces per-cancer stratified correlations automatically
+- This is actually correct behavior for our Level 2 (tumor_by_cancer) needs
+- No fix needed for column detection, but input data must be regenerated with proper filtering
+
+**4. Existing H5ADs are based on old config:**
+- 30 files, ~970MB total, all using `sampleID` without tissue filtering
+- **Keep as sensitivity comparison** — documents the impact of proper donor aggregation + tissue filtering
+- Generate new tumor-only donorID-based outputs as the primary analysis
+
+#### 2.4.8 Action Items
+
+- [ ] Add `donor_col='donorID'` to scatlas_cancer config in `12_cross_sample_correlation.py`
+- [ ] Add tissue filter support (tissue='Tumor') to `12_cross_sample_correlation.py`
+- [ ] Generate Level 0 (donor_only) and Level 1 (tumor_only) pseudobulk + activity
+- [ ] Generate Level 2 (tumor_by_cancer) pseudobulk + activity for 11 cancer types
+- [ ] Generate Level 3 (tumor_by_cancer_celltype1) for HCC/ICC (exploratory)
+- [ ] Compute correlations with proper stratification at all levels
+- [ ] Cross-platform comparison: scAtlas Cancer per-cancer vs TCGA primary_by_cancer correlations
 
 ---
 
@@ -822,7 +1016,7 @@ The core question for every dataset:
 | CIMA | donor | 421 | Yes |
 | Inflammation Main | sampleID | 817 | Unknown (need to verify donor identity) |
 | scAtlas Normal | donor × organ | 706 | No (115 donors share across organs) |
-| scAtlas Cancer | donor × tissue_type | ~800 | No (82 donors share across tissue types) |
+| scAtlas Cancer | donorID (tumor tissue) | 601 | Yes (after tumor-only filter + donorID aggregation) |
 | GTEx | tissue biopsy | 19,788 | No (946 donors × multiple tissues) |
 | TCGA | tumor biopsy | ~10,000 | Mostly yes (after removing matched normals) |
 
@@ -845,6 +1039,7 @@ A pseudobulk aggregate with too few cells is noisy. Two-stage approach:
 Spearman correlation requires sufficient N for reliable estimates:
 - **Single-cell validation** (`validation/config.py`): min_samples=**10** — appropriate for cell-type strata where some types appear in few donors
 - **scAtlas Normal by_organ** (`12_`/`13_`): min_samples=**20** — balances tissue coverage (12 tissues, +26% samples vs ≥30) against Spearman power (detects rho ≥ 0.45 at p < 0.05). Report Tier A (≥30) and Tier B (20–29) separately.
+- **scAtlas Cancer tumor_by_cancer** (`12_`/`13_`): min_samples=**20** — per-cancer primary (11 types: 9 Tier A ≥30 + ICC/STAD at 27–29); min_samples=**10** for exploratory (6 additional Tier C types). Consistent with scAtlas Normal by_organ threshold.
 - **Bulk stratified** (`15_bulk_validation.py`, `15b_tcga_primary_filter.py`): min_samples=**30** — appropriate for per-tissue/per-cancer groups which are larger
 - **Report N alongside every rho** so readers can assess reliability
 
@@ -874,6 +1069,8 @@ Spearman correlation requires sufficient N for reliable estimates:
 | `15b_tcga_primary_filter.py` (stratified) | **30** | TCGA primary by-cancer |
 | scAtlas Normal by_organ (`12_`/`13_`) | **20** | Per-tissue correlation (12 tissues, Tier A+B) |
 | scAtlas Normal by_organ_subCluster | **20** (Breast/Lung), **10** (Spleen/Liver) | Level 3 exploratory |
+| scAtlas Cancer tumor_by_cancer (`12_`/`13_`) | **20** | Per-cancer correlation (11 types, Tier A+B); **10** for Tier C exploratory |
+| scAtlas Cancer tumor_by_cancer_celltype1 | **20** (HCC/ICC), **10** (CRC/LUAD) | Level 3 exploratory |
 
 **Assessment:** The two-stage design is actually correct: activity scripts (`01_`, `02_`, `03_`) generate pseudobulk with all groups (no filtering), and downstream validation scripts (`11_`, `validation/`) apply min_cells=10 at correlation time. This means the pseudobulk H5ADs are complete and reusable — filtering decisions are deferred to analysis.
 
@@ -1015,7 +1212,7 @@ For each dataset, report:
 - [x] **Inflammation Atlas overlap analysis:** 0 shared sampleIDs across all cohorts. 217 shared libraryIDs between Main↔Val (multiplexed sequencing, no shared cells/donors). Safe to analyze separately.
 - [ ] **Inflammation Atlas donor identity:** Investigate sampleID naming convention to determine if donors can be identified. Low priority — treat sampleIDs as independent for now.
 - [x] **scAtlas Normal:** Decided on primary aggregation level — by_organ (per-tissue) as primary, donor_organ as supplementary, donor_only as supplementary
-- [ ] **scAtlas Cancer:** Decide on tissue-type filtering (tumor-only vs all)
+- [x] **scAtlas Cancer:** Decided on tissue-type filtering — tumor-only for primary (TCGA primary_only analogy); per-cancer (tumor_by_cancer) as PRIMARY level; donor_col='donorID' required
 - [x] **scAtlas Normal:** Use `subCluster` (102 values) instead of `cellType1` (468 values) for cell-type-stratified analyses
 - [x] **scAtlas Normal:** Document `cellType1` annotation inconsistencies (25 case groups, 7+ plural pairs)
 - [x] **scAtlas Normal:** Threshold decided — min_samples=20 for Level 1 by_organ (12 tissues); report Tier A (≥30) and Tier B (20–29) separately
@@ -1023,6 +1220,12 @@ For each dataset, report:
 - [x] **scAtlas Normal:** GTEx cross-platform tissue mapping — 11 of 12 tissues have direct GTEx matches (Thymus excluded)
 - [x] **scAtlas Normal:** Per-tissue stratified correlation — already implemented via `donor_organ` pseudobulk. `13_cross_sample_correlation_analysis.py` detects `tissue` column and computes per-tissue Spearman automatically. Results in `scatlas_normal_correlations.csv` (7 Tier A + 5 Tier B tissues)
 - [x] **scAtlas Normal:** Generate donor_only level — used `donor_col='donorID'` (not CIMA pattern since sampleID ≠ donor). Generated: pseudobulk 317 × 21,812, cytosig 317 × 43, lincytosig 317 × 178, secact 317 × 1,170
+- [x] **scAtlas Cancer:** Full section 2.4 analysis complete — annotation audit, multi-level strategy (4 levels), 8 design decisions resolved, TCGA cross-platform mapping (7–9 cancer types)
+- [ ] **scAtlas Cancer:** Add `donor_col='donorID'` to scatlas_cancer config in `12_cross_sample_correlation.py`
+- [ ] **scAtlas Cancer:** Add tissue filter support (tissue='Tumor') to `12_cross_sample_correlation.py`
+- [ ] **scAtlas Cancer:** Generate Level 0–3 pseudobulk + activity with proper donorID aggregation and tumor-only filtering
+- [ ] **scAtlas Cancer:** Compute correlations with per-cancer stratification at all levels
+- [ ] **scAtlas Cancer:** Cross-platform comparison with TCGA primary_by_cancer correlations
 - [x] **GTEx:** Decided on stratification — per-tissue (by_tissue) as primary, pooled (donor_only) as supplementary with non-independence caveat
 - [x] **TCGA:** Decided on sample filtering — primary tumor (01) + blood cancer (03); implemented in `15b_tcga_primary_filter.py`
 
