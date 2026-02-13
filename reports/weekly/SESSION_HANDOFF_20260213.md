@@ -107,22 +107,19 @@ Both repos pushed to remote.
 
 ## What Remains
 
-### Immediate (after SLURM job completes)
+### Immediate (after SLURM job completes) — ALL DONE
 
-- [ ] **Check job output** — verify no errors in log files
-- [ ] **Verify cell exclusion** — confirm Doublets/LowQuality_cells are gone from pseudobulk h5ad obs:
-  ```python
-  import anndata as ad
-  a = ad.read_h5ad('results/cross_sample_validation/inflammation_main/inflammation_main_donor_l1_pseudobulk.h5ad')
-  print(a.obs['Level1'].value_counts())  # Should NOT contain Doublets or LowQuality_cells
-  ```
-- [ ] **Compare before/after correlation statistics** — especially:
-  - donor_only median ρ (was 0.321 for CytoSig — should shift slightly)
-  - L1: should drop from 17 to 15 cell types
-  - L2: should drop from 66 to ~63 cell types
-  - Total correlation rows should decrease by ~3,844 (Doublets + LowQuality_cells rows removed)
-- [ ] **Rebuild global combined files** — run `13_cross_sample_correlation_analysis.py --atlas all` to regenerate `all_correlations.csv` and `correlation_summary.csv` with all atlases
-- [ ] **Update DATASET_ANALYTICS.md** with post-regeneration statistics
+- [x] **Check job output** — SLURM job 11654934 failed (`libcublas.so.12` missing). Re-executed directly on GPU node after `module load CUDA/12.8.1 cuDNN`.
+- [x] **Verify cell exclusion** — Confirmed: L1 has 15 cell types (Doublets/LowQuality_cells absent), L2 has 63 types (both absent). 482,218 cells (9.8%) excluded from Main.
+- [x] **Compare before/after correlation statistics:**
+  - donor_only CytoSig median ρ: 0.321 → 0.323 (slight increase)
+  - donor_only SecAct median ρ: 0.188 → 0.173 (shifted with ridge_batch)
+  - L1: 15 cell types (was 17), 9,771 groups (was 11,327)
+  - L2: 63 cell types (was 66), 28,671 groups (was 30,227)
+  - Total correlation rows: 72,358 (Main), 52,090 (Val), 56,325 (Ext)
+  - L2 min n_samples now 10 (was 5)
+- [x] **Rebuild combined files** — `13_cross_sample_correlation_analysis.py --atlas all` regenerated `all_correlations.csv` (1,162,109 rows) and `correlation_summary.csv` with all atlases (CIMA, inflammation ×3, scAtlas normal/cancer, GTEx, TCGA).
+- [x] **Update DATASET_ANALYTICS.md** — post-regeneration statistics updated
 
 ### Deferred
 

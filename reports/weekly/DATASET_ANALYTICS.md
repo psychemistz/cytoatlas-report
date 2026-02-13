@@ -218,23 +218,33 @@ The Level1 annotation in the raw data contains non-cell categories that **must b
 | Level | Pseudobulk | CytoSig (43) | LinCytoSig (178) | SecAct (1,170) | Match? |
 |-------|-----------|-------------|-----------------|---------------|--------|
 | donor_only | 817 × 22,838 | 817 × 43 | 817 × 178 | 817 × 1,170 | Yes |
-| donor × L1 | 11,327 × 22,838 | 11,327 × 43 | 11,327 × 178 | 11,327 × 1,170 | Yes |
-| donor × L2 | 30,227 × 22,838 | 30,227 × 43 | 30,227 × 178 | 30,227 × 1,170 | Yes |
+| donor × L1 | 9,771 × 22,838 | 9,771 × 43 | 9,771 × 178 | 9,771 × 1,170 | Yes |
+| donor × L2 | 28,671 × 22,838 | 28,671 × 43 | 28,671 × 178 | 28,671 × 1,170 | Yes |
 
-**Existing correlation statistics (BEFORE cell exclusion — will change after regeneration):**
+**Correlation statistics (AFTER cell exclusion + ridge_batch + min_samples=10, regenerated 2026-02-13):**
 
 | Level | Signature | Median ρ | N targets | n_samples range |
 |-------|-----------|---------|-----------|----------------|
-| donor_only | CytoSig | 0.321 | 33 | 817 |
-| donor_only | SecAct | 0.188 | 805 | 817 |
-| donor_l1 | CytoSig | 0.065 | 580 | 59–11,327 |
-| donor_l1 | SecAct | 0.081 | 14,276 | 59–11,327 |
-| donor_l2 | CytoSig | 0.045 | 1,957 | 5–30,227 |
-| donor_l2 | SecAct | 0.050 | 48,760 | 5–30,227 |
+| donor_only | CytoSig | 0.323 | 33 | 817 |
+| donor_only | LinCytoSig | 0.178 | 123 | 817 |
+| donor_only | SecAct | 0.173 | 805 | 817 |
+| donor_l1 | CytoSig | 0.079 | 33 | — |
+| donor_l1 | LinCytoSig | 0.067 | 123 | — |
+| donor_l1 | SecAct | 0.075 | 805 | — |
+| donor_l2 | CytoSig | 0.037 | 33 | — |
+| donor_l2 | LinCytoSig | 0.048 | 123 | — |
+| donor_l2 | SecAct | 0.040 | 805 | — |
 
-**Note:** L2 has n_samples as low as 5, below the documented min_samples=10 threshold. The original correlation script (`13_cross_sample_correlation_analysis.py`, now deleted) used min_samples=5 for per-celltype and min_samples=10 for overall. Regeneration should use min_samples=10 consistently.
+**Changes from regeneration:**
+- L1: 15 cell types (was 17 — Doublets, LowQuality_cells removed). 9,771 groups (was 11,327).
+- L2: 63 cell types (was 66). 28,671 groups (was 30,227).
+- Total correlation rows: 72,358 (reduced from ~76K — artifact cell type rows removed).
+- donor_only CytoSig median ρ: 0.321 → 0.323 (slight increase from cleaner profiles).
+- donor_only SecAct median ρ: 0.188 → 0.173 (shifted slightly with ridge_batch).
+- L2 min n_samples now 10 (was 5) — min_samples=10 enforced consistently.
+- Activity inferred with `ridge_batch` (GPU-accelerated CuPy) instead of `ridge`.
 
-**Note:** Inflammation donor_only median ρ (0.321 CytoSig) is substantially higher than CIMA (0.114 CytoSig). This is expected: inflammation samples span healthy + 20 disease conditions, creating much wider biological variance that inflates cross-sample correlations. CIMA is healthy-only with less variance.
+**Note:** Inflammation donor_only median ρ (0.323 CytoSig) is substantially higher than CIMA (0.114 CytoSig). This is expected: inflammation samples span healthy + 20 disease conditions, creating much wider biological variance that inflates cross-sample correlations. CIMA is healthy-only with less variance.
 
 #### Comparison with CIMA (Gold Standard)
 
@@ -648,17 +658,16 @@ All 30 tissues have ≥29 samples. At min_samples=30, Fallopian Tube is excluded
 
 **Note on by_tissue sample count:** 19,759 = 19,788 − 29 (Fallopian Tube samples excluded by min_samples=30 filter).
 
-**Metadata gap:** Existing H5ADs were generated before the `data_format` metadata field was added. They have `uns['transform'] = 'log2(TPM+1)'` but lack `uns['data_format']`. Regeneration will add this field.
+**Metadata:** Regenerated 2026-02-13 with `data_format='TPM'` and `transform='log2(TPM+1)'` in `.uns`.
 
 #### Correlation Approach Comparison
 
-The existing `gtex_correlations.csv` contains correlations computed at two levels with very different properties:
+`gtex_correlations.csv` (regenerated 2026-02-13 with `data_format` metadata):
 
-| Approach | N | Median rho (CytoSig) | Independence | Notes |
-|----------|---|---------------------|-------------|-------|
-| donor_only (pooled) | 19,788 | 0.211 | **No** | Cross-tissue variation inflates rho |
-| by_tissue "all" | 19,759 | 0.106 | **No** | Within-tissue centered, same donors across tissues |
-| per-tissue (median) | 47–3,234 | 0.150 | **Yes** | Gold standard |
+| Approach | N | Median rho (CytoSig) | Median rho (SecAct) | Independence | Notes |
+|----------|---|---------------------|--------------------|--------------|----|
+| donor_only (pooled) | 19,788 | 0.211 | 0.394 | **No** | Cross-tissue variation inflates rho |
+| by_tissue "all" | 19,759 | 0.105 | 0.192 | **No** | Within-tissue centered, same donors across tissues |
 
 **Why donor_only rho is inflated:** Tissue differences dominate. Liver samples have high albumin expression AND high albumin activity; brain samples have low both. This cross-tissue variation creates strong correlations that don't reflect within-tissue donor variation.
 
@@ -784,6 +793,17 @@ All 33 named cancer types have ≥30 samples in donor_only (all sample types). A
 | by_cancer (no Unknown) | 10,409 × 20,501 | 10,409 × 43 | 10,409 × 178 | 10,409 × 1,170 | Yes |
 | primary_only (01+03) | 9,879 × 20,501 | 9,879 × 43 | 9,879 × 178 | 9,879 × 1,170 | Yes |
 | primary_by_cancer (33 types) | 9,236 × 20,501 | 9,236 × 43 | 9,236 × 178 | 9,236 × 1,170 | Yes |
+
+**Regenerated 2026-02-13:** All 4 levels regenerated with negative clipping (`clip(0)` before `log2(RSEM+1)`). Previous data had 1,247,092 negative values (0.55%) from EBPlusPlus batch correction artifacts propagated through log2 transform. Metadata now includes `data_format='EBPlusPlus_RSEM_normalized_counts'` and `transform='clip(0) -> log2(RSEM+1)'`.
+
+**Correlation summary (post-clipping, 2026-02-13):**
+
+| Level | CytoSig median ρ | LinCytoSig median ρ | SecAct median ρ | N targets (CytoSig/LinCytoSig/SecAct) |
+|-------|------------------|--------------------|-----------------|------------------------------------|
+| donor_only | 0.238 | 0.206 | 0.415 | 41 / 152 / 1,085 |
+| by_cancer | 0.178 | 0.152 | 0.289 | 41 / 152 / 1,085 |
+| primary_only | 0.225 | 0.203 | 0.406 | 41 / 152 / 1,085 |
+| primary_by_cancer | 0.147 | 0.151 | 0.279 | 41 / 152 / 1,085 |
 
 **Note on existing `by_cancer`:** Removes "Unknown" cancer type (660 samples) but does NOT filter by sample type — it still includes normals, metastatic, and recurrent within each cancer type.
 
@@ -1001,7 +1021,7 @@ For each dataset, report:
 - [x] **scAtlas Normal:** Threshold decided — min_samples=20 for Level 1 by_organ (12 tissues); report Tier A (≥30) and Tier B (20–29) separately
 - [x] **scAtlas Normal:** Level 3 (by_organ_subCluster) scoped — exploratory only; Breast/Lung at min_samples=20, Spleen/Liver at min_samples=10
 - [x] **scAtlas Normal:** GTEx cross-platform tissue mapping — 11 of 12 tissues have direct GTEx matches (Thymus excluded)
-- [ ] **scAtlas Normal:** Add per-tissue stratified correlation to `12_`/`13_` (reuse existing `donor_organ` pseudobulk, mirror GTEx by_tissue pattern in `15_bulk_validation.py`)
+- [x] **scAtlas Normal:** Per-tissue stratified correlation — already implemented via `donor_organ` pseudobulk. `13_cross_sample_correlation_analysis.py` detects `tissue` column and computes per-tissue Spearman automatically. Results in `scatlas_normal_correlations.csv` (7 Tier A + 5 Tier B tissues)
 - [x] **scAtlas Normal:** Generate donor_only level — used `donor_col='donorID'` (not CIMA pattern since sampleID ≠ donor). Generated: pseudobulk 317 × 21,812, cytosig 317 × 43, lincytosig 317 × 178, secact 317 × 1,170
 - [x] **GTEx:** Decided on stratification — per-tissue (by_tissue) as primary, pooled (donor_only) as supplementary with non-independence caveat
 - [x] **TCGA:** Decided on sample filtering — primary tumor (01) + blood cancer (03); implemented in `15b_tcga_primary_filter.py`
@@ -1018,24 +1038,18 @@ The existing inflammation cross_sample_validation data contains Doublets and Low
 - Val/Ext: `{'Level1pred': ['Doublets', 'LowQuality_cells']}` (defensive — these files are already QC'd and contain neither category)
 - Does NOT exclude `NK_lowRibocontent` (real cell type with quality caveat)
 
-**Step 2: Regenerate pseudobulk + activity for all 3 cohorts**
-Use `12_cross_sample_correlation.py` (handles all levels including donor_only):
-```bash
-python scripts/12_cross_sample_correlation.py --atlas inflammation_main inflammation_val inflammation_ext --force
-```
-Note: `--force` overwrites existing files. The script generates pseudobulk H5ADs, computes activity for all 3 signatures, AND computes correlations in one pass. Runs sequentially through all 3 cohorts.
+**Step 2: Regenerate pseudobulk + activity for all 3 cohorts** ✅ DONE (2026-02-13)
+- inflammation_main: Pseudobulk regenerated via SLURM (482,218 cells excluded = 9.8%). Activity re-inferred with `ridge_batch` on A100 GPU (22 min).
+- inflammation_val: Pseudobulk unchanged (already QC'd upstream). Activity re-inferred with `ridge_batch` (16.5 min).
+- inflammation_ext: Pseudobulk unchanged (already QC'd upstream). Activity re-inferred with `ridge_batch` (17.7 min).
+- Initial SLURM job (11654934) failed due to missing `libcublas.so.12`; re-executed directly on GPU node after `module load CUDA/12.8.1 cuDNN`.
 
-**Step 3: Recompute correlations** ✅ DONE (code ready)
+**Step 3: Recompute correlations** ✅ DONE (2026-02-13)
 - Fixed min_samples threshold in `13_cross_sample_correlation_analysis.py`: per-celltype changed from 5 → 10 to match overall threshold
 - Added TCGA primary-only levels (`primary_only`, `primary_by_cancer`) to `13_` ATLAS_CONFIGS
 - Both `12_` and `13_` restored from archive to `scripts/`
-- `12_` computes correlations inline during pseudobulk generation (Step 2)
-- `13_` can be run standalone to recompute only correlations without regenerating pseudobulk:
-```bash
-python scripts/13_cross_sample_correlation_analysis.py --atlas inflammation_main
-python scripts/13_cross_sample_correlation_analysis.py --atlas inflammation_val
-python scripts/13_cross_sample_correlation_analysis.py --atlas inflammation_ext
-```
+- Executed: `python scripts/13_cross_sample_correlation_analysis.py --atlas inflammation_main inflammation_val inflammation_ext`
+- Results: inflammation_main 72,358 rows, inflammation_val 52,090 rows, inflammation_ext 56,325 rows
 
 **Step 4: Update resampled validation**
 ```bash
@@ -1044,8 +1058,8 @@ python scripts/16_resampled_validation.py --atlas inflammation_val
 python scripts/16_resampled_validation.py --atlas inflammation_ext
 ```
 
-**Expected changes after regeneration:**
-- donor_only: expression profiles slightly cleaner (Doublets/LQ cells removed from per-donor aggregation)
+**Observed changes after regeneration (inflammation_main):**
+- donor_only: CytoSig median ρ 0.321 → 0.323, SecAct 0.188 → 0.173 (cleaner profiles + ridge_batch)
 - L1: 15 cell types instead of 17 (Doublets and LowQuality_cells removed)
 - L2: 63 cell types instead of 65 (Doublets and LowQuality_cells removed)
 - Correlation CSVs: ~3,844 fewer rows (1,922 Doublets + 1,922 LowQuality_cells)
@@ -1053,21 +1067,21 @@ python scripts/16_resampled_validation.py --atlas inflammation_ext
 
 ### Other Reprocessing
 
-- [ ] Standardize cell exclusion criteria across all single-cell datasets (Section 3.2)
-- [ ] Keep two-stage threshold design: no min_cells at generation, min_cells=10 at validation (Section 3.3, 3.8)
-- [ ] Keep context-appropriate min_samples: 10 for single-cell celltype strata, 20 for scAtlas by_organ, 30 for bulk stratified (Section 3.4, 3.8)
-- [ ] Regenerate TCGA data with negative clipping (Section 3.6; pipeline updated)
-- [ ] Regenerate GTEx H5ADs to add `data_format` metadata (pipeline code updated, data predates change)
+- [x] Standardize cell exclusion criteria across all single-cell datasets (Section 3.2) — verified: CIMA pre-QC'd (no bad cells), Inflammation has `exclude_celltypes` for Doublets/LowQuality_cells, scAtlas Normal/Cancer have `predicted_doublet` all False (doublets removed upstream). No additional exclusion needed.
+- [x] Keep two-stage threshold design: no min_cells at generation, min_cells=10 at validation (Section 3.3, 3.8) — confirmed across `12_`, `validation/config.py`
+- [x] Keep context-appropriate min_samples: 10 for single-cell celltype strata, 20 for scAtlas by_organ, 30 for bulk stratified (Section 3.4, 3.8) — confirmed across `12_`, `13_`, `15_`
+- [x] Regenerate TCGA data with negative clipping (Section 3.6) — `15_bulk_validation.py --dataset tcga --force --backend cupy` + `15b_tcga_primary_filter.py --force --backend cupy`. All 4 levels regenerated with `clip(0)` before `log2(RSEM+1)`.
+- [x] Regenerate GTEx H5ADs to add `data_format` metadata — `15_bulk_validation.py --dataset gtex --force --backend cupy`. Both donor_only and by_tissue regenerated with `data_format` field.
 - [x] Generate TCGA Level 2 (primary-only) and Level 3 (per-cancer from primary) — `15b_tcga_primary_filter.py --force` (9,879 primary-only samples; 9,236 in 33 cancer-type strata)
-- [ ] Recompute correlations for updated datasets — use per-tissue (GTEx) and per-cancer (TCGA) as primary
+- [x] Recompute correlations for updated datasets — `13_cross_sample_correlation_analysis.py --atlas tcga gtex`
 - [ ] Rebuild figures and tables from new correlations
 
 ### Documentation
 
 - [x] Record inflammation cohort overlap analysis and decision rationale
 - [x] Document cell exclusion issue in inflammation data
-- [ ] Report sample independence status for each dataset
-- [ ] Create a provenance chain: raw H5AD → filtered cells → pseudobulk → activity → correlation → figure
+- [x] Report sample independence status for each dataset — documented in Section 3.1 table (CIMA: fully independent, Inflammation: unknown donor identity, scAtlas: partial non-independence from multi-tissue donors, GTEx: severe non-independence, TCGA: mostly independent after primary filtering)
+- [ ] Create a provenance chain: raw H5AD → filtered cells → pseudobulk → activity → correlation → figure (partially done: `baseline/PROVENANCE.md` exists)
 
 ---
 
