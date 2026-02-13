@@ -65,6 +65,8 @@ The system is divided into independent bounded contexts:
 
 **Total: ~29 million cells processed through ridge regression against 3 signature matrices.**
 
+**Dataset considerations:** Each dataset requires specific cleaning decisions (cell exclusion, donor independence, tissue/cancer-type stratification, gene ID mapping, expression normalization). These are documented in detail in [`reports/weekly/DATASET_ANALYTICS.md`](../reports/weekly/DATASET_ANALYTICS.md) — including per-dataset multi-level correlation strategies, threshold rationale, and cross-platform validation mappings.
+
 > **Figure 1** (`fig1_dataset_overview.png`): Dataset scale, signature matrices, and validation layers.
 
 ---
