@@ -279,39 +279,131 @@ The cross-sample validation data (from `11_donor_level_pipeline.py`) is what we 
 | Samples | 706 |
 | Organ systems | 10 |
 | Tissues | 35 |
-| Cell type levels | cellType1 (468), cellType2 (1,069) |
+| Cell type levels | majorCluster (8), subCluster (102), cellType1 (468), cellType2 (1,069) |
 | Population | Healthy / normal tissue |
 
-**Obs columns:** `donorID`, `sampleID`, `system`, `tissue`, `region`, `cellType1`, `cellType2`, `sex`, `age`, ...
+**Obs columns:** `donorID`, `sampleID`, `system`, `tissue`, `region`, `majorCluster`, `subCluster`, `cellType1`, `cellType2`, `sex`, `age`, ...
 
 **Multi-sample donors:**
-- 202 donors: 1 sample
-- 53 donors: 2 samples
-- 62 donors: 3+ samples (up to 27 samples from TSP14 — blood, liver, lung, colon, skin, thymus, etc.)
+- 202 donors: 1 sample (63.7%)
+- 53 donors: 2 samples (16.7%)
+- 62 donors: 3+ samples (19.6%, up to 27 samples from TSP14 — blood, liver, lung, colon, skin, thymus, etc.)
 
-**Top tissues by sample count:**
+**Top tissues by donor count:**
 Breast (124), Lung (97), Colon (65), Heart (52), Liver (43), SmallIntestine (30), Spleen (30), Ovary (28), Thymus (23)
 
-**The fundamental question:** What is the independent sample unit?
+#### 2.3.1 Cell Type Annotation Hierarchy
 
-**Option A — Donor-level (N=317):**
-- Aggregate all cells per donor across all organs
-- Pro: Maximally independent (one value per biological individual)
-- Con: Mixes biology across organs (lung + liver + blood averaged together)
-- Con: Donors with more organs contribute more cells, biasing the pseudobulk
+Four annotation columns with very different quality and granularity:
 
-**Option B — Donor × organ (N=706):**
-- Aggregate per `donorID` × `tissue`
-- Pro: Biologically meaningful unit (cytokine activity in liver vs lung is different)
-- Con: Multiple samples per donor are NOT fully independent
-- Con: Some tissues have very few donors (Fallopian Tube: 1 sample)
+| Column | Unique values | Quality | Use case |
+|--------|--------------|---------|----------|
+| `majorCluster` | 8 | Clean, standardized | Coarse grouping (Epithelial, Stromal, Myeloid, CD8T, CD4T, Endothelial, B, ILC) |
+| `subCluster` | 102 | Clean, structured naming (`CD8T02_Tem_GZMK`, `M07_Mph_FCN1`, `Epi_Breast`) | **Recommended for cell-type analysis** |
+| `cellType1` | 468 | **Inconsistent** — 25 case-duplicate groups, 7+ singular/plural pairs | Legacy; do not use without normalization |
+| `cellType2` | 1,069 | **Inconsistent** — 50 case-duplicate groups | Most granular; too sparse for correlation |
 
-**Option C — Organ-stratified donor-level:**
-- For each organ separately: aggregate per donor within that organ → compute correlation within organ → report per-organ
-- Pro: Each correlation uses independent donors; captures organ-specific biology
-- Con: Small N for rare organs; many parallel tests
+#### 2.3.2 Cell Type Annotation Inconsistencies
 
-**Recommendation:** Option B (donor × organ) as primary, with Option C for sensitivity analysis. Clearly report that samples are not fully independent (115 donors contribute multiple points). Consider excluding organs with <10 donors.
+Full audit of `cellType1` problems with cell counts:
+
+**Case duplicates** (25 groups, major examples):
+- "Myeloid" (134K) vs "myeloid" (18K)
+- "Fibroblasts" (157K) vs "fibroblasts" (11K)
+- "Macrophage" (28K) vs "macrophage" (1.2K)
+- "NK cell" (7.6K) vs "nk cell" (varies by organ)
+
+**Singular/plural duplicates** (7+ pairs):
+- "t cell" (11.7K) vs "t cells" (83.8K)
+- "fibroblast" (31.3K) vs "fibroblasts" (168.5K)
+- "macrophage" (29.2K) vs "macrophages" (5.4K)
+- "b cell" (18.3K) vs "b cells" (5.7K)
+
+**Decision:** Use `subCluster` (102 values, already standardized) for all cell-type-stratified analyses. The `subCluster` column uses structured naming (`PREFIX##_Subtype_MARKER`) and has zero case/plural issues. Already adopted by `03_scatlas_analysis.py`.
+
+#### 2.3.3 Cell Type Distribution Across Organs
+
+Organ-specificity spectrum of `cellType1` (after case normalization):
+
+| Category | Cell types | Percentage |
+|----------|-----------|------------|
+| Organ-specific (1 tissue only) | 333 | 73.5% |
+| Local (2–5 tissues) | 75 | 16.0% |
+| Regional (6–10 tissues) | 28 | 6.0% |
+| Ubiquitous (11+ tissues) | 17 | 3.6% |
+
+**Top ubiquitous types:**
+
+| cellType1 (normalized) | Tissues |
+|------------------------|---------|
+| macrophage | 20 |
+| fibroblast | 15 |
+| Monocyte | 15 |
+| NK cell | 15 |
+| T cell | 15 |
+| plasma cell | 14 |
+| endothelial cell | 14 |
+
+**Key insight:** Most immune/stromal `subCluster`s (M05_Mo_CD14, S01_Fb_PI16, CD8T02_Tem_GZMK, etc.) appear across many organs. Epithelial `subCluster`s (Epi_Breast, Epi_Lung, etc.) are organ-specific by definition. Cross-organ analysis is possible for immune/stromal cells but not epithelial.
+
+#### 2.3.4 Donor × Tissue Sparsity Analysis
+
+**Pseudobulk quality at donor × tissue level:**
+- 706 donor × tissue combinations with meaningful cells
+- Min cells per group: 30, Median: 2,364, Max: 28,619
+- All 706 groups are adequate for pseudobulk (no min_cells filtering needed at this level)
+
+**Per-tissue donor counts** (35 tissues):
+
+| Tier | Criteria | Tissues | Donor counts |
+|------|----------|---------|-------------|
+| A | ≥30 donors | 7 | Breast 124, Lung 97, Colon 65, Heart 52, Liver 43, SmallIntestine 30, Spleen 30 |
+| B | 20–29 donors | 5 | Ovary 28, Thymus 23, Kidney 22, Blood 21, Skin 20 |
+| C | 10–19 donors | 7 | Stomach 18, BoneMarrow 16, Eye 14, Pancreas 13, Esophagus 12, Brain 11, Uterus 10 |
+| D | <10 donors | 16 | Prostate 8, Bladder 7, Gallbladder 6, Trachea 5, Testis 5, ... (down to 1) |
+
+**Donor independence:**
+- 202 single-tissue donors (63.7%)
+- 53 donors with 2 tissues (16.7%)
+- 62 donors with 3+ tissues (19.6%, up to 27 tissues)
+- Multi-tissue donors create non-independence across per-tissue analyses (same issue as GTEx)
+
+**Organ × subCluster sparsity** (for Level 3 feasibility):
+- Even ubiquitous subClusters have few donors per tissue with ≥10 cells
+- Myeloid (M05_Mo_CD14 etc.): only 2–3 tissues with ≥10 donors at min_cells=10
+- Most organ × subCluster combinations too sparse for individual per-tissue correlation
+
+#### 2.3.5 Correlation Strategy Design
+
+**The GTEx analogy:** scAtlas Normal is structurally analogous to GTEx — multiple tissues per donor, need per-tissue stratification for independence. The key difference: scAtlas has cell-type resolution that GTEx lacks.
+
+**The CIMA analogy:** CIMA uses per-celltype correlation across donors, but all cells are PBMC (one compartment). scAtlas has 35 organs, so "macrophage" in Liver ≠ "macrophage" in Lung biologically.
+
+**Multi-level strategy** (mirroring GTEx/TCGA three-level design):
+
+| Level | Unit | N | Mean-centering | Independence | Status | Analogy |
+|-------|------|---|----------------|--------------|--------|---------|
+| 0. donor_only | donor | 317 | Global | Fully independent | Supplementary | GTEx pooled |
+| 1. by_organ (PRIMARY) | per-organ donors | 30–124 per organ | Within-organ | Fully independent within organ | **Primary** | **GTEx by_tissue** |
+| 2. donor_organ | donor × tissue | ~706 | Global | Partial (115 multi-tissue) | Supplementary | TCGA primary_only |
+| 3. by_organ_subCluster | per-organ per-subCluster | sparse | Within-organ | Fully independent | Future/exploratory | CIMA per-celltype |
+
+**Level 0 (donor_only):** Sum all cells per donor → 317 profiles. Fully independent but mixes tissue biology. Donors with different tissue coverage are not comparable. Supplementary with explicit caveat.
+
+**Level 1 (by_organ) — PRIMARY:** For each tissue with ≥30 donors (7 tissues, Tier A), aggregate all cells per donor within that tissue, run within-organ mean-centered ridge regression, correlate across donors. This is the direct analogue of GTEx by_tissue. Each donor contributes at most one point per tissue → fully independent within each tissue correlation.
+
+**Level 2 (donor_organ):** All 706 donor × tissue profiles with global mean-centering. 115 multi-tissue donors create non-independence (same issue as GTEx pooled). Useful as a sensitivity check.
+
+**Level 3 (by_organ_subCluster) — Future:** For well-sampled tissues × ubiquitous subClusters, further stratify by cell type within each organ. Too sparse for primary analysis. Demonstrates where cell-type resolution adds or loses signal.
+
+**Threshold rationale:**
+- min_samples=30 for Level 1 (matches GTEx/TCGA bulk standard)
+- min_samples=10 for Level 3 future celltype-stratified (matches CIMA/validation standard)
+- No min_cells filter needed at donor × tissue level (all 706 groups have ≥30 cells)
+
+#### 2.3.6 Cross-Platform Tissue Comparison
+
+scAtlas Normal shares several tissues with GTEx (Lung, Breast, Colon, Heart, Liver, Spleen). Per-tissue correlations can be directly compared: same tissue, same biological question, independent data, different technology (pseudobulk scRNA-seq vs bulk RNA-seq). This is a unique validation opportunity.
 
 ---
 
@@ -844,8 +936,10 @@ For each dataset, report:
 - [x] **Inflammation Atlas cohort decision:** Analyze Main/Val/Ext separately. Main as primary (curated annotations), Val for internal replication, Ext for independent validation.
 - [x] **Inflammation Atlas overlap analysis:** 0 shared sampleIDs across all cohorts. 217 shared libraryIDs between Main↔Val (multiplexed sequencing, no shared cells/donors). Safe to analyze separately.
 - [ ] **Inflammation Atlas donor identity:** Investigate sampleID naming convention to determine if donors can be identified. Low priority — treat sampleIDs as independent for now.
-- [ ] **scAtlas Normal:** Decide on primary aggregation level (donor-only vs donor×organ)
+- [x] **scAtlas Normal:** Decided on primary aggregation level — by_organ (per-tissue) as primary, donor_organ as supplementary, donor_only as supplementary
 - [ ] **scAtlas Cancer:** Decide on tissue-type filtering (tumor-only vs all)
+- [x] **scAtlas Normal:** Use `subCluster` (102 values) instead of `cellType1` (468 values) for cell-type-stratified analyses
+- [x] **scAtlas Normal:** Document `cellType1` annotation inconsistencies (25 case groups, 7+ plural pairs)
 - [x] **GTEx:** Decided on stratification — per-tissue (by_tissue) as primary, pooled (donor_only) as supplementary with non-independence caveat
 - [x] **TCGA:** Decided on sample filtering — primary tumor (01) + blood cancer (03); implemented in `15b_tcga_primary_filter.py`
 
