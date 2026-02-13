@@ -683,39 +683,60 @@ All 8 design decisions resolved with data-backed rationale:
 
 Per-cancer correlations can be directly compared: same cancer type, same biological question, independent data, different technology (pseudobulk scRNA-seq vs bulk RNA-seq). This gives 7–9 independent cancer-type comparison points — analogous to the 11 tissue-level GTEx↔scAtlas Normal comparisons.
 
-#### 2.4.7 Existing Pipeline Issues
+#### 2.4.7 Existing Processed Data Verification
 
-The current scAtlas Cancer pipeline outputs have several critical issues that require regeneration:
+**Location:** `/data/parks34/projects/2cytoatlas/results/cross_sample_validation/scatlas_cancer/`
 
-**1. `sampleID` instead of `donorID`:**
-- Config uses `sample_col='sampleID'` → 1,062 pseudobulk profiles instead of 717
-- Multi-sample donors are treated as independent samples → inflated N and within-donor correlations
-- **Fix:** Add `donor_col='donorID'` to scatlas_cancer config in `12_cross_sample_correlation.py`
+| Level | Pseudobulk | CytoSig (43) | LinCytoSig (178) | SecAct (1,170) | Match? |
+|-------|-----------|-------------|-----------------|---------------|--------|
+| donor_only | 717 × 21,812 | 717 × 43 | 717 × 178 | 717 × 1,170 | Yes |
+| tumor_only | 601 × 21,812 | 601 × 43 | 601 × 178 | 601 × 1,170 | Yes |
+| tumor_by_cancer | 601 × 21,812 | 601 × 43 | 601 × 178 | 601 × 1,170 | Yes |
+| tumor_by_cancer_celltype1 | 5,069 × 21,812 | 5,069 × 43 | 5,069 × 178 | 5,069 × 1,170 | Yes |
 
-**2. No tissue filter:**
-- All tissue types (Tumor, Adjacent, Blood, Metastasis, PreLesion) are pooled together
-- Adjacent normal from the same donor as tumor creates within-donor non-independence
-- **Fix:** Add tissue filter support to `12_cross_sample_correlation.py` (analogous to `15b_tcga_primary_filter.py`)
+**Tissue filter statistics:** 1,416,242 non-Tumor cells excluded (34.2%) for tumor_only/tumor_by_cancer/tumor_by_cancer_celltype1 levels.
 
-**3. Column detection in `13_` correlation script:**
-- For `donor_cancertype_celltype1` level, the script detects `cancerType` column first → produces per-cancer stratified correlations automatically
-- This is actually correct behavior for our Level 2 (tumor_by_cancer) needs
-- No fix needed for column detection, but input data must be regenerated with proper filtering
+**cellType1 groups:** 7,813 initial (donor × cancerType × cellType1) → 5,069 after min_cells=10 filtering (2,744 groups with <10 cells removed).
 
-**4. Existing H5ADs are based on old config:**
-- 30 files, ~970MB total, all using `sampleID` without tissue filtering
-- **Keep as sensitivity comparison** — documents the impact of proper donor aggregation + tissue filtering
-- Generate new tumor-only donorID-based outputs as the primary analysis
+**Correlation summary (2026-02-13, with donorID aggregation + tumor-only filter):**
 
-#### 2.4.8 Action Items
+| Level | CytoSig median ρ | LinCytoSig median ρ | SecAct median ρ | N targets (CytoSig/LinCytoSig/SecAct) |
+|-------|------------------|--------------------|-----------------|------------------------------------|
+| donor_only | 0.218 | 0.175 | 0.390 | 43 / 156 / 1,140 |
+| tumor_only | 0.184 | 0.166 | 0.399 | 43 / 156 / 1,140 |
+| tumor_by_cancer | 0.163 | 0.096 | 0.246 | 43 / 156 / 1,140 |
+| tumor_by_cancer_celltype1 | 0.031 | 0.051 | 0.115 | 43 / 156 / 1,140 |
 
-- [ ] Add `donor_col='donorID'` to scatlas_cancer config in `12_cross_sample_correlation.py`
-- [ ] Add tissue filter support (tissue='Tumor') to `12_cross_sample_correlation.py`
-- [ ] Generate Level 0 (donor_only) and Level 1 (tumor_only) pseudobulk + activity
-- [ ] Generate Level 2 (tumor_by_cancer) pseudobulk + activity for 11 cancer types
-- [ ] Generate Level 3 (tumor_by_cancer_celltype1) for HCC/ICC (exploratory)
-- [ ] Compute correlations with proper stratification at all levels
-- [ ] Cross-platform comparison: scAtlas Cancer per-cancer vs TCGA primary_by_cancer correlations
+**Expected pattern confirmed:** Correlations decrease with increasing stratification as cross-group variation is removed (donor_only > tumor_only > tumor_by_cancer > tumor_by_cancer_celltype1). This matches TCGA (donor_only 0.238 > primary_by_cancer 0.147 for CytoSig) and GTEx patterns.
+
+**Cross-platform comparison (CytoSig median ρ at per-type/per-tissue level):**
+- scAtlas Cancer tumor_by_cancer: 0.163
+- TCGA primary_by_cancer: 0.147
+- scAtlas Normal by_organ: comparable range
+- GTEx by_tissue: 0.105
+
+scAtlas Cancer per-cancer correlations are consistent with TCGA per-cancer (single-cell pseudobulk vs bulk RNA-seq on the same biological question).
+
+**Legacy outputs:** Previous sampleID-based outputs (30 files, ~970MB) archived to `legacy_sampleid/` subdirectory for sensitivity comparison.
+
+#### 2.4.8 Pipeline Issues (Resolved)
+
+All pipeline issues identified in the design phase have been resolved:
+
+1. **`sampleID` → `donorID`:** ✅ Added `donor_col='donorID'` to scatlas_cancer config. Group key construction now uses donor_col for all levels (not just donor_only).
+2. **Tissue filter:** ✅ Added `tissue_filter` config parameter with per-level application. Levels `tumor_only`, `tumor_by_cancer`, `tumor_by_cancer_celltype1` filter to tissue='Tumor'; `donor_only` includes all tissues.
+3. **Column detection:** ✅ `13_` correlation script detects `cancerType` column → per-cancer stratified correlations. Works correctly with new level names.
+4. **Legacy H5ADs:** ✅ Archived to `legacy_sampleid/` subdirectory. New outputs generated with proper donorID aggregation + tumor-only filter.
+
+#### 2.4.9 Action Items
+
+- [x] Add `donor_col='donorID'` to scatlas_cancer config in `12_cross_sample_correlation.py`
+- [x] Add tissue filter support (tissue='Tumor') to `12_cross_sample_correlation.py`
+- [x] Generate Level 0 (donor_only: 717 × 21,812) and Level 1 (tumor_only: 601 × 21,812)
+- [x] Generate Level 2 (tumor_by_cancer: 601 × 21,812) with within-cancer mean centering
+- [x] Generate Level 3 (tumor_by_cancer_celltype1: 5,069 × 21,812) — all cancer types, HCC/ICC primary
+- [x] Compute correlations with proper stratification at all levels (140,723 rows)
+- [ ] Cross-platform comparison: scAtlas Cancer per-cancer vs TCGA primary_by_cancer correlations (per-target level)
 
 ---
 
@@ -1221,11 +1242,11 @@ For each dataset, report:
 - [x] **scAtlas Normal:** Per-tissue stratified correlation — already implemented via `donor_organ` pseudobulk. `13_cross_sample_correlation_analysis.py` detects `tissue` column and computes per-tissue Spearman automatically. Results in `scatlas_normal_correlations.csv` (7 Tier A + 5 Tier B tissues)
 - [x] **scAtlas Normal:** Generate donor_only level — used `donor_col='donorID'` (not CIMA pattern since sampleID ≠ donor). Generated: pseudobulk 317 × 21,812, cytosig 317 × 43, lincytosig 317 × 178, secact 317 × 1,170
 - [x] **scAtlas Cancer:** Full section 2.4 analysis complete — annotation audit, multi-level strategy (4 levels), 8 design decisions resolved, TCGA cross-platform mapping (7–9 cancer types)
-- [ ] **scAtlas Cancer:** Add `donor_col='donorID'` to scatlas_cancer config in `12_cross_sample_correlation.py`
-- [ ] **scAtlas Cancer:** Add tissue filter support (tissue='Tumor') to `12_cross_sample_correlation.py`
-- [ ] **scAtlas Cancer:** Generate Level 0–3 pseudobulk + activity with proper donorID aggregation and tumor-only filtering
-- [ ] **scAtlas Cancer:** Compute correlations with per-cancer stratification at all levels
-- [ ] **scAtlas Cancer:** Cross-platform comparison with TCGA primary_by_cancer correlations
+- [x] **scAtlas Cancer:** Add `donor_col='donorID'` to scatlas_cancer config in `12_cross_sample_correlation.py`
+- [x] **scAtlas Cancer:** Add tissue filter support (tissue='Tumor') to `12_cross_sample_correlation.py` — per-level `tissue_filter` config
+- [x] **scAtlas Cancer:** Generate Level 0–3 pseudobulk + activity (717/601/601/5,069 groups) with donorID aggregation + tumor-only filter
+- [x] **scAtlas Cancer:** Compute correlations with per-cancer stratification (140,723 rows, tumor_by_cancer CytoSig median ρ=0.163)
+- [ ] **scAtlas Cancer:** Cross-platform comparison with TCGA primary_by_cancer correlations (per-target level)
 - [x] **GTEx:** Decided on stratification — per-tissue (by_tissue) as primary, pooled (donor_only) as supplementary with non-independence caveat
 - [x] **TCGA:** Decided on sample filtering — primary tumor (01) + blood cancer (03); implemented in `15b_tcga_primary_filter.py`
 
