@@ -425,7 +425,7 @@ Of 3,570 total tissue × subCluster combinations (any cells), viable combination
 | 2. donor_organ | donor × tissue | ~706 | Global | Partial (115 multi-tissue) | Supplementary | TCGA primary_only |
 | 3. by_organ_subCluster | per-organ per-subCluster | Breast/Lung only | Within-organ | Fully independent | Exploratory | CIMA per-celltype |
 
-**Level 0 (donor_only):** Sum all cells per donor → 317 profiles. Fully independent but mixes tissue biology. Donors with different tissue coverage are not comparable. Supplementary with explicit caveat. Pipeline support added: `('donor_only', [])` in `12_cross_sample_correlation.py` scatlas_normal config (matches CIMA pattern). Expected output: pseudobulk 317 × 21,812, activity H5ADs for all 3 signatures.
+**Level 0 (donor_only):** Sum all cells per donor → 317 profiles. Fully independent but mixes tissue biology. Donors with different tissue coverage are not comparable. Supplementary with explicit caveat. Pipeline support: `donor_col='donorID'` in `12_cross_sample_correlation.py` config (sampleID is per donor×organ at 706; donorID aggregates to 317 true donors). Generated output: pseudobulk 317 × 21,812 (n_cells range 48–145,977, mean 7,236), activity H5ADs for cytosig (43), lincytosig (178), secact (1,170).
 
 **Level 1 (by_organ) — PRIMARY:** For each tissue with ≥20 donors (12 tissues, Tier A + B), aggregate all cells per donor within that tissue, run within-organ mean-centered ridge regression, correlate across donors. This is the direct analogue of GTEx by_tissue. Each donor contributes at most one point per tissue → fully independent within each tissue correlation. Report Tier A (≥30 donors, 7 tissues) as high-confidence and Tier B (20–29 donors, 5 tissues) as adequate-confidence separately.
 
@@ -438,7 +438,7 @@ Of 3,570 total tissue × subCluster combinations (any cells), viable combination
 - min_samples=20 for Level 3 primary (Breast/Lung), min_samples=10 for Level 3 exploratory (Spleen/Liver)
 - No min_cells filter needed at donor × tissue level (all 706 groups have ≥30 cells)
 
-**Pipeline implementation:** The existing `12_cross_sample_correlation.py` already generates `donor_organ` pseudobulk with within-tissue mean-centered ridge regression. Level 1 (by_organ) requires only adding per-tissue stratified correlation to `12_`/`13_` — no new pseudobulk regeneration needed. This mirrors the pattern in `15_bulk_validation.py` (GTEx by_tissue).
+**Pipeline implementation:** `12_cross_sample_correlation.py` generates `donor_organ` pseudobulk with within-tissue mean-centered ridge regression. Level 0 (donor_only) now generated via `donor_col='donorID'` config (required because `sampleID` is per donor×organ, not per donor). Level 1 (by_organ) requires only adding per-tissue stratified correlation to `12_`/`13_` — no new pseudobulk regeneration needed. This mirrors the pattern in `15_bulk_validation.py` (GTEx by_tissue).
 
 #### 2.3.6 Cross-Platform Tissue Comparison
 
@@ -1002,7 +1002,7 @@ For each dataset, report:
 - [x] **scAtlas Normal:** Level 3 (by_organ_subCluster) scoped — exploratory only; Breast/Lung at min_samples=20, Spleen/Liver at min_samples=10
 - [x] **scAtlas Normal:** GTEx cross-platform tissue mapping — 11 of 12 tissues have direct GTEx matches (Thymus excluded)
 - [ ] **scAtlas Normal:** Add per-tissue stratified correlation to `12_`/`13_` (reuse existing `donor_organ` pseudobulk, mirror GTEx by_tissue pattern in `15_bulk_validation.py`)
-- [ ] **scAtlas Normal:** Generate donor_only level — `python scripts/12_cross_sample_correlation.py --atlas scatlas_normal` (config added: `('donor_only', [])` matching CIMA pattern; expect 317 × 21,812 pseudobulk + 3 activity H5ADs)
+- [x] **scAtlas Normal:** Generate donor_only level — used `donor_col='donorID'` (not CIMA pattern since sampleID ≠ donor). Generated: pseudobulk 317 × 21,812, cytosig 317 × 43, lincytosig 317 × 178, secact 317 × 1,170
 - [x] **GTEx:** Decided on stratification — per-tissue (by_tissue) as primary, pooled (donor_only) as supplementary with non-independence caveat
 - [x] **TCGA:** Decided on sample filtering — primary tumor (01) + blood cancer (03); implemented in `15b_tcga_primary_filter.py`
 
