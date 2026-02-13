@@ -83,7 +83,7 @@ The system is divided into independent bounded contexts:
 | 3 | **CIMA** | scRNA-seq | 6,484,974 | 421 donors | 27 L2 / 100+ L3 | Cell Atlas consortium |
 | 4 | **Inflammation Main** | scRNA-seq | 4,918,140 | 817 samples | 66+ | Jimenez-Gracia et al. |
 | 5 | **Inflammation Val** | scRNA-seq | 849,922 | 144 samples | 66+ | Validation cohort |
-| 6 | **Inflammation Ext** | scRNA-seq | 572,872 | 86 samples | 66+ | Extension cohort |
+| 6 | **Inflammation Ext** | scRNA-seq | 572,872 | 86 samples | 66+ | External cohort |
 | 7 | **scAtlas Normal** | scRNA-seq | 2,293,951 | 317 donors | 102 subCluster | 35 organs |
 | 8 | **scAtlas Cancer** | scRNA-seq | 4,146,975 | 717 donors (601 tumor-only) | 162 cellType1 | 29 cancer types |
 | 9 | **parse_10M** | scRNA-seq | 9,697,974 | 12 donors × 91 cytokines | 18 PBMC types | Cytokine perturbation |
