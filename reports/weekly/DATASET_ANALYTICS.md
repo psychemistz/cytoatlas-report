@@ -1,6 +1,6 @@
 ---
 title: "Dataset Analytics: Cross-Sample Correlation Design"
-date: "2026-02-12"
+date: "2026-02-13"
 status: draft
 purpose: "Document each dataset's structure, identify cleaning decisions, and design a reproducible pseudobulk correlation pipeline"
 ---
@@ -508,7 +508,7 @@ The file contains **EBPlusPlus batch-adjusted RSEM normalized counts** — not T
 | Uterine Corpus Endometrioid Carcinoma | 204 | | |
 | Esophageal Carcinoma | 193 | | |
 
-All 33 cancer types have ≥30 samples.
+All 33 named cancer types have ≥30 samples in donor_only (all sample types). After filtering to primary-only (Level 2), all 33 still have ≥30 samples (smallest: Cholangiocarcinoma with 36).
 
 #### Decision: Compute All Three Levels
 
@@ -521,13 +521,13 @@ All 33 cancer types have ≥30 samples.
 - Filter to sample types 01 (Primary Tumor) + 03 (Primary Blood Cancer)
 - N = 9,879 samples from 9,875 donors (~1:1, nearly perfectly independent)
 - Removes matched normals, metastatic, recurrent
-- **Needs processing** ✗
+- Exists: `tcga_primary_only_*` ✓
 
 **Level 3 — Per-cancer type (from Level 2):**
-- Within each of 33 cancer types, correlate across donors
-- N per type: 45–1,212 (all ≥30)
+- Within each of 33 cancer types (≥30 primary-only samples), correlate across donors
+- N per type: 36–1,092 (33 of 34 pass min_samples=30; "Unknown" excluded)
 - Independent within each cancer type
-- **Needs processing** ✗
+- Exists: `tcga_primary_by_cancer_*` ✓
 
 #### Existing Processed Data Verification
 
@@ -537,8 +537,12 @@ All 33 cancer types have ≥30 samples.
 |-------|-----------|-------------|-----------------|---------------|--------|
 | donor_only (all) | 11,069 × 20,501 | 11,069 × 43 | 11,069 × 178 | 11,069 × 1,170 | Yes |
 | by_cancer (no Unknown) | 10,409 × 20,501 | 10,409 × 43 | 10,409 × 178 | 10,409 × 1,170 | Yes |
+| primary_only (01+03) | 9,879 × 20,501 | 9,879 × 43 | 9,879 × 178 | 9,879 × 1,170 | Yes |
+| primary_by_cancer (33 types) | 9,236 × 20,501 | 9,236 × 43 | 9,236 × 178 | 9,236 × 1,170 | Yes |
 
-**Note:** Existing `by_cancer` removes "Unknown" cancer type (660 samples) but does NOT filter by sample type — it still includes normals, metastatic, and recurrent within each cancer type. Level 2 and 3 require new processing.
+**Note on existing `by_cancer`:** Removes "Unknown" cancer type (660 samples) but does NOT filter by sample type — it still includes normals, metastatic, and recurrent within each cancer type.
+
+**Note on `primary_by_cancer`:** Filters to primary tumors (01) + blood cancer (03) first, then stratifies by cancer type with min_samples=30. This gives 33 groups (9,236 samples) — the one excluded group is "Unknown" cancer type which has fewer than 30 primary-only samples. Sample counts per cancer type differ from the donor_only table above (e.g., Breast: 1,092 vs 1,212; Cholangiocarcinoma: 36 vs 45) because normals, metastatic, and recurrent samples are excluded.
 
 ---
 
@@ -732,7 +736,7 @@ For each dataset, report:
 - [ ] **scAtlas Normal:** Decide on primary aggregation level (donor-only vs donor×organ)
 - [ ] **scAtlas Cancer:** Decide on tissue-type filtering (tumor-only vs all)
 - [x] **GTEx:** Decided on stratification — per-tissue (by_tissue) as primary, pooled (donor_only) as supplementary with non-independence caveat
-- [ ] **TCGA:** Decide on sample filtering (all vs tumor-only)
+- [x] **TCGA:** Decided on sample filtering — primary tumor (01) + blood cancer (03); implemented in `15b_tcga_primary_filter.py`
 
 ### Reprocessing
 
@@ -741,7 +745,7 @@ For each dataset, report:
 - [ ] Keep context-appropriate min_samples: 10 for single-cell, 30 for bulk stratified (Section 3.4, 3.8)
 - [ ] Regenerate TCGA data with negative clipping (Section 3.6; pipeline updated)
 - [ ] Regenerate GTEx H5ADs to add `data_format` metadata (pipeline code updated, data predates change)
-- [ ] Generate TCGA Level 2 (primary-only) and Level 3 (per-cancer from primary) — `15b_tcga_primary_filter.py`
+- [x] Generate TCGA Level 2 (primary-only) and Level 3 (per-cancer from primary) — `15b_tcga_primary_filter.py --force` (9,879 primary-only samples; 9,236 in 33 cancer-type strata)
 - [ ] Recompute correlations for updated datasets — use per-tissue (GTEx) and per-cancer (TCGA) as primary
 - [ ] Rebuild figures and tables from new correlations
 
