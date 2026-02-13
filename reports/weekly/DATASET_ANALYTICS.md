@@ -1,0 +1,621 @@
+---
+title: "Dataset Analytics: Cross-Sample Correlation Design"
+date: "2026-02-12"
+status: draft
+purpose: "Document each dataset's structure, identify cleaning decisions, and design a reproducible pseudobulk correlation pipeline"
+---
+
+# Dataset Analytics: Cross-Sample Correlation Design
+
+## Goal
+
+Compute clean **cross-sample (cross-donor) Spearman correlations** between:
+- **X**: Pseudobulk expression of target gene (one value per sample unit)
+- **Y**: Predicted activity z-score from ridge regression (one value per sample unit)
+
+Every data-cleaning decision flows from this goal: each sample unit must be independent, identifiable, and comparable.
+
+---
+
+## 1. Dataset Inventory
+
+### Summary Table
+
+| Dataset | Type | Cells | Donors | Samples | Sample unit for correlation | Key issue |
+|---------|------|-------|--------|---------|----------------------------|-----------|
+| CIMA | scRNA-seq | 6,484,974 | 421 | 421 | donor (1:1) | Clean — one sample per donor |
+| Inflammation Main | scRNA-seq | 4,918,140 | ? | 817 | sampleID | No donorID column; donor–sample relationship unknown |
+| Inflammation Val | scRNA-seq | 849,922 | ? | 144 | sampleID | Same issue; cell type labels are predicted (Level2pred) |
+| Inflammation Ext | scRNA-seq | 572,872 | ? | 86 | sampleID | Same issue; different gene space (37K vs 23K genes) |
+| scAtlas Normal | scRNA-seq | 2,293,951 | 317 | 706 | donor × organ | 115 donors have multiple samples from different organs |
+| scAtlas Cancer | scRNA-seq | 4,146,975 | 717 | 1,062 | donor × tissue | 82 donors have multiple samples (tumor + adjacent + metastasis) |
+| GTEx | Bulk RNA-seq | — | ~1,400 | 19,788 | sample (tissue biopsy) | Multi-tissue per donor (up to 39 tissues); NOT pseudobulk |
+| TCGA | Bulk RNA-seq | — | 10,274 | 11,069 | sample (tumor biopsy) | Mostly 1:1 donor:sample; some donors have normal+tumor pairs |
+
+---
+
+## 2. Per-Dataset Analysis
+
+### 2.1 CIMA (Cell Atlas)
+
+**Source:** Q. Zhang et al., *Nature*, 2024
+**File:** `CIMA_RNA_6484974cells_36326genes_compressed.h5ad`
+
+| Property | Value |
+|----------|-------|
+| Cells | 6,484,974 |
+| Genes | 36,326 |
+| Donors | 421 |
+| Samples | 421 (1:1 with donors) |
+| Cell type levels | L1 (6), L2 (27), L3 (38), L4 (72) |
+| Population | Healthy donors |
+| Metadata | age, sex, BMI, blood biochemistry, metabolomics |
+
+**Obs columns:** `sample`, `cell_type_l1`, `cell_type_l2`, `cell_type_l3`, `cell_type_l4`, `age`, `sex`, `BMI`, ...
+
+**Note:** Raw data contains NO `LowQuality_cells` or `Doublets` — already QC'd upstream. No additional cell exclusion needed.
+
+#### Cell Type Hierarchy
+
+**L1 (6 types) — all present in all 421 donors:**
+
+| L1 type | Total cells | Donors | Cells/donor (mean) |
+|---------|------------|--------|-------------------|
+| CD4_T | 2,320,103 | 421 | 5,511 |
+| CD8_T | 1,363,182 | 421 | 3,238 |
+| unconventional_T | 977,267 | 421 | 2,321 |
+| Myeloid | 754,770 | 421 | 1,793 |
+| B | 566,569 | 420 | 1,349 |
+| ILC | 503,083 | 421 | 1,195 |
+
+**L2 (27 types) — top types well-represented, bottom types sparse:**
+
+| L2 type | Cells/donor (mean) | Donors | Status |
+|---------|-------------------|--------|--------|
+| CD4_naive | 2,720 | 421 | Excellent |
+| Mono | 1,535 | 421 | Excellent |
+| CD8_naive | 1,389 | 421 | Excellent |
+| CD4_helper | 1,328 | 421 | Excellent |
+| CD8_CTL | 1,002 | 421 | Excellent |
+| ... (12 more types with >100 cells/donor) | | | |
+| pDC | 79 | 420 | Adequate |
+| CD56_bright_NK | 60 | 418 | Adequate |
+| Total_Plasma | 52 | 420 | Marginal |
+| MK | 40 | 420 | Marginal |
+| Proliferative_T | 39 | 421 | Marginal |
+| Immature_T | 24 | 402 | Sparse |
+| Proliferative_NK | 14 | 400 | Sparse |
+| HSPC | 10 | 411 | Sparse |
+| ILC2 | 7 | 406 | Sparse |
+
+#### Pseudobulk Strategy
+
+**Approach:** Compute all 5 levels. Correlation quality will naturally demonstrate where signal degrades.
+
+| Level | Groupby | Pseudobulk groups | Min cells/group | Groups <30 cells |
+|-------|---------|-------------------|-----------------|-----------------|
+| Donor-only | `sample` | 421 | 3,181 | 0 (0%) |
+| Donor × L1 | `sample` × `cell_type_l1` | 2,525 | 45 | 0 (0%) |
+| Donor × L2 | `sample` × `cell_type_l2` | 10,251 | 10 | 1,288 (12.6%) |
+| Donor × L3 | `sample` × `cell_type_l3` | 14,304 | 10 | 2,156 (15.1%) |
+| Donor × L4 | `sample` × `cell_type_l4` | 24,741 | 10 | 5,158 (20.8%) |
+
+**Correlation computation per level:**
+- **Donor-only:** One rho per target. Spearman across 421 donors. Fully independent.
+- **Donor × celltype (L1-L4):** For each cell type separately, Spearman across donors that have ≥min_cells of that type. Each correlation uses independent donors. One rho per (target × cell type).
+
+**Note on existing processed data:** One donor (CIMA_H365) lacks B cells above threshold at L1, giving 2,525 instead of 2,526 groups. This is correct behavior.
+
+#### Existing Processed Data Verification
+
+**Location:** `/data/parks34/projects/2cytoatlas/results/cross_sample_validation/cima/`
+
+| Level | Pseudobulk | CytoSig (43) | SecAct (1,170) | Shapes match? |
+|-------|-----------|-------------|---------------|--------------|
+| Donor-only | 421 × 36,326 | 421 × 43 | 421 × 1,170 | Yes |
+| Donor × L1 | 2,525 × 36,326 | 2,525 × 43 | 2,525 × 1,170 | Yes |
+| Donor × L2 | 10,251 × 36,326 | 10,251 × 43 | 10,251 × 1,170 | Yes |
+| Donor × L3 | 14,304 × 36,326 | 14,304 × 43 | 14,304 × 1,170 | Yes |
+| Donor × L4 | 24,741 × 36,326 | 24,741 × 43 | 24,741 × 1,170 | Yes |
+
+Resampled (bootstrap) versions also exist for L1-L4.
+
+**Min cells at generation:** None (`01_cima_activity.py` includes all groups). **Min cells at validation:** 10 (`11_donor_level_pipeline.py` filters at correlation time). The "Min cells/group" column above shows the smallest observed group in the data, not a threshold. L2-L4 include some small pseudobulk profiles (10-29 cells) whose noise will be visible in correlation distributions.
+
+#### Decision: CONFIRMED (with caveat on thresholds)
+
+- Use all 5 levels (donor-only + L1-L4) with all 3 signature types
+- For correlation: within each cell type, correlate across donors (independent)
+- L3/L4 noise will be apparent in the results, demonstrating the resolution limit naturally
+- **Threshold note:** The original activity script (`01_cima_activity.py`) has **no min_cells filter** — all sample×celltype groups are included regardless of size. The downstream validation pipeline (`11_donor_level_pipeline.py`, `validation/`) applies min_cells=10 at the correlation stage. This is acceptable: the pseudobulk H5ADs preserve all groups, and filtering happens at analysis time. See Section 3.8 for cross-pipeline threshold reconciliation.
+
+---
+
+### 2.2 Inflammation Atlas
+
+**Source:** Inflammatory Atlas consortium
+**Files:**
+- Main: `INFLAMMATION_ATLAS_main_afterQC.h5ad` (4,918,140 cells, 817 samples)
+- Validation: `INFLAMMATION_ATLAS_validation_afterQC.h5ad` (849,922 cells, 144 samples)
+- External: `INFLAMMATION_ATLAS_external_afterQC.h5ad` (572,872 cells, 86 samples)
+- **Combined:** 6,340,934 cells, 1,047 samples
+
+| Property | Main | Validation | External |
+|----------|------|------------|----------|
+| Cells | 4,918,140 | 849,922 | 572,872 |
+| Samples (sampleID) | 817 | 144 | 86 |
+| Genes | 22,838 | 22,838 | 37,169 |
+| Cell type L1 | 17 (Level1) | 15 (Level1pred) | 15 (Level1pred) |
+| Cell type L2 | 66 (Level2) | 53 (Level2pred) | 54 (Level2pred) |
+
+**Obs columns:** `libraryID`, `sampleID`, `Level1`/`Level1pred`, `Level2`/`Level2pred`
+
+**Critical issue: No `donorID` column.**
+- Only `sampleID` is available
+- Unknown whether multiple sampleIDs can map to the same donor (e.g., pre/post treatment, multiple timepoints)
+- If some donors contributed multiple samples, treating each sampleID as independent inflates correlation N and may introduce within-donor correlations
+
+**Additional issues:**
+- Val/Ext use `Level1pred`/`Level2pred` (predicted, not curated annotations) — noisier
+- External cohort has a different gene space (37,169 vs 22,838 genes)
+- `LowQuality_cells` and `Doublets` appear in Level1 — **exclude**
+
+**Cleaning decision needed:**
+1. **Option A (current):** Treat each sampleID as independent. Report as "1,047 samples" not "1,047 donors."
+2. **Option B (conservative):** Investigate sampleID naming conventions. If pattern like `I57.3P_T0` encodes donor + timepoint, deduplicate to one sample per donor (e.g., take T0 only).
+3. **Option C (stratified):** Analyze Main/Val/Ext separately. Use Main (817 samples, curated annotations) as primary. Val/Ext as replication.
+
+**Recommendation:** Option C — analyze Main as primary (curated L1/L2), then replicate in Val/Ext. Report clearly as "samples" not "donors" until donor identity is resolved.
+
+---
+
+### 2.3 scAtlas Normal
+
+**Source:** Q. Shi et al., *Nature*, 2025
+**File:** `igt_s9_fine_counts.h5ad`
+
+| Property | Value |
+|----------|-------|
+| Cells | 2,293,951 |
+| Genes | 21,812 |
+| Donors | 317 |
+| Samples | 706 |
+| Organ systems | 10 |
+| Tissues | 35 |
+| Cell type levels | cellType1 (468), cellType2 (1,069) |
+| Population | Healthy / normal tissue |
+
+**Obs columns:** `donorID`, `sampleID`, `system`, `tissue`, `region`, `cellType1`, `cellType2`, `sex`, `age`, ...
+
+**Multi-sample donors:**
+- 202 donors: 1 sample
+- 53 donors: 2 samples
+- 62 donors: 3+ samples (up to 27 samples from TSP14 — blood, liver, lung, colon, skin, thymus, etc.)
+
+**Top tissues by sample count:**
+Breast (124), Lung (97), Colon (65), Heart (52), Liver (43), SmallIntestine (30), Spleen (30), Ovary (28), Thymus (23)
+
+**The fundamental question:** What is the independent sample unit?
+
+**Option A — Donor-level (N=317):**
+- Aggregate all cells per donor across all organs
+- Pro: Maximally independent (one value per biological individual)
+- Con: Mixes biology across organs (lung + liver + blood averaged together)
+- Con: Donors with more organs contribute more cells, biasing the pseudobulk
+
+**Option B — Donor × organ (N=706):**
+- Aggregate per `donorID` × `tissue`
+- Pro: Biologically meaningful unit (cytokine activity in liver vs lung is different)
+- Con: Multiple samples per donor are NOT fully independent
+- Con: Some tissues have very few donors (Fallopian Tube: 1 sample)
+
+**Option C — Organ-stratified donor-level:**
+- For each organ separately: aggregate per donor within that organ → compute correlation within organ → report per-organ
+- Pro: Each correlation uses independent donors; captures organ-specific biology
+- Con: Small N for rare organs; many parallel tests
+
+**Recommendation:** Option B (donor × organ) as primary, with Option C for sensitivity analysis. Clearly report that samples are not fully independent (115 donors contribute multiple points). Consider excluding organs with <10 donors.
+
+---
+
+### 2.4 scAtlas Cancer
+
+**Source:** Q. Shi et al., *Nature*, 2025
+**File:** `PanCancer_igt_s9_fine_counts.h5ad`
+
+| Property | Value |
+|----------|-------|
+| Cells | 4,146,975 |
+| Genes | 21,812 |
+| Donors | 717 |
+| Samples | 1,062 |
+| Cancer types | 29 |
+| Tissue types | Tumor, Adjacent, Metastasis, Blood, PreLesion, PleuralFluids |
+| Cell type levels | cellType1 (162), cellType2 (153) |
+
+**Obs columns:** `donorID`, `sampleID`, `cancerType`, `sub_cancerType`, `tissue`, `treatment`, `treatmentResponse`, `treatmentPhase`, `cellType1`, `cellType2`, ...
+
+**Multi-sample donors (82 donors with >2 samples):**
+- All 82 have the SAME cancer type across samples
+- Multiple samples come from: tumor vs adjacent normal, multiple tumor regions, blood, metastasis
+- Example: CRC patients with 5-8 biopsies (multiple tumor regions + 1 adjacent)
+- Example: TNBC patients with blood + metastasis at pre/post/progression timepoints
+
+**Top cancer types by donor count:**
+HCC (88), PAAD (75), CRC (65), ESCA (60), LUAD (59), BRCA (49), HNSC (46), NPC (39), STAD (39), KIRC (35), ICC (30)
+
+**Tissue breakdown for donors with ≤2 samples (635 donors):**
+- Tumor only: 438
+- Unlabeled: 82
+- Tumor + Adjacent: 63
+- Metastasis only: 53
+- PreLesion only: 38
+- Tumor + Blood: 22
+- Others: 12
+
+**Cleaning decisions:**
+
+1. **Tissue type filtering:** Should we include adjacent normal, metastasis, blood, pre-lesion samples alongside tumor samples in the same correlation?
+   - **Problem:** Mixing tumor and adjacent normal samples from the SAME donor creates within-donor pairs that are not independent but are biologically very different
+   - **Recommendation:** Stratify by tissue type. Primary analysis on Tumor-only. Separate analyses for Adjacent, Metastasis.
+
+2. **Cancer-type stratification:**
+   - **Option A:** Pool all cancer types (N=717 donors, higher power, but heterogeneous)
+   - **Option B:** Per-cancer-type correlations (HCC: N=88, PAAD: N=75, etc.)
+   - **Recommendation:** Both. Pooled as primary (more power), per-cancer as sensitivity analysis. Exclude cancer types with <20 donors.
+
+3. **Multi-region tumor samples:**
+   - For donors with multiple tumor biopsies (e.g., CRC with 5-7 tumor samples): average across tumor samples per donor, or pick one
+   - **Recommendation:** Average across same-tissue samples per donor → one value per (donor × tissue_type × cancer_type)
+
+---
+
+### 2.5 GTEx (Bulk RNA-seq)
+
+**Source:** GTEx Consortium, v11
+**File:** `GTEx_Analysis_2025-08-22_v11_RNASeQCv2.4.3_gene_tpm.parquet`
+
+| Property | Value |
+|----------|-------|
+| Samples | 19,788 |
+| Donors | ~1,400 |
+| Genes | 74,628 (ENSG IDs → ~20K after HGNC mapping) |
+| Tissues | 31 |
+| Data type | TPM (Transcripts Per Million) |
+| Transform | log2(TPM + 1) |
+
+**This is true bulk RNA-seq, NOT pseudobulk.** No cell-type information.
+
+**Multi-tissue per donor:** Up to 39 samples per donor across different tissues (brain, skin, heart, liver, etc.)
+
+**Top tissues:** Brain (1,152), Skin (812), Esophagus (653), Blood Vessel (606), Adipose (515), Blood (444)
+
+**Critical issue for correlation:** Same as scAtlas Normal — multiple samples per donor are not independent.
+
+**Cleaning options:**
+
+1. **All samples pooled (current, N=19,788):** Treats each tissue biopsy as independent. Very high N gives high power but inflated significance due to within-donor correlation.
+
+2. **Per-tissue correlations:** Within each tissue, correlate across donors. Each donor contributes at most one sample per tissue. Truly independent.
+
+3. **One sample per donor:** Pick one tissue per donor (e.g., whole blood for consistency). N drops to ~1,400 but samples are independent.
+
+**Recommendation:** Per-tissue correlations as primary (biologically meaningful, donors independent within tissue). Pooled as supplementary with clear caveat about non-independence.
+
+---
+
+### 2.6 TCGA (Bulk RNA-seq)
+
+**Source:** TCGA PanCancer
+**File:** `EBPlusPlusAdjustPANCAN_IlluminaHiSeq_RNASeqV2.geneExp.tsv`
+
+| Property | Value |
+|----------|-------|
+| Total samples | 11,069 |
+| Unique donors | 10,274 |
+| Genes | 20,501 (after symbol\|entrezID parsing, dedup by averaging) |
+| Cancer types | 34 (33 named + 1 "Unknown") |
+| Data type | EBPlusPlus batch-adjusted RSEM normalized counts (see below) |
+| Transform | clip(0) → log2(RSEM + 1) |
+
+**True bulk RNA-seq, NOT pseudobulk.** No cell-type information.
+
+#### Expression Value Characterization
+
+The file contains **EBPlusPlus batch-adjusted RSEM normalized counts** — not TPM, not FPKM, not raw counts.
+
+**Evidence:**
+- Column sums vary widely (759K to 16.4M per sample); TPM would sum to exactly 1M
+- Values range from -0.89 to ~717K (mean ~990, median ~56)
+- **0.55% of values are negative** — impossible for raw counts or TPM; confirms EBPlusPlus batch correction artifact introduces small negatives
+
+**Pipeline handling (`15_bulk_validation.py`):**
+- Clips negative values to 0 before log transform (removes batch correction artifacts)
+- Applies `log2(x + 1)` on clipped values
+- Logs the count and percentage of clipped values for traceability
+- Data format tracked in output H5AD metadata (`uns['data_format']`, `uns['transform']`)
+
+**Gene ID mapping:** `symbol|entrezID` format (e.g., `TP53|7157`). Pipeline splits on `|`, takes the symbol. No probemap needed. Genes with `?` symbol are dropped. Duplicate symbols averaged via `groupby().mean()`.
+
+#### Sample Type Breakdown
+
+| Code | Type | Count | Notes |
+|------|------|-------|-------|
+| 01 | Primary Tumor | 9,706 | Main analysis target |
+| 11 | Solid Tissue Normal | 737 | Matched normals — same donor as tumor |
+| 06 | Metastatic | 395 | Different biology from primary |
+| 03 | Primary Blood Cancer | 173 | AML — no solid tissue |
+| 02 | Recurrent Tumor | 46 | Same donor as primary |
+| 05 | Additional Primary | 11 | Rare |
+| 07 | Additional Metastatic | 1 | Rare |
+
+#### Donor Independence
+
+| Samples/donor | Donors | Notes |
+|---------------|--------|-------|
+| 1 | 9,489 | Fully independent |
+| 2 | 775 | Most are tumor + matched normal |
+| 3 | 10 | Tumor + normal + recurrent/metastatic |
+
+- 712 donors have BOTH tumor (01) and normal (11) → not independent
+- Filtering to Primary Tumor (01) + Blood Cancer (03) gives 9,879 samples from 9,875 donors (~1:1)
+
+#### Cancer Types (33 named, by_cancer level)
+
+| Cancer type | Samples | Cancer type | Samples |
+|-------------|---------|-------------|---------|
+| Breast Invasive Carcinoma | 1,212 | Pheochromocytoma & Paraganglioma | 185 |
+| Kidney Clear Cell Carcinoma | 603 | Pancreatic Adenocarcinoma | 183 |
+| Lung Adenocarcinoma | 573 | Glioblastoma Multiforme | 172 |
+| Thyroid Carcinoma | 571 | Acute Myeloid Leukemia | 167 |
+| Head & Neck Squamous Cell Carcinoma | 564 | Testicular Germ Cell Tumor | 154 |
+| Lung Squamous Cell Carcinoma | 549 | Thymoma | 121 |
+| Prostate Adenocarcinoma | 548 | Rectum Adenocarcinoma | 103 |
+| Brain Lower Grade Glioma | 527 | Kidney Chromophobe | 91 |
+| Skin Cutaneous Melanoma | 470 | Mesothelioma | 87 |
+| Stomach Adenocarcinoma | 447 | Uveal Melanoma | 79 |
+| Bladder Urothelial Carcinoma | 426 | Adrenocortical Cancer | 77 |
+| Liver Hepatocellular Carcinoma | 422 | Uterine Carcinosarcoma | 57 |
+| Colon Adenocarcinoma | 331 | Diffuse Large B-Cell Lymphoma | 47 |
+| Kidney Papillary Cell Carcinoma | 321 | Cholangiocarcinoma | 45 |
+| Cervical & Endocervical Cancer | 309 | | |
+| Ovarian Serous Cystadenocarcinoma | 307 | | |
+| Sarcoma | 264 | | |
+| Uterine Corpus Endometrioid Carcinoma | 204 | | |
+| Esophageal Carcinoma | 193 | | |
+
+All 33 cancer types have ≥30 samples.
+
+#### Decision: Compute All Three Levels
+
+**Level 1 — All samples pooled (as-is):**
+- N = 11,069 samples (all sample types, all cancer types)
+- 785 donors contribute >1 sample → mild non-independence
+- Exists: `tcga_donor_only_*` ✓
+
+**Level 2 — Primary tumor + blood cancer only:**
+- Filter to sample types 01 (Primary Tumor) + 03 (Primary Blood Cancer)
+- N = 9,879 samples from 9,875 donors (~1:1, nearly perfectly independent)
+- Removes matched normals, metastatic, recurrent
+- **Needs processing** ✗
+
+**Level 3 — Per-cancer type (from Level 2):**
+- Within each of 33 cancer types, correlate across donors
+- N per type: 45–1,212 (all ≥30)
+- Independent within each cancer type
+- **Needs processing** ✗
+
+#### Existing Processed Data Verification
+
+**Location:** `/data/parks34/projects/2cytoatlas/results/cross_sample_validation/tcga/`
+
+| Level | Expression | CytoSig (43) | LinCytoSig (178) | SecAct (1,170) | Match? |
+|-------|-----------|-------------|-----------------|---------------|--------|
+| donor_only (all) | 11,069 × 20,501 | 11,069 × 43 | 11,069 × 178 | 11,069 × 1,170 | Yes |
+| by_cancer (no Unknown) | 10,409 × 20,501 | 10,409 × 43 | 10,409 × 178 | 10,409 × 1,170 | Yes |
+
+**Note:** Existing `by_cancer` removes "Unknown" cancer type (660 samples) but does NOT filter by sample type — it still includes normals, metastatic, and recurrent within each cancer type. Level 2 and 3 require new processing.
+
+---
+
+## 3. Cross-Cutting Cleaning Decisions
+
+### 3.1 Defining the Independent Sample Unit
+
+The core question for every dataset:
+
+| Dataset | Independent unit | N | Fully independent? |
+|---------|-----------------|---|-------------------|
+| CIMA | donor | 421 | Yes |
+| Inflammation Main | sampleID | 817 | Unknown (need to verify donor identity) |
+| scAtlas Normal | donor × organ | 706 | No (115 donors share across organs) |
+| scAtlas Cancer | donor × tissue_type | ~800 | No (82 donors share across tissue types) |
+| GTEx | tissue biopsy | 19,788 | No (~1,400 donors × multiple tissues) |
+| TCGA | tumor biopsy | ~10,000 | Mostly yes (after removing matched normals) |
+
+### 3.2 Cell Exclusion (Single-Cell Datasets)
+
+Before pseudobulk aggregation, exclude:
+- `LowQuality_cells` (Inflammation) — CIMA is already QC'd upstream; no such cells exist
+- `Doublets` (Inflammation, scAtlas) — CIMA is already QC'd upstream; no such cells exist
+- Cells with `predicted_doublet == True` (scAtlas)
+
+### 3.3 Minimum Cell Count per Pseudobulk Group
+
+A pseudobulk aggregate with too few cells is noisy. Two-stage approach:
+- **Generation stage** (`01_`, `02_`, `03_`): No filtering — all groups preserved in H5ADs
+- **Validation stage** (`11_`, `validation/`): min_cells=10 applied at correlation time
+- See Section 3.8 for full per-script threshold audit
+
+### 3.4 Minimum Samples per Correlation
+
+Spearman correlation requires sufficient N for reliable estimates:
+- **Single-cell validation** (`validation/config.py`): min_samples=**10** — appropriate for cell-type strata where some types appear in few donors
+- **Bulk stratified** (`15_bulk_validation.py`, `15b_tcga_primary_filter.py`): min_samples=**30** — appropriate for per-tissue/per-cancer groups which are larger
+- **Report N alongside every rho** so readers can assess reliability
+
+### 3.8 Threshold Reconciliation Across Pipeline Scripts
+
+**Problem:** Different pipeline stages use different thresholds. Audit of all scripts:
+
+**min_cells (pseudobulk aggregation — minimum cells per sample×celltype group):**
+
+| Script | min_cells | Notes |
+|--------|-----------|-------|
+| `01_cima_activity.py` | **None** | All groups included regardless of size |
+| `02_inflam_activity.py` | **None** | All groups included |
+| `03_scatlas_analysis.py` | **10** (default), **1** (actual calls at lines 1340, 1357) | Inconsistent: default vs actual usage |
+| `11_donor_level_pipeline.py` | **10** | Applied at validation stage |
+| `validation/config.py` | **10** (standard), **50** (resampled) | Two-tier |
+| `validation/01_generate_pseudobulk.py` | **10** | |
+| `validation/run_validation.py` | **10** | |
+
+**min_samples (correlation — minimum samples per Spearman correlation):**
+
+| Script | min_samples | Notes |
+|--------|-------------|-------|
+| `validation/config.py` | **10** | |
+| `validation/run_validation.py` | **10** | |
+| `15_bulk_validation.py` (stratified) | **30** | GTEx by-tissue, TCGA by-cancer |
+| `15b_tcga_primary_filter.py` (stratified) | **30** | TCGA primary by-cancer |
+| DATASET_ANALYTICS.md proposal | **20** (donor-level), **10** (stratified) | |
+
+**Assessment:** The two-stage design is actually correct: activity scripts (`01_`, `02_`, `03_`) generate pseudobulk with all groups (no filtering), and downstream validation scripts (`11_`, `validation/`) apply min_cells=10 at correlation time. This means the pseudobulk H5ADs are complete and reusable — filtering decisions are deferred to analysis.
+
+**Remaining item to review:**
+- `03_scatlas_analysis.py` passes min_cells=1 in some calls (lines 1340, 1357), overriding its default of 10. This is in the tumor vs adjacent comparison where all groups are needed regardless of size. Should be verified as intentional.
+
+**Resolved:** min_samples differences (10 vs 30) are context-appropriate and documented in Section 3.4. The two-stage pseudobulk design (generate all, filter at analysis) is confirmed as correct architecture.
+
+### 3.5 Gene ID Harmonization
+
+| Dataset | Gene ID format | Mapping needed |
+|---------|---------------|----------------|
+| CIMA | HGNC symbols | Direct match to signatures |
+| Inflammation | HGNC symbols | Direct match |
+| scAtlas Normal | HGNC symbols | Direct match |
+| scAtlas Cancer | HGNC symbols | Direct match |
+| GTEx | ENSG (versioned) | GENCODE v23 probemap → HGNC (3-tier: versioned → unversioned → Description column) |
+| TCGA | `symbol\|entrezID` (e.g., `TP53\|7157`) | Split on `\|`, take symbol; no probemap needed |
+
+CytoSig target aliases: TNFA→TNF, GMCSF→CSF2, IFNA→IFNA1, etc. Must resolve before correlation.
+
+### 3.6 Expression Normalization
+
+**Single-cell datasets (pseudobulk):**
+1. Sum raw counts per group (donor or donor×celltype)
+2. CPM normalize: (counts / total_counts) × 1e6
+3. Log transform: log1p(CPM)
+
+**Bulk datasets (format-specific preprocessing):**
+
+| Dataset | Source format | Preprocessing | Transform |
+|---------|-------------|---------------|-----------|
+| GTEx v11 | TPM (always ≥ 0) | None needed | `log2(TPM + 1)` |
+| TCGA PanCancer | EBPlusPlus batch-adjusted RSEM normalized counts | Clip negatives to 0 (0.55% of values are small negatives from batch correction) | `log2(RSEM + 1)` |
+| TOIL fallback | Uniformly recomputed TPM | None needed | `log2(TPM + 1)` |
+
+**Why this is sufficient for our analysis:**
+- **Spearman correlation** is rank-based — only rank order matters, not absolute scale
+- **Ridge regression** mean-centers per gene across samples before inference — absolute scale cancels out
+- Both formats produce comparable downstream results because activity z-scores depend on relative variation across samples, not absolute normalization
+
+**Pipeline implementation** (`15_bulk_validation.py`): Each dataset's `data_format` is tracked through loading → expression H5AD → activity H5AD metadata (`uns['data_format']`, `uns['transform']`) for full provenance.
+
+### 3.7 Confounders (Age, Sex, Batch, Tumor Purity)
+
+Not a concern for expression-activity correlation validation. Both the target gene expression (X) and predicted activity (Y) are derived from the **same expression matrix**, so any factor that shifts expression also shifts the activity prediction proportionally. Biological confounders (age, sex, tumor purity) create natural variation that the model should track — this is signal, not noise. Technical confounders (batch, sequencing center) are partially handled by ridge regression's mean-centering step.
+
+The one caveat: confounders can inflate **absolute rho magnitude** by widening the expression range (e.g., TCGA's heterogeneous tumor purity likely contributes to its higher rho vs. CIMA's homogeneous healthy donors). This affects cross-dataset comparison of rho values but does not create false positive/negative correlations for individual targets.
+
+Confounders would become relevant for downstream analyses correlating activity with **independent** measurements (protein levels, clinical outcomes, treatment response).
+
+---
+
+## 4. Proposed Reprocessing Pipeline
+
+### Phase 1: Standardized Pseudobulk Generation
+
+For each single-cell dataset:
+```
+1. Load H5AD (backed mode)
+2. Exclude low-quality cells and doublets (Section 3.2)
+3. For each aggregation level:
+   a. Define groupby keys (donor, donor×celltype, donor×organ, etc.)
+   b. Sum counts for ALL groups (no min_cells filtering at this stage)
+   c. CPM normalize → log1p
+   d. Save as clean pseudobulk H5AD with n_cells per group in metadata
+4. Run ridge regression on pseudobulk → activity z-scores
+```
+Note: min_cells filtering is deferred to Phase 2 (correlation), keeping H5ADs reusable.
+
+### Phase 2: Standardized Correlation Computation
+
+For each dataset × aggregation level:
+```
+1. Load pseudobulk expression + activity
+2. For each target signature:
+   a. Resolve target → gene name
+   b. Extract expression and activity vectors
+   c. Remove NaN/Inf, require ≥ min_samples
+   d. Require non-zero variance in both vectors
+   e. Compute Spearman rho + p-value
+   f. Record N, mean, std for both vectors
+3. Apply BH-FDR correction per dataset × signature group
+4. Save correlation table
+```
+
+### Phase 3: Reporting
+
+For each dataset, report:
+- N (samples used), not just "number of significant correlations"
+- Independence status (fully independent vs partially correlated samples)
+- Aggregation level used
+- Filtering applied (cells excluded, groups dropped)
+
+---
+
+## 5. Action Items
+
+### Immediate (before reprocessing)
+
+- [ ] **Inflammation Atlas:** Investigate sampleID naming convention to determine if donors can be identified. Check original publication or metadata files for donor–sample mapping.
+- [ ] **scAtlas Normal:** Decide on primary aggregation level (donor-only vs donor×organ)
+- [ ] **scAtlas Cancer:** Decide on tissue-type filtering (tumor-only vs all)
+- [ ] **GTEx:** Decide on stratification (pooled vs per-tissue)
+- [ ] **TCGA:** Decide on sample filtering (all vs tumor-only)
+
+### Reprocessing
+
+- [ ] Standardize cell exclusion criteria across all single-cell datasets (Section 3.2)
+- [ ] Keep two-stage threshold design: no min_cells at generation, min_cells=10 at validation (Section 3.3, 3.8)
+- [ ] Keep context-appropriate min_samples: 10 for single-cell, 30 for bulk stratified (Section 3.4, 3.8)
+- [ ] Regenerate TCGA data with negative clipping (Section 3.6; pipeline updated)
+- [ ] Generate TCGA Level 2 (primary-only) and Level 3 (per-cancer from primary) — `15b_tcga_primary_filter.py`
+- [ ] Recompute correlations for updated datasets
+- [ ] Rebuild figures and tables from new correlations
+
+### Documentation
+
+- [ ] Record every filtering decision with rationale
+- [ ] Report sample independence status for each dataset
+- [ ] Create a provenance chain: raw H5AD → filtered cells → pseudobulk → activity → correlation → figure
+
+---
+
+## 6. Impact on Existing Report
+
+If reprocessing changes the numbers, these sections of the baseline report need updating:
+
+| Report section | What changes |
+|----------------|-------------|
+| 1.2 Processing Scale | Cell counts, donor/sample counts |
+| 2.1 Datasets and Scale | scAtlas: 781 donors → 1,034 donors (317 normal + 717 cancer) |
+| 4.1 Summary statistics | All median rho values |
+| 4.2 Per-atlas boxplots | All correlation distributions |
+| 4.3 Cross-atlas consistency | Consistency profiles may shift |
+| 4.5 Aggregation levels | Results depend on cleaning choices |
+| 5.x Method comparison | All 10-way comparison numbers |
+| Figures 2-15 | Most figures need regeneration |
+
+**Known discrepancy:** The report states scAtlas has "781 donors" — actual data shows 317 (normal) + 717 (cancer) = 1,034 donors. This needs investigation: either the data has changed since the report was generated, or the 781 figure used a different counting method.
