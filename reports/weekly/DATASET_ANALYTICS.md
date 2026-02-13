@@ -425,7 +425,7 @@ Of 3,570 total tissue × subCluster combinations (any cells), viable combination
 | 2. donor_organ | donor × tissue | ~706 | Global | Partial (115 multi-tissue) | Supplementary | TCGA primary_only |
 | 3. by_organ_subCluster | per-organ per-subCluster | Breast/Lung only | Within-organ | Fully independent | Exploratory | CIMA per-celltype |
 
-**Level 0 (donor_only):** Sum all cells per donor → 317 profiles. Fully independent but mixes tissue biology. Donors with different tissue coverage are not comparable. Supplementary with explicit caveat.
+**Level 0 (donor_only):** Sum all cells per donor → 317 profiles. Fully independent but mixes tissue biology. Donors with different tissue coverage are not comparable. Supplementary with explicit caveat. Pipeline support added: `('donor_only', [])` in `12_cross_sample_correlation.py` scatlas_normal config (matches CIMA pattern). Expected output: pseudobulk 317 × 21,812, activity H5ADs for all 3 signatures.
 
 **Level 1 (by_organ) — PRIMARY:** For each tissue with ≥20 donors (12 tissues, Tier A + B), aggregate all cells per donor within that tissue, run within-organ mean-centered ridge regression, correlate across donors. This is the direct analogue of GTEx by_tissue. Each donor contributes at most one point per tissue → fully independent within each tissue correlation. Report Tier A (≥30 donors, 7 tissues) as high-confidence and Tier B (20–29 donors, 5 tissues) as adequate-confidence separately.
 
@@ -1002,6 +1002,7 @@ For each dataset, report:
 - [x] **scAtlas Normal:** Level 3 (by_organ_subCluster) scoped — exploratory only; Breast/Lung at min_samples=20, Spleen/Liver at min_samples=10
 - [x] **scAtlas Normal:** GTEx cross-platform tissue mapping — 11 of 12 tissues have direct GTEx matches (Thymus excluded)
 - [ ] **scAtlas Normal:** Add per-tissue stratified correlation to `12_`/`13_` (reuse existing `donor_organ` pseudobulk, mirror GTEx by_tissue pattern in `15_bulk_validation.py`)
+- [ ] **scAtlas Normal:** Generate donor_only level — `python scripts/12_cross_sample_correlation.py --atlas scatlas_normal` (config added: `('donor_only', [])` matching CIMA pattern; expect 317 × 21,812 pseudobulk + 3 activity H5ADs)
 - [x] **GTEx:** Decided on stratification — per-tissue (by_tissue) as primary, pooled (donor_only) as supplementary with non-independence caveat
 - [x] **TCGA:** Decided on sample filtering — primary tumor (01) + blood cancer (03); implemented in `15b_tcga_primary_filter.py`
 
