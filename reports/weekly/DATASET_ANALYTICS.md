@@ -430,9 +430,9 @@ Of 3,570 total tissue × subCluster combinations (any cells), viable combination
 
 | Level | Unit | N | Mean-centering | Independence | Status | Analogy |
 |-------|------|---|----------------|--------------|--------|---------|
-| 0. donor_only | donor | 317 | Global | Fully independent | Supplementary | GTEx pooled |
-| 1. by_organ (PRIMARY) | per-organ donors | 20–124 per organ | Within-organ | Fully independent within organ | **Primary** | **GTEx by_tissue** |
-| 2. donor_organ | donor × tissue | ~706 | Global | Partial (115 multi-tissue) | Supplementary | TCGA primary_only |
+| 0. donor_only | donor | 317 | Global | **Fully independent** | **Global independent** | GTEx donor_only (but independent here) |
+| 1. by_organ (PRIMARY) | per-organ donors | 20–124 per organ | Within-organ | **Fully independent** within organ | **Primary** | **GTEx by_tissue** |
+| 2. donor_organ | donor × tissue | ~706 | Global | Partial (115 multi-tissue) | Supplementary | GTEx donor_only (non-independent) |
 | 3. by_organ_subCluster | per-organ per-subCluster | Breast/Lung only | Within-organ | Fully independent | Exploratory | CIMA per-celltype |
 
 **Level 0 (donor_only):** Sum all cells per donor → 317 profiles. Fully independent but mixes tissue biology. Donors with different tissue coverage are not comparable. Supplementary with explicit caveat. Pipeline support: `donor_col='donorID'` in `12_cross_sample_correlation.py` config (sampleID is per donor×organ at 706; donorID aggregates to 317 true donors). Generated output: pseudobulk 317 × 21,812 (n_cells range 48–145,977, mean 7,236), activity H5ADs for cytosig (43), lincytosig (178), secact (1,170).
@@ -448,7 +448,20 @@ Of 3,570 total tissue × subCluster combinations (any cells), viable combination
 - min_samples=20 for Level 3 primary (Breast/Lung), min_samples=10 for Level 3 exploratory (Spleen/Liver)
 - No min_cells filter needed at donor × tissue level (all 706 groups have ≥30 cells)
 
-**Pipeline implementation:** `12_cross_sample_correlation.py` generates `donor_organ` pseudobulk with within-tissue mean-centered ridge regression. Level 0 (donor_only) now generated via `donor_col='donorID'` config (required because `sampleID` is per donor×organ, not per donor). Level 1 (by_organ) requires only adding per-tissue stratified correlation to `12_`/`13_` — no new pseudobulk regeneration needed. This mirrors the pattern in `15_bulk_validation.py` (GTEx by_tissue).
+**Pipeline implementation:** `12_cross_sample_correlation.py` generates `donor_organ` pseudobulk with within-tissue mean-centered ridge regression. Level 0 (donor_only) now generated via `donor_col='donorID'` config (required because `sampleID` is per donor×organ, not per donor). Level 1 (by_organ) is the per-tissue stratification from `donor_organ` level — `13_` detects `tissue` column and computes per-tissue Spearman automatically.
+
+#### Correlation Results (recomputed 2026-02-13)
+
+`scatlas_normal_correlations.csv` (381,097 rows):
+
+| Level | CytoSig median ρ | LinCytoSig median ρ | SecAct median ρ | N targets (CytoSig/LinCytoSig/SecAct) | Independence |
+|-------|------------------|--------------------|-----------------|------------------------------------|--------------|
+| **donor_only (317 donors)** | **0.173** | **0.124** | **0.455** | 43 / 156 / 1,140 | **Yes** |
+| donor_organ "all" (706) | 0.120 | 0.083 | 0.247 | 43 / 156 / 1,140 | No (115 multi-organ) |
+| donor_organ_celltype1 | 0.040 | 0.030 | 0.108 | 43 / 156 / 1,140 | — |
+| donor_organ_celltype2 | 0.020 | 0.034 | 0.072 | 43 / 156 / 1,140 | — |
+
+**Pattern:** Decreasing rho with finer stratification (consistent with GTEx, TCGA, scAtlas Cancer). donor_only achieves strong SecAct ρ=0.455 (comparable to CIMA 0.484). The per-organ correlations (Level 1 by_organ) are the per-tissue rows within the donor_organ level — fully independent within each tissue.
 
 #### 2.3.6 Cross-Platform Tissue Comparison
 
@@ -881,8 +894,9 @@ All 30 tissues have ≥29 samples. At min_samples=30, Fallopian Tube is excluded
 
 | Approach | N | Median rho (CytoSig) | Median rho (SecAct) | Independence | Notes |
 |----------|---|---------------------|--------------------|--------------|----|
-| donor_only (pooled) | 19,788 | 0.211 | 0.394 | **No** | Cross-tissue variation inflates rho |
-| by_tissue "all" | 19,759 | 0.105 | 0.192 | **No** | Within-tissue centered, same donors across tissues |
+| **by_tissue per-tissue (PRIMARY)** | 47–3,234 per tissue (29 tissues) | **0.170** | **0.277** | **Yes** | Within-tissue, one donor per tissue. Median-of-medians across tissues. |
+| by_tissue "all" | 19,759 | 0.105 | 0.192 | No | Global across tissue-centered values, same donors across tissues |
+| donor_only (pooled) | 19,788 | 0.211 | 0.394 | No | Cross-tissue variation inflates rho |
 
 **Why donor_only rho is inflated:** Tissue differences dominate. Liver samples have high albumin expression AND high albumin activity; brain samples have low both. This cross-tissue variation creates strong correlations that don't reflect within-tissue donor variation.
 
@@ -1032,14 +1046,14 @@ All 33 named cancer types have ≥30 samples in donor_only (all sample types). A
 
 The core question for every dataset:
 
-| Dataset | Independent unit | N | Fully independent? |
-|---------|-----------------|---|-------------------|
-| CIMA | donor | 421 | Yes |
-| Inflammation Main | sampleID | 817 | Unknown (need to verify donor identity) |
-| scAtlas Normal | donor × organ | 706 | No (115 donors share across organs) |
-| scAtlas Cancer | donorID (tumor tissue) | 601 | Yes (after tumor-only filter + donorID aggregation) |
-| GTEx | tissue biopsy | 19,788 | No (946 donors × multiple tissues) |
-| TCGA | tumor biopsy | ~10,000 | Mostly yes (after removing matched normals) |
+| Dataset | Primary Level | Independent unit | N | Fully independent? |
+|---------|--------------|-----------------|---|-------------------|
+| GTEx | by_tissue | donor (within tissue) | 77–1,431 per tissue (30 tissues) | **Yes** — one biopsy per donor per tissue |
+| TCGA | primary_by_cancer | donor (within cancer type) | varies per cancer (33 types) | **Yes** — primary tumors only, 1 per donor per cancer |
+| CIMA | donor_only | donor | 421 | **Yes** — 1:1 donor:sample |
+| Inflammation Main | donor_only | sampleID | 817 | Unknown (no donorID column) |
+| scAtlas Normal | donor_only | donor | 317 | **Yes** — pooled across organs per donor |
+| scAtlas Cancer | tumor_by_cancer | donor (within cancer type, tumor) | varies per cancer (11 types) | **Yes** — tumor-only filter + donorID aggregation |
 
 ### 3.2 Cell Exclusion (Single-Cell Datasets)
 
@@ -1241,6 +1255,7 @@ For each dataset, report:
 - [x] **scAtlas Normal:** GTEx cross-platform tissue mapping — 11 of 12 tissues have direct GTEx matches (Thymus excluded)
 - [x] **scAtlas Normal:** Per-tissue stratified correlation — already implemented via `donor_organ` pseudobulk. `13_cross_sample_correlation_analysis.py` detects `tissue` column and computes per-tissue Spearman automatically. Results in `scatlas_normal_correlations.csv` (7 Tier A + 5 Tier B tissues)
 - [x] **scAtlas Normal:** Generate donor_only level — used `donor_col='donorID'` (not CIMA pattern since sampleID ≠ donor). Generated: pseudobulk 317 × 21,812, cytosig 317 × 43, lincytosig 317 × 178, secact 317 × 1,170
+- [x] **scAtlas Normal:** Compute donor_only correlations — added `donor_only` to 13_ ATLAS_CONFIGS. Results: 317 independent donors, CytoSig median ρ=0.173, SecAct median ρ=0.455. Full independence achieved.
 - [x] **scAtlas Cancer:** Full section 2.4 analysis complete — annotation audit, multi-level strategy (4 levels), 8 design decisions resolved, TCGA cross-platform mapping (7–9 cancer types)
 - [x] **scAtlas Cancer:** Add `donor_col='donorID'` to scatlas_cancer config in `12_cross_sample_correlation.py`
 - [x] **scAtlas Cancer:** Add tissue filter support (tissue='Tumor') to `12_cross_sample_correlation.py` — per-level `tissue_filter` config

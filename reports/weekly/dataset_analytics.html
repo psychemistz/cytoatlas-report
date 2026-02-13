@@ -120,12 +120,12 @@
   <ol>
     <li><a href="#goal">Goal</a></li>
     <li><a href="#inventory">Dataset Inventory</a></li>
+    <li><a href="#gtex">GTEx (Bulk RNA-seq)</a></li>
+    <li><a href="#tcga">TCGA (Bulk RNA-seq)</a></li>
     <li><a href="#cima">CIMA (Cell Atlas)</a></li>
     <li><a href="#inflammation">Inflammation Atlas</a></li>
     <li><a href="#scatlas-normal">scAtlas Normal</a></li>
     <li><a href="#scatlas-cancer">scAtlas Cancer</a></li>
-    <li><a href="#gtex">GTEx (Bulk RNA-seq)</a></li>
-    <li><a href="#tcga">TCGA (Bulk RNA-seq)</a></li>
     <li><a href="#cross-cutting">Cross-Cutting Decisions</a></li>
     <li><a href="#correlation-summary">Correlation Summary</a></li>
   </ol>
@@ -184,6 +184,24 @@
   </thead>
   <tbody>
     <tr>
+      <td><strong>GTEx</strong></td>
+      <td>Bulk RNA-seq</td>
+      <td>&mdash;</td>
+      <td>946</td>
+      <td>19,788</td>
+      <td>sample (tissue biopsy)</td>
+      <td>Multi-tissue per donor (1&ndash;39 samples/donor); NOT pseudobulk</td>
+    </tr>
+    <tr>
+      <td><strong>TCGA</strong></td>
+      <td>Bulk RNA-seq</td>
+      <td>&mdash;</td>
+      <td>10,274</td>
+      <td>11,069</td>
+      <td>sample (tumor biopsy)</td>
+      <td>Mostly 1:1 donor:sample; some donors have normal+tumor pairs</td>
+    </tr>
+    <tr>
       <td><strong>CIMA</strong></td>
       <td>scRNA-seq</td>
       <td>6,484,974</td>
@@ -237,33 +255,167 @@
       <td>donorID (tumor-only)</td>
       <td>197 donors (27.5%) have &gt;1 sample; tumor-only filter &rarr; 601 donors</td>
     </tr>
-    <tr>
-      <td><strong>GTEx</strong></td>
-      <td>Bulk RNA-seq</td>
-      <td>&mdash;</td>
-      <td>946</td>
-      <td>19,788</td>
-      <td>sample (tissue biopsy)</td>
-      <td>Multi-tissue per donor (1&ndash;39 samples/donor); NOT pseudobulk</td>
-    </tr>
-    <tr>
-      <td><strong>TCGA</strong></td>
-      <td>Bulk RNA-seq</td>
-      <td>&mdash;</td>
-      <td>10,274</td>
-      <td>11,069</td>
-      <td>sample (tumor biopsy)</td>
-      <td>Mostly 1:1 donor:sample; some donors have normal+tumor pairs</td>
-    </tr>
   </tbody>
 </table>
 
 <hr>
 
-<!-- ========== 2.1 CIMA ========== -->
-<h2 id="cima">2.1 CIMA (Cell Atlas)</h2>
+<!-- ========== 2.1 GTEx ========== -->
+<h2 id="gtex">2.1 GTEx (Bulk RNA-seq)</h2>
 
-<p><strong>Source:</strong> Q. Zhang et al., <em>Nature</em>, 2024 &nbsp;|&nbsp; <strong>File:</strong> <code>CIMA_RNA_6484974cells_36326genes_compressed.h5ad</code></p>
+<p><strong>Source:</strong> <a href="https://gtexportal.org/home/downloads/adult-gtex/bulk_tissue_expression">GTEx Portal</a>, v11 &nbsp;|&nbsp; <strong>File:</strong> <code>GTEx_Analysis_2025-08-22_v11_RNASeQCv2.4.3_gene_tpm.parquet</code> (4.1 GB)</p>
+
+<div class="stats-row">
+  <div class="stat-card"><span class="number">19,788</span><div class="label">Samples</div></div>
+  <div class="stat-card"><span class="number">946</span><div class="label">Donors</div></div>
+  <div class="stat-card"><span class="number">72,930</span><div class="label">Genes (mapped)</div></div>
+  <div class="stat-card"><span class="number">30</span><div class="label">Tissues (SMTS)</div></div>
+</div>
+
+<h3>Basic Metadata</h3>
+<table class="compact-table">
+  <thead><tr><th>Property</th><th>Value</th></tr></thead>
+  <tbody>
+    <tr><td>Samples</td><td>19,788</td></tr>
+    <tr><td>Donors</td><td>946</td></tr>
+    <tr><td>Genes (raw)</td><td>74,628 ENSG IDs (all GENCODE features: protein-coding + lncRNA + pseudogenes + small RNA)</td></tr>
+    <tr><td>Genes (mapped)</td><td>72,930 unique HGNC symbols (after dedup; ~20K protein-coding, rest non-coding/pseudo)</td></tr>
+    <tr><td>Tissues (SMTS)</td><td>30</td></tr>
+    <tr><td>Tissue subtypes (SMTSD)</td><td>68</td></tr>
+    <tr><td>Data type</td><td>TPM (Transcripts Per Million)</td></tr>
+    <tr><td>Transform</td><td>log2(TPM + 1)</td></tr>
+  </tbody>
+</table>
+
+<div class="callout amber">
+  <p><strong>This is true bulk RNA-seq, NOT pseudobulk.</strong> No cell-type information available.</p>
+</div>
+
+<h3>Multi-Level Correlation Strategy</h3>
+<table>
+  <thead><tr><th>Level</th><th>Unit</th><th>N</th><th>Independence</th><th>Status</th><th>Analogy</th></tr></thead>
+  <tbody>
+    <tr><td>donor_only (pooled)</td><td>all samples</td><td>19,788</td><td><span class="lose">No</span> &mdash; every donor contributes ~20 samples</td><td>Supplementary</td><td>&mdash;</td></tr>
+    <tr><td><strong>by_tissue (PRIMARY)</strong></td><td>per-tissue donors</td><td>47&ndash;3,234 per tissue</td><td><span class="win">Yes</span> &mdash; at most one sample per donor per tissue</td><td><span class="badge green">Primary</span></td><td>&mdash;</td></tr>
+  </tbody>
+</table>
+
+<h3>Correlation Results (regenerated 2026-02-13)</h3>
+<table>
+  <thead><tr><th>Approach</th><th>N</th><th>CytoSig median &rho;</th><th>SecAct median &rho;</th><th>Independence</th></tr></thead>
+  <tbody>
+    <tr><td>donor_only (pooled)</td><td>19,788</td><td>0.211</td><td>0.394</td><td><span class="lose">No</span></td></tr>
+    <tr><td>by_tissue "all"</td><td>19,759</td><td>0.105</td><td>0.192</td><td><span class="lose">No</span></td></tr>
+  </tbody>
+</table>
+
+<h3>Gene Coverage per Signature</h3>
+<table class="compact-table">
+  <thead><tr><th>Signature</th><th>Common Genes</th><th>Total Sig Genes</th><th>Coverage</th></tr></thead>
+  <tbody>
+    <tr><td>CytoSig</td><td>4,859</td><td>4,881</td><td>99.5%</td></tr>
+    <tr><td>LinCytoSig</td><td>18,639</td><td>19,918</td><td>93.6%</td></tr>
+    <tr><td>SecAct</td><td>7,451</td><td>7,919</td><td>94.1%</td></tr>
+  </tbody>
+</table>
+
+<div class="callout">
+  <p><strong>Gene ID Mapping (3-tier cascade):</strong> Source IDs are versioned ENSG (e.g., <code>ENSG00000223972.6</code>). Probemap lookup with full versioned ID (25,687 mapped), then base ENSG with version stripped (26,841), then Description column fallback (22,100). <strong>0 unmapped</strong> &mdash; 100% mapping rate.</p>
+</div>
+
+<div class="callout green">
+  <p><strong>Key Decisions</strong></p>
+  <ul>
+    <li><strong>by_tissue (per-tissue) as PRIMARY</strong> &mdash; biologically meaningful and statistically valid; donors independent within tissue</li>
+    <li>Pooled (donor_only) as supplementary with explicit caveat: cross-tissue variation inflates rho (liver high albumin + brain low albumin drives correlation)</li>
+    <li>No preprocessing needed (TPM is always &ge; 0); applies <code>log2(TPM + 1)</code> directly</li>
+    <li>29 tissues pass min_samples=30 (Fallopian Tube excluded with only 29 samples)</li>
+  </ul>
+</div>
+
+<hr>
+
+<!-- ========== 2.2 TCGA ========== -->
+<h2 id="tcga">2.2 TCGA (Bulk RNA-seq)</h2>
+
+<p><strong>Source:</strong> <a href="https://gdc.cancer.gov/about-data/publications/pancanatlas">GDC PanCancer Atlas</a> &nbsp;|&nbsp; <strong>File:</strong> <code>EBPlusPlusAdjustPANCAN_IlluminaHiSeq_RNASeqV2.geneExp.tsv</code></p>
+
+<div class="stats-row">
+  <div class="stat-card"><span class="number">11,069</span><div class="label">Total Samples</div></div>
+  <div class="stat-card"><span class="number">10,274</span><div class="label">Unique Donors</div></div>
+  <div class="stat-card"><span class="number">20,501</span><div class="label">Genes</div></div>
+  <div class="stat-card"><span class="number">34</span><div class="label">Cancer Types</div></div>
+</div>
+
+<h3>Basic Metadata</h3>
+<table class="compact-table">
+  <thead><tr><th>Property</th><th>Value</th></tr></thead>
+  <tbody>
+    <tr><td>Total samples</td><td>11,069</td></tr>
+    <tr><td>Unique donors</td><td>10,274</td></tr>
+    <tr><td>Genes</td><td>20,501 (after symbol|entrezID parsing, dedup by averaging)</td></tr>
+    <tr><td>Cancer types</td><td>34 (33 named + 1 "Unknown")</td></tr>
+    <tr><td>Data type</td><td>EBPlusPlus batch-adjusted RSEM normalized counts</td></tr>
+    <tr><td>Transform</td><td>clip(0) &rarr; log2(RSEM + 1)</td></tr>
+  </tbody>
+</table>
+
+<div class="callout amber">
+  <p><strong>True bulk RNA-seq, NOT pseudobulk.</strong> No cell-type information. 0.55% of values are negative from EBPlusPlus batch correction &mdash; clipped to 0 before log transform.</p>
+</div>
+
+<h3>Multi-Level Correlation Strategy</h3>
+<table>
+  <thead><tr><th>Level</th><th>Unit</th><th>N</th><th>Independence</th><th>Status</th><th>Analogy</th></tr></thead>
+  <tbody>
+    <tr><td>1. donor_only (all)</td><td>all samples</td><td>11,069</td><td>785 donors contribute &gt;1 sample &rarr; mild non-independence</td><td>Supplementary</td><td>&mdash;</td></tr>
+    <tr><td>2. primary_only</td><td>primary tumor + blood cancer</td><td>9,879 from 9,875 donors</td><td>~1:1, nearly perfectly independent</td><td>Supplementary</td><td>&mdash;</td></tr>
+    <tr><td><strong>3. primary_by_cancer (PRIMARY)</strong></td><td>per-cancer primary donors</td><td>36&ndash;1,092 per type</td><td>Independent within cancer type</td><td><span class="badge green">Primary</span></td><td>&mdash;</td></tr>
+  </tbody>
+</table>
+
+<h3>Correlation Results (post-clipping, 2026-02-13)</h3>
+<table>
+  <thead><tr><th>Level</th><th>CytoSig median &rho;</th><th>LinCytoSig median &rho;</th><th>SecAct median &rho;</th><th>N Targets (CytoSig / LinCytoSig / SecAct)</th></tr></thead>
+  <tbody>
+    <tr><td>donor_only</td><td>0.238</td><td>0.206</td><td>0.415</td><td>41 / 152 / 1,085</td></tr>
+    <tr><td>by_cancer</td><td>0.178</td><td>0.152</td><td>0.289</td><td>41 / 152 / 1,085</td></tr>
+    <tr><td>primary_only</td><td>0.225</td><td>0.203</td><td>0.406</td><td>41 / 152 / 1,085</td></tr>
+    <tr><td><strong>primary_by_cancer</strong></td><td><strong>0.147</strong></td><td><strong>0.151</strong></td><td><strong>0.279</strong></td><td>41 / 152 / 1,085</td></tr>
+  </tbody>
+</table>
+
+<h3>Sample Type Breakdown</h3>
+<table class="compact-table">
+  <thead><tr><th>Code</th><th>Type</th><th>Count</th><th>Notes</th></tr></thead>
+  <tbody>
+    <tr><td>01</td><td>Primary Tumor</td><td>9,706</td><td>Main analysis target</td></tr>
+    <tr><td>11</td><td>Solid Tissue Normal</td><td>737</td><td>Matched normals &mdash; same donor as tumor</td></tr>
+    <tr><td>06</td><td>Metastatic</td><td>395</td><td>Different biology from primary</td></tr>
+    <tr><td>03</td><td>Primary Blood Cancer</td><td>173</td><td>AML &mdash; no solid tissue</td></tr>
+    <tr><td>02</td><td>Recurrent Tumor</td><td>46</td><td>Same donor as primary</td></tr>
+    <tr><td>05</td><td>Additional Primary</td><td>11</td><td>Rare</td></tr>
+    <tr><td>07</td><td>Additional Metastatic</td><td>1</td><td>Rare</td></tr>
+  </tbody>
+</table>
+
+<div class="callout green">
+  <p><strong>Key Decisions</strong></p>
+  <ul>
+    <li><strong>primary_by_cancer as PRIMARY</strong> &mdash; filters to primary tumor (01) + blood cancer (03), then stratifies by cancer type</li>
+    <li>All 33 named cancer types have &ge;30 primary-only samples (smallest: Cholangiocarcinoma with 36)</li>
+    <li>Gene IDs use <code>symbol|entrezID</code> format &mdash; split on <code>|</code>, take symbol; no probemap needed</li>
+    <li>Negative values (0.55% from EBPlusPlus batch correction) clipped to 0 before <code>log2(RSEM + 1)</code></li>
+    <li>712 donors with BOTH tumor and normal &rarr; not independent unless filtered to primary-only</li>
+  </ul>
+</div>
+
+<hr>
+
+<!-- ========== 2.3 CIMA ========== -->
+<h2 id="cima">2.3 CIMA (Cell Atlas)</h2>
+
+<p><strong>Source:</strong> J. Yin et al., <em>Science</em>, 2026 &nbsp;|&nbsp; <strong>File:</strong> <code>CIMA_RNA_6484974cells_36326genes_compressed.h5ad</code></p>
 
 <div class="stats-row">
   <div class="stat-card"><span class="number">6.5M</span><div class="label">Cells</div></div>
@@ -327,10 +479,10 @@
 
 <hr>
 
-<!-- ========== 2.2 INFLAMMATION ========== -->
-<h2 id="inflammation">2.2 Inflammation Atlas</h2>
+<!-- ========== 2.4 INFLAMMATION ========== -->
+<h2 id="inflammation">2.4 Inflammation Atlas</h2>
 
-<p><strong>Source:</strong> Inflammatory Atlas consortium &nbsp;|&nbsp; <strong>Combined:</strong> 6,340,934 cells, 1,047 samples</p>
+<p><strong>Source:</strong> Jimenez-Gracia et al., <em>Nature Medicine</em>, 2026 &nbsp;|&nbsp; <strong>Combined:</strong> 6,340,934 cells, 1,047 samples</p>
 
 <div class="stats-row">
   <div class="stat-card"><span class="number">6.3M</span><div class="label">Total Cells</div></div>
@@ -397,8 +549,8 @@
 
 <hr>
 
-<!-- ========== 2.3 scATLAS NORMAL ========== -->
-<h2 id="scatlas-normal">2.3 scAtlas Normal</h2>
+<!-- ========== 2.5 scATLAS NORMAL ========== -->
+<h2 id="scatlas-normal">2.5 scAtlas Normal</h2>
 
 <p><strong>Source:</strong> Q. Shi et al., <em>Nature</em>, 2025 &nbsp;|&nbsp; <strong>File:</strong> <code>igt_s9_fine_counts.h5ad</code></p>
 
@@ -480,8 +632,8 @@
 
 <hr>
 
-<!-- ========== 2.4 scATLAS CANCER ========== -->
-<h2 id="scatlas-cancer">2.4 scAtlas Cancer</h2>
+<!-- ========== 2.6 scATLAS CANCER ========== -->
+<h2 id="scatlas-cancer">2.6 scAtlas Cancer</h2>
 
 <p><strong>Source:</strong> Q. Shi et al., <em>Nature</em>, 2025 &nbsp;|&nbsp; <strong>File:</strong> <code>PanCancer_igt_s9_fine_counts.h5ad</code></p>
 
@@ -567,172 +719,20 @@
 
 <hr>
 
-<!-- ========== 2.5 GTEx ========== -->
-<h2 id="gtex">2.5 GTEx (Bulk RNA-seq)</h2>
-
-<p><strong>Source:</strong> GTEx Consortium, v11 &nbsp;|&nbsp; <strong>File:</strong> <code>GTEx_Analysis_2025-08-22_v11_RNASeQCv2.4.3_gene_tpm.parquet</code> (4.1 GB)</p>
-
-<div class="stats-row">
-  <div class="stat-card"><span class="number">19,788</span><div class="label">Samples</div></div>
-  <div class="stat-card"><span class="number">946</span><div class="label">Donors</div></div>
-  <div class="stat-card"><span class="number">72,930</span><div class="label">Genes (mapped)</div></div>
-  <div class="stat-card"><span class="number">30</span><div class="label">Tissues (SMTS)</div></div>
-</div>
-
-<h3>Basic Metadata</h3>
-<table class="compact-table">
-  <thead><tr><th>Property</th><th>Value</th></tr></thead>
-  <tbody>
-    <tr><td>Samples</td><td>19,788</td></tr>
-    <tr><td>Donors</td><td>946</td></tr>
-    <tr><td>Genes (raw)</td><td>74,628 ENSG IDs (all GENCODE features: protein-coding + lncRNA + pseudogenes + small RNA)</td></tr>
-    <tr><td>Genes (mapped)</td><td>72,930 unique HGNC symbols (after dedup; ~20K protein-coding, rest non-coding/pseudo)</td></tr>
-    <tr><td>Tissues (SMTS)</td><td>30</td></tr>
-    <tr><td>Tissue subtypes (SMTSD)</td><td>68</td></tr>
-    <tr><td>Data type</td><td>TPM (Transcripts Per Million)</td></tr>
-    <tr><td>Transform</td><td>log2(TPM + 1)</td></tr>
-  </tbody>
-</table>
-
-<div class="callout amber">
-  <p><strong>This is true bulk RNA-seq, NOT pseudobulk.</strong> No cell-type information available.</p>
-</div>
-
-<h3>Multi-Level Correlation Strategy</h3>
-<table>
-  <thead><tr><th>Level</th><th>Unit</th><th>N</th><th>Independence</th><th>Status</th><th>Analogy</th></tr></thead>
-  <tbody>
-    <tr><td>donor_only (pooled)</td><td>all samples</td><td>19,788</td><td><span class="lose">No</span> &mdash; every donor contributes ~20 samples</td><td>Supplementary</td><td>&mdash;</td></tr>
-    <tr><td><strong>by_tissue (PRIMARY)</strong></td><td>per-tissue donors</td><td>47&ndash;3,234 per tissue</td><td><span class="win">Yes</span> &mdash; at most one sample per donor per tissue</td><td><span class="badge green">Primary</span></td><td>&mdash;</td></tr>
-  </tbody>
-</table>
-
-<h3>Correlation Results (regenerated 2026-02-13)</h3>
-<table>
-  <thead><tr><th>Approach</th><th>N</th><th>CytoSig median &rho;</th><th>SecAct median &rho;</th><th>Independence</th></tr></thead>
-  <tbody>
-    <tr><td>donor_only (pooled)</td><td>19,788</td><td>0.211</td><td>0.394</td><td><span class="lose">No</span></td></tr>
-    <tr><td>by_tissue "all"</td><td>19,759</td><td>0.105</td><td>0.192</td><td><span class="lose">No</span></td></tr>
-  </tbody>
-</table>
-
-<h3>Gene Coverage per Signature</h3>
-<table class="compact-table">
-  <thead><tr><th>Signature</th><th>Common Genes</th><th>Total Sig Genes</th><th>Coverage</th></tr></thead>
-  <tbody>
-    <tr><td>CytoSig</td><td>4,859</td><td>4,881</td><td>99.5%</td></tr>
-    <tr><td>LinCytoSig</td><td>18,639</td><td>19,918</td><td>93.6%</td></tr>
-    <tr><td>SecAct</td><td>7,451</td><td>7,919</td><td>94.1%</td></tr>
-  </tbody>
-</table>
-
-<div class="callout">
-  <p><strong>Gene ID Mapping (3-tier cascade):</strong> Source IDs are versioned ENSG (e.g., <code>ENSG00000223972.6</code>). Probemap lookup with full versioned ID (25,687 mapped), then base ENSG with version stripped (26,841), then Description column fallback (22,100). <strong>0 unmapped</strong> &mdash; 100% mapping rate.</p>
-</div>
-
-<div class="callout green">
-  <p><strong>Key Decisions</strong></p>
-  <ul>
-    <li><strong>by_tissue (per-tissue) as PRIMARY</strong> &mdash; biologically meaningful and statistically valid; donors independent within tissue</li>
-    <li>Pooled (donor_only) as supplementary with explicit caveat: cross-tissue variation inflates rho (liver high albumin + brain low albumin drives correlation)</li>
-    <li>No preprocessing needed (TPM is always &ge; 0); applies <code>log2(TPM + 1)</code> directly</li>
-    <li>29 tissues pass min_samples=30 (Fallopian Tube excluded with only 29 samples)</li>
-  </ul>
-</div>
-
-<hr>
-
-<!-- ========== 2.6 TCGA ========== -->
-<h2 id="tcga">2.6 TCGA (Bulk RNA-seq)</h2>
-
-<p><strong>Source:</strong> TCGA PanCancer &nbsp;|&nbsp; <strong>File:</strong> <code>EBPlusPlusAdjustPANCAN_IlluminaHiSeq_RNASeqV2.geneExp.tsv</code></p>
-
-<div class="stats-row">
-  <div class="stat-card"><span class="number">11,069</span><div class="label">Total Samples</div></div>
-  <div class="stat-card"><span class="number">10,274</span><div class="label">Unique Donors</div></div>
-  <div class="stat-card"><span class="number">20,501</span><div class="label">Genes</div></div>
-  <div class="stat-card"><span class="number">34</span><div class="label">Cancer Types</div></div>
-</div>
-
-<h3>Basic Metadata</h3>
-<table class="compact-table">
-  <thead><tr><th>Property</th><th>Value</th></tr></thead>
-  <tbody>
-    <tr><td>Total samples</td><td>11,069</td></tr>
-    <tr><td>Unique donors</td><td>10,274</td></tr>
-    <tr><td>Genes</td><td>20,501 (after symbol|entrezID parsing, dedup by averaging)</td></tr>
-    <tr><td>Cancer types</td><td>34 (33 named + 1 "Unknown")</td></tr>
-    <tr><td>Data type</td><td>EBPlusPlus batch-adjusted RSEM normalized counts</td></tr>
-    <tr><td>Transform</td><td>clip(0) &rarr; log2(RSEM + 1)</td></tr>
-  </tbody>
-</table>
-
-<div class="callout amber">
-  <p><strong>True bulk RNA-seq, NOT pseudobulk.</strong> No cell-type information. 0.55% of values are negative from EBPlusPlus batch correction &mdash; clipped to 0 before log transform.</p>
-</div>
-
-<h3>Multi-Level Correlation Strategy</h3>
-<table>
-  <thead><tr><th>Level</th><th>Unit</th><th>N</th><th>Independence</th><th>Status</th><th>Analogy</th></tr></thead>
-  <tbody>
-    <tr><td>1. donor_only (all)</td><td>all samples</td><td>11,069</td><td>785 donors contribute &gt;1 sample &rarr; mild non-independence</td><td>Supplementary</td><td>&mdash;</td></tr>
-    <tr><td>2. primary_only</td><td>primary tumor + blood cancer</td><td>9,879 from 9,875 donors</td><td>~1:1, nearly perfectly independent</td><td>Supplementary</td><td>&mdash;</td></tr>
-    <tr><td><strong>3. primary_by_cancer (PRIMARY)</strong></td><td>per-cancer primary donors</td><td>36&ndash;1,092 per type</td><td>Independent within cancer type</td><td><span class="badge green">Primary</span></td><td>&mdash;</td></tr>
-  </tbody>
-</table>
-
-<h3>Correlation Results (post-clipping, 2026-02-13)</h3>
-<table>
-  <thead><tr><th>Level</th><th>CytoSig median &rho;</th><th>LinCytoSig median &rho;</th><th>SecAct median &rho;</th><th>N Targets (CytoSig / LinCytoSig / SecAct)</th></tr></thead>
-  <tbody>
-    <tr><td>donor_only</td><td>0.238</td><td>0.206</td><td>0.415</td><td>41 / 152 / 1,085</td></tr>
-    <tr><td>by_cancer</td><td>0.178</td><td>0.152</td><td>0.289</td><td>41 / 152 / 1,085</td></tr>
-    <tr><td>primary_only</td><td>0.225</td><td>0.203</td><td>0.406</td><td>41 / 152 / 1,085</td></tr>
-    <tr><td><strong>primary_by_cancer</strong></td><td><strong>0.147</strong></td><td><strong>0.151</strong></td><td><strong>0.279</strong></td><td>41 / 152 / 1,085</td></tr>
-  </tbody>
-</table>
-
-<h3>Sample Type Breakdown</h3>
-<table class="compact-table">
-  <thead><tr><th>Code</th><th>Type</th><th>Count</th><th>Notes</th></tr></thead>
-  <tbody>
-    <tr><td>01</td><td>Primary Tumor</td><td>9,706</td><td>Main analysis target</td></tr>
-    <tr><td>11</td><td>Solid Tissue Normal</td><td>737</td><td>Matched normals &mdash; same donor as tumor</td></tr>
-    <tr><td>06</td><td>Metastatic</td><td>395</td><td>Different biology from primary</td></tr>
-    <tr><td>03</td><td>Primary Blood Cancer</td><td>173</td><td>AML &mdash; no solid tissue</td></tr>
-    <tr><td>02</td><td>Recurrent Tumor</td><td>46</td><td>Same donor as primary</td></tr>
-    <tr><td>05</td><td>Additional Primary</td><td>11</td><td>Rare</td></tr>
-    <tr><td>07</td><td>Additional Metastatic</td><td>1</td><td>Rare</td></tr>
-  </tbody>
-</table>
-
-<div class="callout green">
-  <p><strong>Key Decisions</strong></p>
-  <ul>
-    <li><strong>primary_by_cancer as PRIMARY</strong> &mdash; filters to primary tumor (01) + blood cancer (03), then stratifies by cancer type</li>
-    <li>All 33 named cancer types have &ge;30 primary-only samples (smallest: Cholangiocarcinoma with 36)</li>
-    <li>Gene IDs use <code>symbol|entrezID</code> format &mdash; split on <code>|</code>, take symbol; no probemap needed</li>
-    <li>Negative values (0.55% from EBPlusPlus batch correction) clipped to 0 before <code>log2(RSEM + 1)</code></li>
-    <li>712 donors with BOTH tumor and normal &rarr; not independent unless filtered to primary-only</li>
-  </ul>
-</div>
-
-<hr>
-
 <!-- ========== CROSS-CUTTING DECISIONS ========== -->
 <h2 id="cross-cutting">3. Cross-Cutting Decisions</h2>
 
 <h3>3.1 Independent Sample Unit</h3>
 
 <table>
-  <thead><tr><th>Dataset</th><th>Independent Unit</th><th>N</th><th>Fully Independent?</th></tr></thead>
+  <thead><tr><th>Dataset</th><th>Primary Level</th><th>Independent Unit</th><th>N</th><th>Fully Independent?</th></tr></thead>
   <tbody>
-    <tr><td>CIMA</td><td>donor</td><td>421</td><td><span class="win">Yes</span></td></tr>
-    <tr><td>Inflammation Main</td><td>sampleID</td><td>817</td><td>Unknown (need to verify donor identity)</td></tr>
-    <tr><td>scAtlas Normal</td><td>donor &times; organ</td><td>706</td><td><span class="lose">No</span> (115 donors share across organs)</td></tr>
-    <tr><td>scAtlas Cancer</td><td>donorID (tumor tissue)</td><td>601</td><td><span class="win">Yes</span> (after tumor-only filter + donorID aggregation)</td></tr>
-    <tr><td>GTEx</td><td>tissue biopsy</td><td>19,788</td><td><span class="lose">No</span> (946 donors &times; multiple tissues)</td></tr>
-    <tr><td>TCGA</td><td>tumor biopsy</td><td>~10,000</td><td>Mostly yes (after removing matched normals)</td></tr>
+    <tr><td>GTEx</td><td>by_tissue</td><td>donor (within tissue)</td><td>47&ndash;3,234 per tissue (29 tissues)</td><td><span class="win">Yes</span> &mdash; one biopsy per donor per tissue</td></tr>
+    <tr><td>TCGA</td><td>primary_by_cancer</td><td>donor (within cancer type)</td><td>varies per cancer (33 types)</td><td><span class="win">Yes</span> &mdash; primary tumors only, 1 per donor per cancer</td></tr>
+    <tr><td>CIMA</td><td>donor_only</td><td>donor</td><td>421</td><td><span class="win">Yes</span> &mdash; 1:1 donor:sample</td></tr>
+    <tr><td>Inflammation Main</td><td>donor_only</td><td>sampleID</td><td>817</td><td>Unknown (no donorID column)</td></tr>
+    <tr><td>scAtlas Normal</td><td>donor_only</td><td>donor</td><td>317</td><td><span class="win">Yes</span> &mdash; pooled across organs per donor</td></tr>
+    <tr><td>scAtlas Cancer</td><td>tumor_by_cancer</td><td>donor (within cancer type, tumor)</td><td>varies per cancer (11 types)</td><td><span class="win">Yes</span> &mdash; tumor-only filter + donorID aggregation</td></tr>
   </tbody>
 </table>
 
@@ -842,20 +842,44 @@
   </thead>
   <tbody>
     <tr>
-      <td><strong>Inflammation Main</strong></td>
-      <td>donor_only</td>
-      <td><strong>0.323</strong></td>
-      <td>0.178</td>
-      <td>0.173</td>
-      <td>33 / 123 / 805</td>
+      <td><strong>GTEx</strong></td>
+      <td>by_tissue per-tissue</td>
+      <td>0.170</td>
+      <td>0.125</td>
+      <td><strong>0.277</strong></td>
+      <td>43 / 156 / 1,132</td>
     </tr>
     <tr>
       <td><strong>TCGA</strong></td>
       <td>primary_by_cancer</td>
       <td>0.147</td>
-      <td><strong>0.151</strong></td>
+      <td>0.151</td>
       <td>0.279</td>
       <td>41 / 152 / 1,085</td>
+    </tr>
+    <tr>
+      <td><strong>CIMA</strong></td>
+      <td>donor_only</td>
+      <td>0.114</td>
+      <td>0.131</td>
+      <td>0.191</td>
+      <td>43 / 156 / 1,161</td>
+    </tr>
+    <tr>
+      <td><strong>Inflammation Main</strong></td>
+      <td>donor_only</td>
+      <td><strong>0.323</strong></td>
+      <td><strong>0.178</strong></td>
+      <td>0.173</td>
+      <td>33 / 123 / 805</td>
+    </tr>
+    <tr>
+      <td><strong>scAtlas Normal</strong></td>
+      <td>donor_only</td>
+      <td>0.173</td>
+      <td>0.124</td>
+      <td>0.455</td>
+      <td>43 / 156 / 1,140</td>
     </tr>
     <tr>
       <td><strong>scAtlas Cancer</strong></td>
@@ -865,25 +889,17 @@
       <td>0.246</td>
       <td>43 / 156 / 1,140</td>
     </tr>
-    <tr>
-      <td><strong>GTEx</strong></td>
-      <td>by_tissue "all"</td>
-      <td>0.105</td>
-      <td>&mdash;</td>
-      <td>0.192</td>
-      <td>41 / &mdash; / 1,085</td>
-    </tr>
   </tbody>
 </table>
 
 <div class="callout">
   <p><strong>Cross-platform comparison (CytoSig median &rho; at per-type/per-tissue level):</strong></p>
   <ul>
+    <li>GTEx by_tissue per-tissue: 0.170 (median-of-medians across 29 tissues)</li>
     <li>scAtlas Cancer tumor_by_cancer: 0.163</li>
     <li>TCGA primary_by_cancer: 0.147</li>
-    <li>GTEx by_tissue: 0.105</li>
   </ul>
-  <p>scAtlas Cancer per-cancer correlations are consistent with TCGA per-cancer (single-cell pseudobulk vs bulk RNA-seq on the same biological question). The decrease from pooled to stratified levels is expected and consistent across all datasets as cross-group variation is progressively removed.</p>
+  <p>All three stratified levels show consistent CytoSig median &rho; (0.15&ndash;0.17), demonstrating that within-group correlations are reproducible across technologies (pseudobulk scRNA-seq vs bulk RNA-seq) and biological contexts (normal tissues vs cancer types).</p>
 </div>
 
 <div class="callout amber">
