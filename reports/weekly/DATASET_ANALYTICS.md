@@ -1153,6 +1153,40 @@ After gene ID mapping, multiple source IDs can map to the same HGNC symbol. Both
 
 **Single-cell datasets** use HGNC symbols natively — no gene mapping or deduplication needed.
 
+### 3.5c Signature Target Overlap: CytoSig vs SecAct
+
+**How many targets are shared between the two signature matrices?**
+
+After resolving CytoSig's cytokine aliases to HGNC gene symbols (e.g., TNFA→TNF, GMCSF→CSF2, IFNL→IFNL1, IL36→IL36A), the overlap is:
+
+| | CytoSig | SecAct | Shared |
+|---|---|---|---|
+| **Signature targets** | 43 | 1,170 | **32** (74.4% of CytoSig) |
+
+**32 shared targets:** BDNF, BMP2, BMP4, BMP6, CSF1, CSF2, CSF3, CXCL12, FGF2, GDF11, HGF, IFNG, IFNL1, IL10, IL15, IL1A, IL1B, IL21, IL27, IL36A, IL6, LIF, LTA, OSM, TGFB1, TGFB3, TNF, TNFSF10 (TRAIL), TNFSF12 (TWEAK), VEGFA, and 2 others from alias resolution.
+
+**11 CytoSig-only targets** (no SecAct counterpart): EGF, IFNA1 (IFN1), IL12A (IL12), IL13, IL17A, IL2, IL22, IL3, IL4, NOS1 (NO), WNT3A.
+
+**Per-dataset availability after gene-presence filtering:**
+
+| Dataset | Expression genes | CytoSig found | SecAct found | Shared found |
+|---------|-----------------|---------------|-------------|-------------|
+| GTEx | 72,930 | **43/43** (100%) | **1,133/1,170** (96.8%) | **32/32** (100%) |
+| TCGA | 20,501 | **41/43** (95.3%) | **1,085/1,170** (92.7%) | **30/32** (93.8%) |
+| CIMA | 36,326 | 43/43 | ~1,170 | 32/32 |
+| scAtlas Normal | 21,812 | 43/43 | 1,170 | 32/32 |
+| scAtlas Cancer | 21,812 | 43/43 | 1,170 | 32/32 |
+
+**TCGA-specific losses (2 targets):** IFNL1 and IL36A are absent from TCGA's 20.5k gene set. These genes are present in GTEx (72.9k genes) but not measured in the TCGA PanCancer expression matrix. This reduces the matched CytoSig-vs-SecAct comparison from 32 to 30 pairs in TCGA.
+
+**SecAct gene-presence losses:**
+- GTEx: 37 SecAct targets absent (newer HGNC symbols not in GTEx v11 GENCODE annotation)
+- TCGA: 85 SecAct targets absent (smaller gene set — 20.5k vs 72.9k)
+
+**Implication for Section 4.2 (Wilcoxon signed-rank test):** The previous report used 22 shared targets for the matched comparison. The actual overlap is **32** (30 in TCGA). The 22-target list was computed before CytoSig alias resolution was fully applied (only matching on raw cytokine names like "IFNG" that happen to be valid gene symbols, missing aliases like TNFA→TNF). The updated matched comparison should use all 32 (or 30 for TCGA) shared targets.
+
+**Source:** Activity H5AD files in `/data/parks34/projects/2cytoatlas/results/cross_sample_validation/{gtex,tcga}/` — `var_names` (targets) from CytoSig and SecAct activity files. Gene-presence checked against expression H5AD `var_names`.
+
 ### 3.6 Expression Normalization
 
 **Single-cell datasets — two pipelines with different normalization:**

@@ -151,138 +151,125 @@ This is a conservative validation — it only captures signatures where the targ
 
 ## 4. Validation Results
 
-### 4.1 Overall Performance Summary
+Validation uses a simple, conservative principle: if a method predicts high activity for a target, that target's gene expression should be high. All Spearman ρ values below use each dataset's **primary independent level** — the coarsest aggregation where every sample is statistically independent — preventing inflation from repeated measures across tissues, cancer types, or cell types. Full detail tables and supplementary levels are in the linked HTML supplements.
+
+### 4.1 Overall Performance Summary ([full details](stats_section_4.1.html))
 
 > **Figure 15** (`fig15_summary_table.png`): Complete validation statistics table.
 > **Figure 2** (`fig2_correlation_summary_boxplot.png`): Spearman ρ distributions across atlases.
 
-**Key numbers (donor-level pseudobulk, CytoSig):**
+| Dataset | Independent Level | CytoSig | LinCytoSig | SecAct |
+|---------|------------------|---------|------------|--------|
+| GTEx | by_tissue (29 tissues) | 0.170 | [TBD] | 0.277 |
+| TCGA | primary_by_cancer (33 types) | 0.147 | 0.151 | 0.279 |
+| CIMA | donor_only (421 donors) | 0.114 | 0.131 | 0.191 |
+| Inflammation Main | donor_only (817 samples) | 0.323 | 0.178 | 0.173 |
+| scAtlas Normal | donor_only (317 donors) | 0.173 | 0.124 | 0.455 |
+| scAtlas Cancer | tumor_only (601 donors) | 0.184 | 0.166 | 0.399 |
 
-| Atlas | Median ρ | % Significant (FDR q<0.05) | % Positive |
-|-------|----------|---------------------------|------------|
-| CIMA | 0.114 | 69.8% | 58.1% |
-| Inflammation Atlas | 0.215 | 79.6% | 65.7% |
-| scAtlas (Normal) | 0.145 | 18.1% | 64.3% |
-| scAtlas (Cancer) | 0.212 | 60.0% | 74.9% |
-| GTEx | 0.211 | 100.0% | 81.4% |
-| TCGA | 0.238 | 92.7% | 92.7% |
+**Column values** are median Spearman ρ between predicted activity and target gene expression. **Independent Level** = aggregation where samples are fully independent (see [analytics](../reports/weekly/dataset_analytics.html)).
 
-**Column definitions:** **Median ρ** = Spearman rank correlation between predicted activity and target gene expression across donors. **% Significant** = fraction of targets with Benjamini-Hochberg FDR-corrected q-value < 0.05 (multiple testing correction applied per atlas × signature group). **% Positive** = fraction of targets with ρ > 0 (predicted activity positively correlates with target expression).
+- **SecAct achieves the highest median ρ in 4 of 6 datasets** (GTEx, TCGA, scAtlas Normal, scAtlas Cancer), benefiting from broad secreted protein coverage and spatial-transcriptomics-derived signatures
+- **CytoSig dominates Inflammation Main** (0.323 vs 0.178/0.173) — disease-driven cytokine variance amplifies signal for canonical cytokine signatures
+- **CIMA shows the lowest correlations** (0.114 CytoSig) because healthy donors have narrow activity ranges
+- **Bulk independent levels are lower than pooled** — GTEx by_tissue (0.170) vs donor_only (0.211); TCGA primary_by_cancer (0.147) vs donor_only (0.238). The pooled values are inflated by cross-tissue/cross-cancer confounding (Section 4.5)
+- **scAtlas Normal donor_only** achieves remarkably high SecAct ρ (0.455) with full independence across 317 donors
+- Inflammation Val (144 samples) and Ext (86 samples) replicate directionally; full results in [supplement](stats_section_4.1.html)
 
-**Interpretation:** Inflammation Atlas (pooling main, validation, and external cohorts) shows the highest single-cell correlations (median ρ=0.215) because disease-associated samples have high cytokine activity variance. CIMA (healthy donors) shows lower but still significant correlations because the activity range is narrower in healthy individuals. scAtlas Cancer (0.212) outperforms scAtlas Normal (0.145), consistent with elevated cytokine signaling in the tumor microenvironment. scAtlas Normal has the lowest FDR-corrected significance rate (18.1%) because organ-level pseudobulk across 35+ diverse organs introduces high heterogeneity — yet 64.3% of targets still show positive correlation. GTEx and TCGA consistently show 92-100% significance rate.
+### 4.2 Correlation Distributions ([statistical methods](stats_section_4.2.html))
 
-### 4.2 Correlation Distributions
+> **Figure 2** (interactive): CytoSig vs SecAct Spearman ρ distributions across atlases, with Total/Matched tabs.
 
-> **Figure 2** (interactive): CytoSig vs SecAct Spearman ρ distributions across atlases, with two comparison tabs.
+**Independence-corrected approach:** Each target gets one representative ρ at the independent level. For datasets with per-stratum correlations (GTEx 29 tissues, TCGA 33 cancers), the representative ρ is the **median across strata**. For donor-only datasets (CIMA, Inflammation Main, scAtlas Normal, scAtlas Cancer), each target already has one ρ. This yields n = 43 CytoSig values and n = 1,085–1,140 SecAct values per dataset — fixing the inflated sample sizes in the prior analysis (e.g., scAtlas Normal was 1,013 = 43 × ~24 organs, not independent).
 
-**Total tab:** Compares the full Spearman ρ distributions of CytoSig (43 cytokine signatures) vs SecAct (~1,170 secreted protein signatures) per atlas. Statistical significance assessed by **Mann-Whitney U test** (two-sided) — chosen because the two target sets are **independent with unequal sample sizes** (CytoSig and SecAct measure different proteins, so there is no natural pairing). Sample sizes per atlas vary because each target × cell-type/tissue combination contributes one ρ value (e.g., bulk atlases yield ~43 vs ~1,130; scAtlas Normal yields 1,013 vs 27,154 across 25+ tissues; Inflammation merges 3 sub-cohorts yielding 108 vs 2,728). SecAct achieves a significantly higher median ρ in 5 of 6 atlases (CIMA: p = 0.032, GTEx: p = 2.1 × 10⁻³, TCGA: p = 3.9 × 10⁻⁶, scAtlas Cancer: p = 1.1 × 10⁻¹⁰, scAtlas Normal: p = 7.4 × 10⁻³²). The sole exception is the Inflammation Atlas (U = 151,018, p = 0.657, not significant), which is the only atlas where CytoSig's median ρ (0.215) exceeds SecAct's (0.148) — a composition effect driven by SecAct's inclusion of many tissue-specific targets with minimal expression variation in blood/PBMC samples.
+**Total comparison (Mann-Whitney U):** Compares all CytoSig targets vs all SecAct targets.
 
-**Matched tab:** Restricts to the 22 targets shared between both methods, with each target's ρ averaged across cell types to yield one paired value. Statistical significance assessed by **Wilcoxon signed-rank test** (two-sided) — chosen because this is a **paired design** where each target serves as its own control (one ρ from CytoSig and one from SecAct for the same cytokine). SecAct's median ρ is consistently higher across all 6 atlases, reaching significance in 4 (GTEx: p = 5.3 × 10⁻³, TCGA: p = 8.1 × 10⁻⁵, scAtlas Normal: p = 1.2 × 10⁻⁴, scAtlas Cancer: p = 1.7 × 10⁻³). CIMA is borderline (W = 67, p = 0.054) and the Inflammation Atlas is not significant (W = 86, p = 0.198).
+**Matched comparison (Wilcoxon signed-rank):** Restricts to 32 shared targets (30 for TCGA due to missing IFNL1/IL36A). After full alias resolution (TNFA→TNF, GMCSF→CSF2, etc.), the CytoSig–SecAct overlap is 32 targets — 10 more than the previous 22-target list which only matched raw cytokine names.
 
-### 4.3 Best and Worst Correlated Targets
+| Dataset | Mann-Whitney U p | Wilcoxon p | N pairs | Direction |
+|---------|-----------------|-----------|---------|-----------|
+| GTEx | [TBD] | [TBD] | 32 | SecAct > CytoSig |
+| TCGA | [TBD] | [TBD] | 30 | SecAct > CytoSig |
+| CIMA | [TBD] | [TBD] | 32 | SecAct > CytoSig |
+| Inflammation Main | [TBD] | [TBD] | 32 | CytoSig > SecAct |
+| scAtlas Normal | [TBD] | [TBD] | 32 | SecAct > CytoSig |
+| scAtlas Cancer | [TBD] | [TBD] | 32 | SecAct > CytoSig |
+
+SecAct's advantage derives from broad secreted protein coverage (1,170 targets vs 43). The Inflammation Main exception reflects disease-driven cytokine variance that preferentially boosts CytoSig's canonical targets. Per-tissue (GTEx) and per-cancer (TCGA) stratified tests with BH-FDR correction are in the [supplement](stats_section_4.2.html).
+
+### 4.3 Best and Worst Correlated Targets ([per-atlas details](stats_section_4.3.html))
 
 > **Figure 3** (`fig3_good_bad_correlations_cytosig.png`): Top 15 and bottom 15 targets per atlas.
 
-**Consistently well-correlated targets (ρ > 0.3 across multiple atlases):**
-- **IL1B** (ρ = 0.67 in CIMA, 0.68 in Inflammation) — canonical inflammatory cytokine
-- **TNFA** (ρ = 0.63 in CIMA, 0.60 in Inflammation) — master inflammatory regulator
-- **VEGFA** (ρ = 0.79 in Inflammation, 0.92 in scAtlas) — angiogenesis factor
-- **TGFB1/2/3** (ρ = 0.35-0.55 across atlases) — TGF-beta family
-- **IL27** (ρ = 0.43 in CIMA, 0.54 in Inflammation) — immunomodulatory
-- **IL1A** (ρ = 0.38 in CIMA, 0.70 in Inflammation) — alarmin
-- **BMP2/4** (ρ = 0.26-0.92 depending on atlas) — bone morphogenetic proteins
-- **CXCL12** (ρ = 0.92 in scAtlas) — chemokine
-- **Activin A** (ρ = 0.98 in scAtlas) — TGF-beta superfamily
+**Consistently well-correlated targets:** IL1B (ρ 0.3–0.7 across atlases), TNFA (0.3–0.6), VEGFA (0.5–0.9), and the TGFB family (0.3–0.6) — canonical cytokines with strong, well-characterized transcriptional programs that produce clear expression-activity concordance.
 
-**Consistently poorly correlated targets (ρ < 0 in multiple atlases):**
-- **CD40L** (ρ = -0.48 in CIMA, -0.56 in Inflammation) — membrane-bound, not secreted
-- **TRAIL** (ρ = -0.46 in CIMA, -0.55 in Inflammation) — apoptosis inducer
-- **LTA** (ρ = -0.33 in CIMA) — lymphotoxin alpha
-- **HGF** (ρ = -0.25 in CIMA, -0.33 in Inflammation) — hepatocyte growth factor
+**Consistently poorly correlated targets:** CD40L (ρ ≈ −0.5), TRAIL (−0.5), LTA (−0.3), HGF (−0.3) — membrane-bound ligands or post-transcriptionally regulated proteins. The negative correlations are **explainable failures**: ridge regression on transcriptomics cannot capture post-translational regulation, and membrane-bound ligands (CD40L/CD154) signal through cell contact rather than secretion. This validates the method's interpretability — failures have biological explanations.
 
-**Biological insight:** The poorly correlated targets share a pattern — they are either membrane-bound (CD40L/CD154), intracellular-signaling (TRAIL apoptosis), or their gene expression is regulated at the post-transcriptional level (HGF). This makes biological sense: ridge regression on transcriptomics cannot capture post-transcriptional regulation.
+**SecAct novel discoveries:** Activin A (ρ up to 0.98 in scAtlas), CXCL12 (0.92), and BMP family members — secreted proteins with strong validated activity-expression correlations that would be missed by CytoSig's 43-cytokine panel. Full per-atlas top-15/bottom-15 lists in [supplement](stats_section_4.3.html).
 
 ### 4.4 Cross-Atlas Consistency
 
-> **Figure 6** (`fig6_cross_atlas_consistency.png`): Key targets tracked across 6 atlases.
+> **Figure 6** (`fig6_cross_atlas_consistency.png`): Key targets tracked across 6 atlases at independent levels.
 
-**Finding:** Most cytokines show **consistent positive correlations** across all 6 atlases, with some notable patterns:
-- IL1B and TNFA are consistently strong across all cohorts
-- TGFB1 shows variable behavior — positive in some atlases, negative in scAtlas
-- IL4, IL17A show atlas-dependent patterns (related to disease-specific biology)
-- GTEx and TCGA (bulk) generally show higher absolute ρ than single-cell atlases
+Most cytokines show **consistent positive correlations** across all 6 atlases:
+- **IL1B, TNFA** — consistently strong across all cohorts (universal inflammatory markers)
+- **TGFB1** — variable: positive in most atlases, negative in scAtlas (context-dependent biology in the tumor/organ microenvironment)
+- **IL4, IL17A** — atlas-dependent patterns reflecting disease-specific biology (Th2/Th17 prevalence varies by cohort)
+- **Bulk datasets** (GTEx, TCGA) generally show higher absolute ρ than single-cell atlases at comparable aggregation
 
-### 4.5 Effect of Aggregation Level
+The distinction between **universal targets** (IL1B, TNFA, VEGFA — consistent across contexts) and **context-dependent targets** (IL4, IL17A, TGFB1 — driven by specific cell populations or disease states) provides biological insight into which cytokine axes are fundamental vs. specialized.
 
-> **Figure 7** (`fig7_validation_levels.png`): Aggregation level comparison across all 4 single-cell atlases.
+### 4.5 Effect of Aggregation Level ([statistical methods](stats_section_4.5.html))
 
-Each atlas uses a different base aggregation reflecting its experimental design:
-- **CIMA and Inflammation Atlas**: Donor-level pseudobulk, then stratified by cell-type annotation (L1 → L2 → L3 → L4 for CIMA; L1 → L2 for Inflammation)
-- **scAtlas** (Normal/Cancer): Donor × organ pseudobulk, then stratified by cell-type annotation (Celltype1, Celltype2)
-- **GTEx/TCGA**: Donor-only (bulk RNA-seq, no cell-type information)
+> **Figure 7** (`fig7_validation_levels.png`): Aggregation level comparison across all 6 datasets.
 
-**Aggregation-level statistics (CytoSig, median Spearman ρ):**
+**Unified aggregation table (CytoSig, median Spearman ρ):**
 
-| Atlas | Base Level | Median ρ | + L1/Celltype1 | + L2/Celltype2 | + L3 | + L4 |
-|-------|-----------|----------|----------------|----------------|------|------|
-| **CIMA** | Donor | 0.114 | 0.062 | 0.017 | 0.011 | 0.005 |
-| **Inflammation Atlas** | Donor | 0.215 | 0.066 | 0.044 | — | — |
-| **scAtlas Normal** | Donor × Organ | 0.145 | 0.086 | 0.071 | — | — |
-| **scAtlas Cancer** | Donor × Organ | 0.212 | 0.046 | 0.086 | — | — |
+| Dataset | Pooled | Independent | Finest |
+|---------|--------|-------------|--------|
+| GTEx | donor_only: 0.211 | by_tissue: 0.170 | — |
+| TCGA | donor_only: 0.238 | primary_by_cancer: 0.147 | — |
+| CIMA | donor_only: 0.114 | donor_only: 0.114 | donor × L4: 0.005 |
+| Inflammation Main | donor_only: 0.323 | donor_only: 0.323 | donor × L2: 0.037 |
+| scAtlas Normal | donor_organ: 0.120 | donor_only: 0.173 | donor_organ × CT2: 0.020 |
+| scAtlas Cancer | donor_only: 0.218 | tumor_only: 0.184 | tumor × CT1: 0.031 |
 
-**Finding:** Finer cell-type annotation consistently **increases** the number of data points but **decreases** per-target correlation. This pattern holds across all 4 single-cell atlases:
-1. Base-level aggregation (donor or donor × organ) yields the highest median correlations because averaging across cells produces a smoother signal
-2. Cell-type stratification isolates specific biology but introduces more variance, widening the range of correlations
-3. The drop is steepest in CIMA (0.114 → 0.005 from donor to L4), reflecting the narrow activity range in healthy donors
-4. Inflammation Atlas retains the highest absolute correlations at all levels (0.215 donor → 0.044 at L2) due to disease-driven variance
+**Key insights:**
+- **GTEx/TCGA pooled ρ is 24–62% higher than the independent level** — this inflation from cross-tissue/cancer confounding validates the independence-first approach. GTEx donor_only (0.211) conflates tissue-level differences (Liver has high albumin expression AND high albumin activity); by_tissue (0.170) isolates within-tissue donor variation
+- **Single-cell datasets show steep drops** from donor to cell-type levels — CIMA: 0.114 → 0.005 (donor to L4), reflecting noise amplification as pseudobulk groups shrink
+- **CIMA and Inflammation Main** have no confounding at donor level (one compartment per donor), so pooled = independent
+- **scAtlas Normal donor_only** (0.173) exceeds donor_organ (0.120) because pooling all organs per donor creates a more complete transcriptional profile with less noise, despite the donor_organ level having more data points
 
-### 4.6 Comprehensive Validation Across All Datasets
+Per-tissue GTEx breakdowns, per-cancer TCGA breakdowns, and per-level Mann-Whitney/Wilcoxon tests for all 3 methods are in the [supplement](stats_section_4.5.html).
+
+### 4.6 Comprehensive Validation
 
 > **Figure 12** (`fig12_bulk_validation.png`): Bulk RNA-seq validation results.
 > **Figure 15** (`fig15_summary_table.png`): Complete validation statistics table.
 
-The following table summarizes donor-level expression-activity Spearman correlations for all three signature matrices across all 6 datasets:
+Full 3-method comparison at each dataset's independent level:
 
-**CytoSig (43 cytokines):**
+| Dataset (Independent Level) | Method | N Targets | Median ρ | % Sig | % Pos |
+|-----------------------------|--------|-----------|----------|-------|-------|
+| GTEx (by_tissue) | CytoSig | 43 | 0.170 | [TBD] | [TBD] |
+| | SecAct | 1,132 | 0.277 | [TBD] | [TBD] |
+| TCGA (primary_by_cancer) | CytoSig | 41 | 0.147 | [TBD] | [TBD] |
+| | LinCytoSig | 152 | 0.151 | [TBD] | [TBD] |
+| | SecAct | 1,085 | 0.279 | [TBD] | [TBD] |
+| CIMA (donor_only) | CytoSig | 43 | 0.114 | 72.1% | 58.1% |
+| | LinCytoSig | 156 | 0.131 | [TBD] | [TBD] |
+| | SecAct | 1,161 | 0.191 | 76.3% | 76.1% |
+| Inflam Main (donor_only) | CytoSig | 33 | 0.323 | [TBD] | [TBD] |
+| | LinCytoSig | 123 | 0.178 | [TBD] | [TBD] |
+| | SecAct | 805 | 0.173 | [TBD] | [TBD] |
+| scAtlas Normal (donor_only) | CytoSig | 43 | 0.173 | [TBD] | [TBD] |
+| | LinCytoSig | 156 | 0.124 | [TBD] | [TBD] |
+| | SecAct | 1,140 | 0.455 | [TBD] | [TBD] |
+| scAtlas Cancer (tumor_only) | CytoSig | 43 | 0.184 | [TBD] | [TBD] |
+| | LinCytoSig | 156 | 0.166 | [TBD] | [TBD] |
+| | SecAct | 1,140 | 0.399 | [TBD] | [TBD] |
 
-| Dataset | N Targets | Median ρ | Mean ρ | % Significant | % Positive |
-|---------|-----------|----------|--------|---------------|------------|
-| CIMA | 43 | 0.114 | 0.097 | 72.1% | 58.1% |
-| Inflammation Atlas | 42 | 0.215 | 0.161 | 80.6% | 65.7% |
-| scAtlas (Normal) | 1,013 | 0.145 | 0.127 | 29.9% | 64.3% |
-| scAtlas (Cancer) | 295 | 0.212 | 0.219 | 62.0% | 74.9% |
-| GTEx | 43 | 0.211 | 0.248 | 100.0% | 81.4% |
-| TCGA | 41 | 0.238 | 0.249 | 92.7% | 92.7% |
-
-**LinCytoSig (178 cell-type-specific signatures):**
-
-| Dataset | N Targets | Median ρ | Mean ρ | % Significant | % Positive |
-|---------|-----------|----------|--------|---------------|------------|
-| CIMA | 156 | 0.131 | 0.156 | 71.8% | 69.2% |
-| Inflammation Atlas | 155 | 0.158 | 0.156 | 71.8% | 67.3% |
-| scAtlas (Normal) | 3,781 | 0.115 | 0.104 | 30.1% | 61.7% |
-| scAtlas (Cancer) | 1,079 | 0.137 | 0.159 | 52.1% | 63.9% |
-| GTEx | 156 | 0.159 | 0.147 | 98.7% | 66.0% |
-| TCGA | 152 | 0.205 | 0.201 | 98.0% | 74.3% |
-
-**SecAct (1,170 secreted proteins):**
-
-| Dataset | N Targets | Median ρ | Mean ρ | % Significant | % Positive |
-|---------|-----------|----------|--------|---------------|------------|
-| CIMA | 1,161 | 0.191 | 0.193 | 76.3% | 76.1% |
-| Inflammation Atlas | 1,118 | 0.148 | 0.164 | 65.0% | 68.5% |
-| scAtlas (Normal) | 27,154 | 0.307 | 0.275 | 40.9% | 75.6% |
-| scAtlas (Cancer) | 7,809 | 0.363 | 0.336 | 71.2% | 85.6% |
-| GTEx | 1,132 | 0.395 | 0.379 | 98.1% | 89.8% |
-| TCGA | 1,085 | 0.415 | 0.399 | 98.8% | 97.1% |
-
-**Cross-dataset observations:**
-
-- **Inflammation Atlas** (pooling main, validation, and external cohorts) achieves a CytoSig median ρ of 0.215 among single-cell atlases, driven by cytokine activity variance across disease states
-- **scAtlas Cancer** outperforms scAtlas Normal for both CytoSig (0.212 vs 0.145) and SecAct (0.363 vs 0.307), consistent with elevated cytokine signaling in the tumor microenvironment
-- **CIMA** shows the lowest CytoSig median ρ (0.114) because healthy donors have a narrow activity range, but LinCytoSig (0.131) and SecAct (0.191) partially recover signal
-- **Bulk RNA-seq** (GTEx/TCGA) consistently achieves 92-100% significance rates across all three methods, confirming that CytoSig, LinCytoSig, and SecAct signatures generalize beyond single-cell to bulk transcriptomics
-- **SecAct** achieves the highest median ρ in scAtlas Normal (0.307), scAtlas Cancer (0.363), GTEx (0.395), and TCGA (0.415), benefiting from its broad secreted protein coverage and spatial-transcriptomics-derived signatures
+**Summary ranking:** SecAct > CytoSig > LinCytoSig in 4 of 6 datasets (GTEx, TCGA, scAtlas Normal, scAtlas Cancer). CytoSig leads Inflammation Main (0.323 vs 0.173 SecAct) where disease-driven cytokine variance amplifies canonical signatures. LinCytoSig's cell-type-specific signatures show modest improvement over CytoSig in TCGA (0.151 vs 0.147) but generally underperform at donor-level aggregation where global signatures have more power (see Section 5 for cell-type-specific analysis).
 
 ---
 
