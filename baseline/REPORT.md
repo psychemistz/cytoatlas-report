@@ -54,19 +54,19 @@ The system is divided into independent bounded contexts:
 
 ### 1.2 Processing Scale
 
-| Dataset | Type | Cells/Samples | Independent units | Key consideration |
-|---------|------|---------------|-------------------|-------------------|
-| CIMA | scRNA-seq | 6.5M cells, 421 donors | 421 donors (1:1) | Clean — one sample per donor |
-| Inflammation Atlas | scRNA-seq | 6.3M cells, 1,047 samples | 817 / 144 / 86 samples | No donorID; Doublets/LowQuality excluded |
-| scAtlas Normal | scRNA-seq | 2.3M cells, 317 donors | 317 donors (by_organ: 12 tissues) | Multi-tissue donors; per-organ stratification |
-| scAtlas Cancer | scRNA-seq | 4.1M cells, 717 donors | 601 tumor-only donors (by_cancer: 11 types) | Tumor-only filter; per-cancer stratification |
-| GTEx | Bulk RNA-seq | 19,788 samples, 946 donors | Per-tissue (29 tissues) | Multi-tissue per donor; per-tissue stratification |
-| TCGA | Bulk RNA-seq | 11,069 samples, 10,274 donors | 9,879 primary-only (33 cancer types) | Primary tumor filter; per-cancer stratification |
-| parse_10M | scRNA-seq | 9.7M cells, 1,092 conditions | 12 donors × 91 cytokines | Ground truth perturbation |
+| Dataset | Cells/Samples | Processing Time | Hardware |
+|---------|---------------|-----------------|----------|
+| CIMA | 6.5M cells | ~2h | A100 80GB |
+| Inflammation Atlas | 6.3M cells | ~2h | A100 80GB |
+| scAtlas Normal | 2.3M cells | ~1h | A100 80GB |
+| scAtlas Cancer | 4.1M cells | ~1h | A100 80GB |
+| GTEx | 19,788 bulk samples | ~10min | A100 80GB |
+| TCGA | 11,069 bulk samples | ~10min | A100 80GB |
+| parse_10M | 9.7M cells | ~3h | A100 80GB |
 
-**Total: ~29 million single cells + ~31K bulk RNA-seq samples across 6 atlases, processed through ridge regression against 3 signature matrices.**
+**Total: ~29M single cells + ~31K bulk RNA-seq samples, processed through ridge regression against 3 signature matrices (CytoSig, LinCytoSig, SecAct).**
 
-**Dataset considerations:** Each dataset requires specific cleaning decisions (cell exclusion, donor independence, tissue/cancer-type stratification, gene ID mapping, expression normalization). These are documented in detail in [`reports/weekly/DATASET_ANALYTICS.md`](../reports/weekly/DATASET_ANALYTICS.md) — including per-dataset multi-level correlation strategies, threshold rationale, and cross-platform validation mappings.
+**Processing Time** = wall-clock time for full activity inference on a single NVIDIA A100 GPU (80 GB VRAM). See Section 2.1 for per-dataset details and cleaning considerations.
 
 > **Figure 1** (`fig1_dataset_overview.png`): Dataset scale, signature matrices, and validation layers.
 
@@ -87,6 +87,8 @@ The system is divided into independent bounded contexts:
 | 7 | **parse_10M** | scRNA-seq | 9,697,974 | 12 donors × 91 cytokines | 18 PBMC types | Cytokine perturbation |
 
 **Grand total: ~29 million single cells + ~31K bulk samples, 1,034 single-cell donors + 11,220 bulk donors, 100+ cell types**
+
+Each dataset requires specific cleaning decisions — cell exclusion, donor independence verification, tissue/cancer-type stratification, gene ID mapping, and expression normalization. These are documented in detail in [`reports/weekly/DATASET_ANALYTICS.md`](../reports/weekly/DATASET_ANALYTICS.md), including per-dataset multi-level correlation strategies, threshold rationale, and cross-platform validation mappings.
 
 ### 2.2 Disease and Condition Categories
 
