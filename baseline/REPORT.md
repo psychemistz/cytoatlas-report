@@ -54,16 +54,17 @@ The system is divided into independent bounded contexts:
 
 ### 1.2 Processing Scale
 
-| Dataset | Cells | Samples | Processing Time | GPU |
-|---------|-------|---------|-----------------|-----|
-| CIMA | 6.5M | 421 donors | ~2h | A100 |
-| Inflammation Atlas | 6.3M | 1,047 samples | ~2h | A100 |
-| scAtlas | 6.4M | 781 donors | ~2h | A100 |
-| parse_10M | 9.7M | 1,092 conditions | ~3h | A100 |
+| Dataset | Type | Cells/Samples | Independent units | Key consideration |
+|---------|------|---------------|-------------------|-------------------|
+| CIMA | scRNA-seq | 6.5M cells, 421 donors | 421 donors (1:1) | Clean — one sample per donor |
+| Inflammation Atlas | scRNA-seq | 6.3M cells, 1,047 samples | 817 / 144 / 86 samples | No donorID; Doublets/LowQuality excluded |
+| scAtlas Normal | scRNA-seq | 2.3M cells, 317 donors | 317 donors (by_organ: 12 tissues) | Multi-tissue donors; per-organ stratification |
+| scAtlas Cancer | scRNA-seq | 4.1M cells, 717 donors | 601 tumor-only donors (by_cancer: 11 types) | Tumor-only filter; per-cancer stratification |
+| GTEx | Bulk RNA-seq | 19,788 samples, 946 donors | Per-tissue (29 tissues) | Multi-tissue per donor; per-tissue stratification |
+| TCGA | Bulk RNA-seq | 11,069 samples, 10,274 donors | 9,879 primary-only (33 cancer types) | Primary tumor filter; per-cancer stratification |
+| parse_10M | scRNA-seq | 9.7M cells, 1,092 conditions | 12 donors × 91 cytokines | Ground truth perturbation |
 
-**Processing Time** = wall-clock time for full activity inference (ridge regression across all signatures) on a single NVIDIA A100 GPU (80 GB VRAM).
-
-**Total: ~29 million cells processed through ridge regression against 3 signature matrices.**
+**Total: ~29 million single cells + ~31K bulk RNA-seq samples across 6 atlases, processed through ridge regression against 3 signature matrices.**
 
 **Dataset considerations:** Each dataset requires specific cleaning decisions (cell exclusion, donor independence, tissue/cancer-type stratification, gene ID mapping, expression normalization). These are documented in detail in [`reports/weekly/DATASET_ANALYTICS.md`](../reports/weekly/DATASET_ANALYTICS.md) — including per-dataset multi-level correlation strategies, threshold rationale, and cross-platform validation mappings.
 
@@ -75,14 +76,17 @@ The system is divided into independent bounded contexts:
 
 ### 2.1 Datasets and Scale
 
-| # | Dataset | Cells | Donors/Samples | Cell Types | Source |
-|---|---------|-------|----------------|------------|--------|
-| 1 | **CIMA** | 6,484,974 | 421 donors | 27 L2 / 100+ L3 | Cell Atlas consortium |
-| 2 | **Inflammation Atlas** | 6,340,934 | 1,047 samples | 66+ | Main/Val/Ext cohorts |
-| 3 | **scAtlas** | 6,440,926 | 781 donors | 100+ | 35+ organs + 15+ cancers |
-| 4 | **parse_10M** | 9,697,974 | 12 donors × 91 cytokines | 18 PBMC types | Cytokine perturbation |
+| # | Dataset | Type | Cells/Samples | Donors | Cell Types | Source |
+|---|---------|------|---------------|--------|------------|--------|
+| 1 | **CIMA** | scRNA-seq | 6,484,974 | 421 donors | 27 L2 / 100+ L3 | Cell Atlas consortium |
+| 2 | **Inflammation Atlas** | scRNA-seq | 6,340,934 | 1,047 samples (donor unknown) | 66+ | Main/Val/Ext cohorts |
+| 3 | **scAtlas Normal** | scRNA-seq | 2,293,951 | 317 donors | 102 subCluster | 35 organs |
+| 4 | **scAtlas Cancer** | scRNA-seq | 4,146,975 | 717 donors (601 tumor-only) | 162 cellType1 | 29 cancer types |
+| 5 | **GTEx** | Bulk RNA-seq | 19,788 samples | 946 donors | — | GTEx v11 (30 tissues) |
+| 6 | **TCGA** | Bulk RNA-seq | 11,069 samples | 10,274 donors | — | PanCancer (33 cancer types) |
+| 7 | **parse_10M** | scRNA-seq | 9,697,974 | 12 donors × 91 cytokines | 18 PBMC types | Cytokine perturbation |
 
-**Grand total: ~29 million cells, ~3,300+ samples/conditions, 100+ cell types**
+**Grand total: ~29 million single cells + ~31K bulk samples, 1,034 single-cell donors + 11,220 bulk donors, 100+ cell types**
 
 ### 2.2 Disease and Condition Categories
 
