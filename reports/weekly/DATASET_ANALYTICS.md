@@ -368,10 +368,47 @@ Organ-specificity spectrum of `cellType1` (after case normalization):
 - 62 donors with 3+ tissues (19.6%, up to 27 tissues)
 - Multi-tissue donors create non-independence across per-tissue analyses (same issue as GTEx)
 
+**Threshold sweep for Level 1 (by_organ):**
+
+| min_samples | Tissues passing | Total samples | Tiers included |
+|-------------|-----------------|---------------|----------------|
+| ≥30 | 7 | 441 | A only |
+| ≥25 | 8 | 469 | A + Ovary |
+| ≥20 | 12 | 556 | A + B |
+| ≥15 | 14 | 590 | A + B + BoneMarrow, Eye |
+| ≥10 | 19 | 652 | A + B + C |
+
 **Organ × subCluster sparsity** (for Level 3 feasibility):
-- Even ubiquitous subClusters have few donors per tissue with ≥10 cells
-- Myeloid (M05_Mo_CD14 etc.): only 2–3 tissues with ≥10 donors at min_cells=10
-- Most organ × subCluster combinations too sparse for individual per-tissue correlation
+
+Of 3,570 total tissue × subCluster combinations (any cells), viable combinations with ≥N donors having ≥10 cells per donor:
+
+| Donor threshold | Viable combos |
+|-----------------|---------------|
+| ≥10 donors | 200 |
+| ≥20 donors | 74 |
+| ≥30 donors | 39 |
+
+**Per-tissue subCluster viability** (donors with ≥10 cells, min_cells=10):
+
+| Tissue (Tier A) | subClusters ≥10 donors | ≥20 donors | ≥30 donors |
+|-----------------|----------------------|------------|------------|
+| Lung | 38 | 26 | 16 |
+| Spleen | 34 | 8 | 0 |
+| Breast | 32 | 26 | 23 |
+| Liver | 21 | 7 | 0 |
+| Colon | 5 | 0 | 0 |
+| SmallIntestine | 3 | 0 | 0 |
+| Heart | 0 | 0 | 0 |
+
+| Tissue (Tier B) | subClusters ≥10 donors | ≥20 donors | ≥30 donors |
+|-----------------|----------------------|------------|------------|
+| Skin | 10 | 0 | 0 |
+| Blood | 4 | 0 | 0 |
+| Ovary | 0 | 0 | 0 |
+| Thymus | 0 | 0 | 0 |
+| Kidney | 0 | 0 | 0 |
+
+**Level 3 conclusion:** Only **Breast** (26 subClusters) and **Lung** (26) are viable at min_samples=20. At min_samples=10, Spleen (34) and Liver (21) become exploratory candidates. Heart, Colon, SmallIntestine, and all Tier B tissues lack subCluster depth entirely.
 
 #### 2.3.5 Correlation Strategy Design
 
@@ -384,26 +421,45 @@ Organ-specificity spectrum of `cellType1` (after case normalization):
 | Level | Unit | N | Mean-centering | Independence | Status | Analogy |
 |-------|------|---|----------------|--------------|--------|---------|
 | 0. donor_only | donor | 317 | Global | Fully independent | Supplementary | GTEx pooled |
-| 1. by_organ (PRIMARY) | per-organ donors | 30–124 per organ | Within-organ | Fully independent within organ | **Primary** | **GTEx by_tissue** |
+| 1. by_organ (PRIMARY) | per-organ donors | 20–124 per organ | Within-organ | Fully independent within organ | **Primary** | **GTEx by_tissue** |
 | 2. donor_organ | donor × tissue | ~706 | Global | Partial (115 multi-tissue) | Supplementary | TCGA primary_only |
-| 3. by_organ_subCluster | per-organ per-subCluster | sparse | Within-organ | Fully independent | Future/exploratory | CIMA per-celltype |
+| 3. by_organ_subCluster | per-organ per-subCluster | Breast/Lung only | Within-organ | Fully independent | Exploratory | CIMA per-celltype |
 
 **Level 0 (donor_only):** Sum all cells per donor → 317 profiles. Fully independent but mixes tissue biology. Donors with different tissue coverage are not comparable. Supplementary with explicit caveat.
 
-**Level 1 (by_organ) — PRIMARY:** For each tissue with ≥30 donors (7 tissues, Tier A), aggregate all cells per donor within that tissue, run within-organ mean-centered ridge regression, correlate across donors. This is the direct analogue of GTEx by_tissue. Each donor contributes at most one point per tissue → fully independent within each tissue correlation.
+**Level 1 (by_organ) — PRIMARY:** For each tissue with ≥20 donors (12 tissues, Tier A + B), aggregate all cells per donor within that tissue, run within-organ mean-centered ridge regression, correlate across donors. This is the direct analogue of GTEx by_tissue. Each donor contributes at most one point per tissue → fully independent within each tissue correlation. Report Tier A (≥30 donors, 7 tissues) as high-confidence and Tier B (20–29 donors, 5 tissues) as adequate-confidence separately.
 
 **Level 2 (donor_organ):** All 706 donor × tissue profiles with global mean-centering. 115 multi-tissue donors create non-independence (same issue as GTEx pooled). Useful as a sensitivity check.
 
-**Level 3 (by_organ_subCluster) — Future:** For well-sampled tissues × ubiquitous subClusters, further stratify by cell type within each organ. Too sparse for primary analysis. Demonstrates where cell-type resolution adds or loses signal.
+**Level 3 (by_organ_subCluster) — Exploratory:** Feasible only for Breast (26 subClusters at ≥20 donors) and Lung (26 subClusters). At min_samples=10, Spleen (34 subClusters) and Liver (21) become additional candidates. Heart, Colon, SmallIntestine, and all Tier B tissues lack subCluster depth. Not primary analysis, but demonstrates where cell-type resolution adds or loses signal within the best-sampled tissues.
 
 **Threshold rationale:**
-- min_samples=30 for Level 1 (matches GTEx/TCGA bulk standard)
-- min_samples=10 for Level 3 future celltype-stratified (matches CIMA/validation standard)
+- min_samples=20 for Level 1 — at N=20, Spearman has reasonable power to detect rho ≥ 0.45 (p < 0.05); gains 5 tissues (+26% samples) over strict ≥30 cutoff while avoiding the wide confidence intervals below N=20
+- min_samples=20 for Level 3 primary (Breast/Lung), min_samples=10 for Level 3 exploratory (Spleen/Liver)
 - No min_cells filter needed at donor × tissue level (all 706 groups have ≥30 cells)
+
+**Pipeline implementation:** The existing `12_cross_sample_correlation.py` already generates `donor_organ` pseudobulk with within-tissue mean-centered ridge regression. Level 1 (by_organ) requires only adding per-tissue stratified correlation to `12_`/`13_` — no new pseudobulk regeneration needed. This mirrors the pattern in `15_bulk_validation.py` (GTEx by_tissue).
 
 #### 2.3.6 Cross-Platform Tissue Comparison
 
-scAtlas Normal shares several tissues with GTEx (Lung, Breast, Colon, Heart, Liver, Spleen). Per-tissue correlations can be directly compared: same tissue, same biological question, independent data, different technology (pseudobulk scRNA-seq vs bulk RNA-seq). This is a unique validation opportunity.
+Of the 12 scAtlas tissues passing the min_samples=20 threshold, **11 have direct GTEx counterparts** (Thymus is scAtlas-only):
+
+| scAtlas Normal | GTEx (SMTS) | scAtlas donors | GTEx samples | Match |
+|----------------|-------------|----------------|--------------|-------|
+| Breast | Breast | 124 | 514 | Exact |
+| Lung | Lung | 97 | 604 | Exact |
+| Colon | Colon | 65 | 925 | Exact |
+| Heart | Heart | 52 | 913 | Exact |
+| Liver | Liver | 43 | 282 | Exact |
+| SmallIntestine | Small Intestine | 30 | 226 | Semantic |
+| Spleen | Spleen | 30 | 277 | Exact |
+| Ovary | Ovary | 28 | 193 | Exact |
+| Kidney | Kidney | 22 | 115 | Exact |
+| Blood | Blood | 21 | 1,130 | Exact |
+| Skin | Skin | 20 | 2,057 | Exact |
+| Thymus | — | 23 | — | No GTEx match |
+
+Per-tissue correlations can be directly compared: same tissue, same biological question, independent data, different technology (pseudobulk scRNA-seq vs bulk RNA-seq). This gives 11 independent tissue-level comparison points — a strong cross-platform validation opportunity.
 
 ---
 
@@ -768,6 +824,7 @@ A pseudobulk aggregate with too few cells is noisy. Two-stage approach:
 
 Spearman correlation requires sufficient N for reliable estimates:
 - **Single-cell validation** (`validation/config.py`): min_samples=**10** — appropriate for cell-type strata where some types appear in few donors
+- **scAtlas Normal by_organ** (`12_`/`13_`): min_samples=**20** — balances tissue coverage (12 tissues, +26% samples vs ≥30) against Spearman power (detects rho ≥ 0.45 at p < 0.05). Report Tier A (≥30) and Tier B (20–29) separately.
 - **Bulk stratified** (`15_bulk_validation.py`, `15b_tcga_primary_filter.py`): min_samples=**30** — appropriate for per-tissue/per-cancer groups which are larger
 - **Report N alongside every rho** so readers can assess reliability
 
@@ -795,7 +852,8 @@ Spearman correlation requires sufficient N for reliable estimates:
 | `validation/run_validation.py` | **10** | |
 | `15_bulk_validation.py` (stratified) | **30** | GTEx by-tissue, TCGA by-cancer |
 | `15b_tcga_primary_filter.py` (stratified) | **30** | TCGA primary by-cancer |
-| DATASET_ANALYTICS.md proposal | **20** (donor-level), **10** (stratified) | |
+| scAtlas Normal by_organ (`12_`/`13_`) | **20** | Per-tissue correlation (12 tissues, Tier A+B) |
+| scAtlas Normal by_organ_subCluster | **20** (Breast/Lung), **10** (Spleen/Liver) | Level 3 exploratory |
 
 **Assessment:** The two-stage design is actually correct: activity scripts (`01_`, `02_`, `03_`) generate pseudobulk with all groups (no filtering), and downstream validation scripts (`11_`, `validation/`) apply min_cells=10 at correlation time. This means the pseudobulk H5ADs are complete and reusable — filtering decisions are deferred to analysis.
 
@@ -940,6 +998,10 @@ For each dataset, report:
 - [ ] **scAtlas Cancer:** Decide on tissue-type filtering (tumor-only vs all)
 - [x] **scAtlas Normal:** Use `subCluster` (102 values) instead of `cellType1` (468 values) for cell-type-stratified analyses
 - [x] **scAtlas Normal:** Document `cellType1` annotation inconsistencies (25 case groups, 7+ plural pairs)
+- [x] **scAtlas Normal:** Threshold decided — min_samples=20 for Level 1 by_organ (12 tissues); report Tier A (≥30) and Tier B (20–29) separately
+- [x] **scAtlas Normal:** Level 3 (by_organ_subCluster) scoped — exploratory only; Breast/Lung at min_samples=20, Spleen/Liver at min_samples=10
+- [x] **scAtlas Normal:** GTEx cross-platform tissue mapping — 11 of 12 tissues have direct GTEx matches (Thymus excluded)
+- [ ] **scAtlas Normal:** Add per-tissue stratified correlation to `12_`/`13_` (reuse existing `donor_organ` pseudobulk, mirror GTEx by_tissue pattern in `15_bulk_validation.py`)
 - [x] **GTEx:** Decided on stratification — per-tissue (by_tissue) as primary, pooled (donor_only) as supplementary with non-independence caveat
 - [x] **TCGA:** Decided on sample filtering — primary tumor (01) + blood cancer (03); implemented in `15b_tcga_primary_filter.py`
 
@@ -992,7 +1054,7 @@ python scripts/16_resampled_validation.py --atlas inflammation_ext
 
 - [ ] Standardize cell exclusion criteria across all single-cell datasets (Section 3.2)
 - [ ] Keep two-stage threshold design: no min_cells at generation, min_cells=10 at validation (Section 3.3, 3.8)
-- [ ] Keep context-appropriate min_samples: 10 for single-cell, 30 for bulk stratified (Section 3.4, 3.8)
+- [ ] Keep context-appropriate min_samples: 10 for single-cell celltype strata, 20 for scAtlas by_organ, 30 for bulk stratified (Section 3.4, 3.8)
 - [ ] Regenerate TCGA data with negative clipping (Section 3.6; pipeline updated)
 - [ ] Regenerate GTEx H5ADs to add `data_format` metadata (pipeline code updated, data predates change)
 - [x] Generate TCGA Level 2 (primary-only) and Level 3 (per-cancer from primary) — `15b_tcga_primary_filter.py --force` (9,879 primary-only samples; 9,236 in 33 cancer-type strata)
