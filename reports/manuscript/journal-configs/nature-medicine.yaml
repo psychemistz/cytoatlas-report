@@ -1,0 +1,53 @@
+journal: Nature Medicine
+url: https://www.nature.com/nm/for-authors
+article_type: Analysis     # appropriate for re-analysis/computational work
+
+limits:
+  word_count: 4000          # main text
+  abstract_words: 150
+  abstract_style: single_paragraph
+  main_figures: 6
+  extended_data_items: 10
+  supplementary: unlimited
+  references: ~50
+  methods_words: 3000
+
+structure:
+  sections:
+    - name: abstract
+      required: true
+      notes: Single paragraph, max 150 words, no references.
+    - name: introduction
+      required: true
+    - name: results
+      required: true
+    - name: discussion
+      required: true
+    - name: online_methods
+      required: true
+      notes: Detailed methods with own word limit.
+    - name: data_availability
+      required: true
+    - name: code_availability
+      required: true
+    - name: acknowledgements
+      required: true
+    - name: author_contributions
+      required: true
+    - name: competing_interests
+      required: true
+
+figures:
+  format: [eps, pdf, tiff]
+  min_dpi: 300
+  max_width_cm: 18
+  notes: >
+    Extended Data figures and tables are peer-reviewed.
+    Supplementary Information is separate.
+
+special_requirements:
+  - "Analysis article type for computational/re-analysis work"
+  - "Clinical relevance should be emphasized"
+  - "Life sciences reporting checklist required"
+  - "Patient data ethics statements if applicable"
+  - "Follows Nature family formatting (bold first paragraph optional)"

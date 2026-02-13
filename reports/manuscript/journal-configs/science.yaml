@@ -1,0 +1,60 @@
+journal: Science
+url: https://www.science.org/content/page/instructions-preparing-initial-manuscript
+article_type: Research Article
+
+limits:
+  word_count: 3000          # main text (abstract through references)
+  abstract_words: 250       # structured, can include subheadings
+  main_figures: 5           # 3-5 figures typical
+  supplementary: unlimited  # Supplementary Materials
+  references: ~50
+
+structure:
+  sections:
+    - name: title
+      required: true
+      notes: Short title (max 90 characters) + optional running title.
+    - name: one_sentence_summary
+      required: true
+      notes: >
+        Single sentence capturing the main result.
+        Max 125 characters. Appears on Table of Contents.
+    - name: abstract
+      required: true
+      notes: 200-250 words, can be structured with brief subheadings.
+    - name: introduction
+      required: true
+      notes: Typically untitled; first section flows directly from abstract.
+    - name: results
+      required: true
+    - name: discussion
+      required: true
+    - name: materials_and_methods
+      required: true
+      notes: >
+        Brief in main text; detailed version in Supplementary Materials.
+    - name: references
+      required: true
+    - name: acknowledgements
+      required: true
+    - name: supplementary_materials
+      required: true
+      notes: >
+        Contains detailed methods, supplementary figures, tables, data.
+        Can be extensive.
+
+figures:
+  format: [eps, pdf, tiff, png]
+  min_dpi: 300
+  max_width_cm: 17.8
+  single_column_cm: 8.5
+  notes: >
+    Figures should be simple and self-contained.
+    3-5 main figures is the strong norm.
+
+special_requirements:
+  - "One-Sentence Summary (max 125 characters) is mandatory"
+  - "Two titles may be needed: full title + short running title"
+  - "Abstract can be structured (200-250 words)"
+  - "Very tight main text limit (3000 words)"
+  - "Detailed methods go in Supplementary Materials"

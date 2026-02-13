@@ -18,5 +18,8 @@ Thumbs.db
 # Environment
 .env
 
+# Generated HTML from build_site.py
+reports/**/*.html
+
 # Claude Code
 CLAUDE.md

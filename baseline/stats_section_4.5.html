@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Section 4.5 Statistical Methods</title>
+<style>
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 900px; margin: 2em auto; padding: 0 1em; line-height: 1.6; color: #1a1a1a; }
+h1 { border-bottom: 2px solid #2563EB; padding-bottom: 0.3em; }
+h2 { color: #2563EB; margin-top: 2em; }
+h3 { color: #059669; }
+h4 { color: #444; }
+table { border-collapse: collapse; width: 100%; margin: 1em 0; font-size: 0.9em; }
+th, td { border: 1px solid #ddd; padding: 0.5em 0.8em; text-align: left; }
+th { background: #f5f5f5; }
+tr:nth-child(even) { background: #fafafa; }
+.sig { font-weight: bold; }
+.sig-yes { color: #059669; }
+.sig-no { color: #999; }
+code { background: #f0f0f0; padding: 0.15em 0.4em; border-radius: 3px; font-size: 0.9em; }
+.back-link { margin-bottom: 2em; }
+.back-link a { color: #2563EB; }
+</style>
+</head>
+<body>
+
+<div class="back-link"><a href="index.html">&larr; Back to report</a></div>
+
+<h1>Section 4.5: Effect of Aggregation Level &mdash; Statistical Methods</h1>
+
+<h2>Overview</h2>
+<p>Section 4.5 examines how the CytoSig vs SecAct comparison changes across aggregation levels (from coarse donor-level to fine cell-type-level pseudobulk). The same two statistical tests from Section 4.2 are applied at <strong>each aggregation level within each atlas</strong>.</p>
+<p>Four atlases have multiple aggregation levels: CIMA (5 levels), Inflammation Atlas (3 levels), scAtlas Normal (3 levels), and scAtlas Cancer (3 levels). GTEx and TCGA have only donor-level data and are not included.</p>
+
+<h2>How &rho; values are generated at each level</h2>
+<p>At each aggregation level, pseudobulk gene expression profiles are computed by averaging single-cell data within each (donor &times; cell-type group). For each target gene, a Spearman rank correlation (&rho;) is computed between predicted cytokine activity and target gene expression across all pseudobulk profiles at that level.</p>
+<p>At coarser levels (e.g., donor only), each target has fewer &rho; values (one per donor grouping). At finer levels (e.g., donor &times; cell type), each target has more &rho; values (one per donor &times; cell-type combination), but each based on fewer cells.</p>
+
+<h2>Total Comparison (Mann&ndash;Whitney U Test)</h2>
+
+<h3>Rationale</h3>
+<p>Same as Section 4.2: the Mann&ndash;Whitney U test compares the full &rho; distributions of CytoSig (all ~43 targets) vs SecAct (all ~1,170 targets). The two target sets are <strong>independent with unequal sample sizes</strong>.</p>
+
+<h3>Procedure</h3>
+<ol>
+<li>For each atlas and each aggregation level, collect all Spearman &rho; values for CytoSig targets and all &rho; values for SecAct targets at that level.</li>
+<li>At finer levels, each target contributes multiple &rho; values (one per cell-type group), so the total sample size grows. For example, CIMA at Donor &times; L1 has 301 CytoSig values (43 targets &times; 7 cell types) and 8,125 SecAct values (1,161 targets &times; 7 cell types).</li>
+<li>Apply the two-sided Mann&ndash;Whitney U test (<code>scipy.stats.mannwhitneyu</code>, <code>alternative='two-sided'</code>).</li>
+</ol>
+
+<h3>Results</h3>
+
+<h4>CIMA</h4>
+<table>
+<tr><th>Level</th><th>n<sub>CytoSig</sub></th><th>n<sub>SecAct</sub></th><th>Median &rho;<sub>CS</sub></th><th>Median &rho;<sub>SA</sub></th><th>U statistic</th><th>p-value</th><th>Sig.</th></tr>
+<tr><td>Donor Only</td><td>43</td><td>1,161</td><td>0.114</td><td>0.191</td><td>29,770</td><td>3.18 &times; 10<sup>&minus;2</sup></td><td class="sig sig-yes">*</td></tr>
+<tr><td>Donor &times; L1</td><td>301</td><td>8,125</td><td>0.062</td><td>0.130</td><td>1,459,625</td><td>1.10 &times; 10<sup>&minus;8</sup></td><td class="sig sig-yes">***</td></tr>
+<tr><td>Donor &times; L2</td><td>1,156</td><td>31,346</td><td>0.017</td><td>0.073</td><td>22,225,194</td><td>2.88 &times; 10<sup>&minus;39</sup></td><td class="sig sig-yes">***</td></tr>
+<tr><td>Donor &times; L3</td><td>1,602</td><td>43,520</td><td>0.011</td><td>0.066</td><td>43,236,838</td><td>3.61 &times; 10<sup>&minus;60</sup></td><td class="sig sig-yes">***</td></tr>
+<tr><td>Donor &times; L4</td><td>2,914</td><td>78,739</td><td>0.005</td><td>0.052</td><td>140,800,639</td><td>9.91 &times; 10<sup>&minus;97</sup></td><td class="sig sig-yes">***</td></tr>
+</table>
+
+<h4>Inflammation Atlas</h4>
+<table>
+<tr><th>Level</th><th>n<sub>CytoSig</sub></th><th>n<sub>SecAct</sub></th><th>Median &rho;<sub>CS</sub></th><th>Median &rho;<sub>SA</sub></th><th>U statistic</th><th>p-value</th><th>Sig.</th></tr>
+<tr><td>Donor Only</td><td>108</td><td>2,728</td><td>0.215</td><td>0.148</td><td>143,607</td><td>6.57 &times; 10<sup>&minus;1</sup></td><td class="sig sig-no">ns</td></tr>
+<tr><td>Donor &times; L1</td><td>1,521</td><td>37,780</td><td>0.066</td><td>0.071</td><td>29,127,484</td><td>3.62 &times; 10<sup>&minus;1</sup></td><td class="sig sig-no">ns</td></tr>
+<tr><td>Donor &times; L2</td><td>4,605</td><td>114,494</td><td>0.044</td><td>0.046</td><td>266,613,874</td><td>1.91 &times; 10<sup>&minus;1</sup></td><td class="sig sig-no">ns</td></tr>
+</table>
+<p><strong>Note:</strong> The Inflammation Atlas merges three independent cohorts (main, validation, external). At each level, each target can contribute up to 3 &rho; values (one per cohort), inflating sample sizes relative to a single-cohort atlas.</p>
+
+<h4>scAtlas Normal</h4>
+<table>
+<tr><th>Level</th><th>n<sub>CytoSig</sub></th><th>n<sub>SecAct</sub></th><th>Median &rho;<sub>CS</sub></th><th>Median &rho;<sub>SA</sub></th><th>U statistic</th><th>p-value</th><th>Sig.</th></tr>
+<tr><td>Donor &times; Organ</td><td>1,013</td><td>27,154</td><td>0.145</td><td>0.307</td><td>16,738,067</td><td>7.44 &times; 10<sup>&minus;32</sup></td><td class="sig sig-yes">***</td></tr>
+<tr><td>Donor &times; Organ &times; CT1</td><td>5,875</td><td>158,840</td><td>0.086</td><td>0.178</td><td>526,368,029</td><td>1.27 &times; 10<sup>&minus;62</sup></td><td class="sig sig-yes">***</td></tr>
+<tr><td>Donor &times; Organ &times; CT2</td><td>10,261</td><td>278,567</td><td>0.071</td><td>0.139</td><td>1,569,046,554</td><td>8.61 &times; 10<sup>&minus;64</sup></td><td class="sig sig-yes">***</td></tr>
+</table>
+
+<h4>scAtlas Cancer</h4>
+<table>
+<tr><th>Level</th><th>n<sub>CytoSig</sub></th><th>n<sub>SecAct</sub></th><th>Median &rho;<sub>CS</sub></th><th>Median &rho;<sub>SA</sub></th><th>U statistic</th><th>p-value</th><th>Sig.</th></tr>
+<tr><td>Donor &times; Organ</td><td>295</td><td>7,809</td><td>0.212</td><td>0.363</td><td>1,406,192</td><td>1.13 &times; 10<sup>&minus;10</sup></td><td class="sig sig-yes">***</td></tr>
+<tr><td>Donor &times; Organ &times; CT1</td><td>4,948</td><td>133,722</td><td>0.046</td><td>0.162</td><td>403,345,629</td><td>1.36 &times; 10<sup>&minus;151</sup></td><td class="sig sig-yes">***</td></tr>
+<tr><td>Donor &times; Organ &times; CT2</td><td>3,331</td><td>90,540</td><td>0.086</td><td>0.186</td><td>172,440,006</td><td>4.23 &times; 10<sup>&minus;45</sup></td><td class="sig sig-yes">***</td></tr>
+</table>
+
+<h2>Matched Comparison (Wilcoxon Signed-Rank Test)</h2>
+
+<h3>Rationale</h3>
+<p>Same as Section 4.2: restricts to the 22 targets shared between CytoSig and SecAct. Each target serves as its own control in a <strong>paired design</strong>.</p>
+
+<h3>The 22 shared targets</h3>
+<p>BDNF, BMP2, BMP4, BMP6, CXCL12, FGF2, GDF11, HGF, IFNG, IL10, IL15, IL1A, IL1B, IL21, IL27, IL6, LIF, LTA, OSM, TGFB1, TGFB3, VEGFA</p>
+<p>These are CytoSig targets whose target name is also present as a SecAct target name (both being standard gene symbols).</p>
+
+<h3>Procedure</h3>
+<ol>
+<li>For each atlas and each aggregation level, collect the Spearman &rho; for each of the 22 shared targets in both CytoSig and SecAct.</li>
+<li>At finer levels, each target has multiple &rho; values (one per cell-type group or organ). <strong>Average each target&rsquo;s &rho; across all cell types/organs/sub-cohorts at that level</strong> to yield one paired value per target. This ensures exactly 22 paired observations regardless of aggregation level.</li>
+<li>Compute paired differences: &Delta;<sub>i</sub> = mean(&rho;<sub>SecAct,i</sub>) &minus; mean(&rho;<sub>CytoSig,i</sub>) for each target i.</li>
+<li>Apply the two-sided Wilcoxon signed-rank test (<code>scipy.stats.wilcoxon</code>) on the non-zero differences.</li>
+</ol>
+
+<h3>Why average before pairing?</h3>
+<p>At finer aggregation levels, each target produces multiple &rho; values (e.g., 7 cell types in CIMA L1, or 25 organs in scAtlas Normal). These within-target observations are <strong>not independent</strong> &mdash; they share the same underlying biological signal for that target. Averaging first collapses these correlated observations into a single representative &rho; per target, ensuring the Wilcoxon test&rsquo;s independence assumption is met. This also makes results directly comparable to Section 4.2, which uses the same averaging approach.</p>
+
+<h3>Results</h3>
+
+<h4>CIMA</h4>
+<table>
+<tr><th>Level</th><th>n<sub>pairs</sub></th><th>Median &rho;<sub>CS</sub></th><th>Median &rho;<sub>SA</sub></th><th>W statistic</th><th>p-value</th><th>Sig.</th></tr>
+<tr><td>Donor Only</td><td>22</td><td>0.193</td><td>0.326</td><td>67.0</td><td>5.42 &times; 10<sup>&minus;2</sup></td><td class="sig sig-no">ns</td></tr>
+<tr><td>Donor &times; L1</td><td>22</td><td>0.105</td><td>0.171</td><td>62.0</td><td>3.59 &times; 10<sup>&minus;2</sup></td><td class="sig sig-yes">*</td></tr>
+<tr><td>Donor &times; L2</td><td>22</td><td>0.041</td><td>0.081</td><td>71.0</td><td>7.38 &times; 10<sup>&minus;2</sup></td><td class="sig sig-no">ns</td></tr>
+<tr><td>Donor &times; L3</td><td>22</td><td>0.028</td><td>0.057</td><td>69.0</td><td>6.34 &times; 10<sup>&minus;2</sup></td><td class="sig sig-no">ns</td></tr>
+<tr><td>Donor &times; L4</td><td>22</td><td>0.005</td><td>0.021</td><td>75.0</td><td>9.84 &times; 10<sup>&minus;2</sup></td><td class="sig sig-no">ns</td></tr>
+</table>
+
+<h4>Inflammation Atlas</h4>
+<table>
+<tr><th>Level</th><th>n<sub>pairs</sub></th><th>Median &rho;<sub>CS</sub></th><th>Median &rho;<sub>SA</sub></th><th>W statistic</th><th>p-value</th><th>Sig.</th></tr>
+<tr><td>Donor Only</td><td>22</td><td>0.285</td><td>0.379</td><td>86.0</td><td>1.98 &times; 10<sup>&minus;1</sup></td><td class="sig sig-no">ns</td></tr>
+<tr><td>Donor &times; L1</td><td>22</td><td>0.135</td><td>0.175</td><td>96.0</td><td>3.37 &times; 10<sup>&minus;1</sup></td><td class="sig sig-no">ns</td></tr>
+<tr><td>Donor &times; L2</td><td>22</td><td>0.092</td><td>0.098</td><td>113.0</td><td>6.79 &times; 10<sup>&minus;1</sup></td><td class="sig sig-no">ns</td></tr>
+</table>
+<p><strong>Note:</strong> The per-target averaging first collapses three sub-cohort &rho; values into one before pairing. This matches the Section 4.2 methodology.</p>
+
+<h4>scAtlas Normal</h4>
+<table>
+<tr><th>Level</th><th>n<sub>pairs</sub></th><th>Median &rho;<sub>CS</sub></th><th>Median &rho;<sub>SA</sub></th><th>W statistic</th><th>p-value</th><th>Sig.</th></tr>
+<tr><td>Donor &times; Organ</td><td>22</td><td>0.193</td><td>0.447</td><td>18.0</td><td>1.21 &times; 10<sup>&minus;4</sup></td><td class="sig sig-yes">***</td></tr>
+<tr><td>Donor &times; Organ &times; CT1</td><td>22</td><td>0.075</td><td>0.167</td><td>23.0</td><td>3.05 &times; 10<sup>&minus;4</sup></td><td class="sig sig-yes">***</td></tr>
+<tr><td>Donor &times; Organ &times; CT2</td><td>22</td><td>0.094</td><td>0.133</td><td>40.0</td><td>3.67 &times; 10<sup>&minus;3</sup></td><td class="sig sig-yes">**</td></tr>
+</table>
+
+<h4>scAtlas Cancer</h4>
+<table>
+<tr><th>Level</th><th>n<sub>pairs</sub></th><th>Median &rho;<sub>CS</sub></th><th>Median &rho;<sub>SA</sub></th><th>W statistic</th><th>p-value</th><th>Sig.</th></tr>
+<tr><td>Donor &times; Organ</td><td>22</td><td>0.331</td><td>0.525</td><td>34.0</td><td>1.67 &times; 10<sup>&minus;3</sup></td><td class="sig sig-yes">**</td></tr>
+<tr><td>Donor &times; Organ &times; CT1</td><td>22</td><td>0.083</td><td>0.128</td><td>8.0</td><td>1.19 &times; 10<sup>&minus;5</sup></td><td class="sig sig-yes">***</td></tr>
+<tr><td>Donor &times; Organ &times; CT2</td><td>22</td><td>0.100</td><td>0.168</td><td>17.0</td><td>9.87 &times; 10<sup>&minus;5</sup></td><td class="sig sig-yes">***</td></tr>
+</table>
+
+<h2>Boxplot visualization vs statistical test</h2>
+<p>The boxplots in the &ldquo;Matched&rdquo; tab display <strong>all individual &rho; values</strong> for the 22 shared targets (one per target &times; cell-type combination). For atlases with multiple cell types or sub-cohorts, this means more than 22 data points are shown in the boxplot. However, the statistical test always uses the <strong>per-target averaged values</strong> (22 pairs), ensuring proper paired inference.</p>
+
+<h2>Significance Thresholds</h2>
+<table>
+<tr><th>Symbol</th><th>Threshold</th></tr>
+<tr><td>***</td><td>p &lt; 0.001</td></tr>
+<tr><td>**</td><td>p &lt; 0.01</td></tr>
+<tr><td>*</td><td>p &lt; 0.05</td></tr>
+<tr><td>ns</td><td>p &ge; 0.05 (not significant)</td></tr>
+</table>
+
+<h2>Software</h2>
+<p>All tests computed using <code>scipy.stats</code> (Python). Mann&ndash;Whitney U: <code>scipy.stats.mannwhitneyu(secact_rhos, cytosig_rhos, alternative='two-sided')</code>. Wilcoxon signed-rank: <code>scipy.stats.wilcoxon(differences)</code> on non-zero paired differences after per-target averaging.</p>
+
+</body>
+</html>

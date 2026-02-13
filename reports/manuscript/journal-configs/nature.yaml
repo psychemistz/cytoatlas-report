@@ -1,0 +1,58 @@
+journal: Nature
+url: https://www.nature.com/nature/for-authors
+article_type: Article
+
+limits:
+  word_count: 3500          # main text excluding methods, refs, figure legends
+  abstract_words: 150
+  abstract_style: single_paragraph  # no subheadings
+  main_figures: 6
+  extended_data_items: 10   # figures or tables
+  supplementary: unlimited
+  references: ~50
+  methods_words: 3000       # separate Online Methods section
+
+structure:
+  # Nature Articles have NO formal section headings in the main text
+  # Bold opening paragraph serves as a structured abstract
+  sections:
+    - name: bold_first_paragraph
+      required: true
+      notes: >
+        ~200 words summarizing background, results, and significance.
+        Serves as the article's hook; appears bold in print.
+    - name: main_text
+      required: true
+      notes: >
+        No formal Introduction/Results/Discussion headings.
+        Typically 3-5 short descriptive subheadings guiding the narrative.
+    - name: online_methods
+      required: true
+      notes: Detailed methods published online, separate word limit.
+    - name: data_availability
+      required: true
+    - name: code_availability
+      required: true
+    - name: acknowledgements
+      required: true
+    - name: author_contributions
+      required: true
+    - name: competing_interests
+      required: true
+
+figures:
+  format: [eps, pdf, tiff]
+  min_dpi: 300
+  max_width_cm: 18
+  single_column_cm: 8.9
+  double_column_cm: 18.3
+  notes: >
+    Extended Data figures appear in the peer-reviewed paper.
+    Supplementary Information is separate and not peer-reviewed to the
+    same standard.
+
+special_requirements:
+  - "Bold first paragraph (~200 words) is mandatory"
+  - "No formal Introduction/Results/Discussion section headings"
+  - "Short, punchy title (no colons preferred)"
+  - "Life sciences reporting checklist required"

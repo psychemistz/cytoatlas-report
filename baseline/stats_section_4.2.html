@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Section 4.2 Statistical Methods</title>
+<style>
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 900px; margin: 2em auto; padding: 0 1em; line-height: 1.6; color: #1a1a1a; }
+h1 { border-bottom: 2px solid #2563EB; padding-bottom: 0.3em; }
+h2 { color: #2563EB; margin-top: 2em; }
+h3 { color: #059669; }
+table { border-collapse: collapse; width: 100%; margin: 1em 0; font-size: 0.9em; }
+th, td { border: 1px solid #ddd; padding: 0.5em 0.8em; text-align: left; }
+th { background: #f5f5f5; }
+tr:nth-child(even) { background: #fafafa; }
+.sig { font-weight: bold; }
+.sig-yes { color: #059669; }
+.sig-no { color: #999; }
+code { background: #f0f0f0; padding: 0.15em 0.4em; border-radius: 3px; font-size: 0.9em; }
+.back-link { margin-bottom: 2em; }
+.back-link a { color: #2563EB; }
+</style>
+</head>
+<body>
+
+<div class="back-link"><a href="index.html">&larr; Back to report</a></div>
+
+<h1>Section 4.2: Correlation Distributions &mdash; Statistical Methods</h1>
+
+<h2>Overview</h2>
+<p>Section 4.2 compares the Spearman &rho; distributions of CytoSig and SecAct across 6 independent atlases at the donor level (the coarsest aggregation). Two complementary statistical tests are used, corresponding to the two tabs in the interactive figure.</p>
+
+<h2>Total Comparison (Mann&ndash;Whitney U Test)</h2>
+
+<h3>Rationale</h3>
+<p>The <strong>Mann&ndash;Whitney U test</strong> (also called the Wilcoxon rank-sum test) is a non-parametric test comparing two independent samples. It tests whether one distribution is stochastically greater than the other.</p>
+<p>This test is appropriate here because:</p>
+<ul>
+<li>CytoSig and SecAct measure <strong>different sets of proteins</strong> &mdash; there is no natural pairing between the ~43 CytoSig targets and ~1,170 SecAct targets.</li>
+<li>The sample sizes are <strong>unequal</strong> (43 vs ~1,170).</li>
+<li>The &rho; distributions are not necessarily normal, so a non-parametric test is preferred.</li>
+</ul>
+
+<h3>Procedure</h3>
+<ol>
+<li>For each atlas, collect the Spearman &rho; values for all CytoSig targets (one &rho; per target) and all SecAct targets (one &rho; per target) at the donor level.</li>
+<li>Apply the two-sided Mann&ndash;Whitney U test (<code>scipy.stats.mannwhitneyu</code>, <code>alternative='two-sided'</code>).</li>
+<li>Report the U statistic and p-value.</li>
+</ol>
+
+<h3>Results</h3>
+<table>
+<tr><th>Atlas</th><th>n<sub>CytoSig</sub></th><th>n<sub>SecAct</sub></th><th>U statistic</th><th>p-value</th><th>Significance</th></tr>
+<tr><td>GTEx</td><td>43</td><td>1,132</td><td>17,622.5</td><td>2.11 &times; 10<sup>&minus;3</sup></td><td class="sig sig-yes">**</td></tr>
+<tr><td>TCGA</td><td>41</td><td>1,085</td><td>12,809.5</td><td>3.94 &times; 10<sup>&minus;6</sup></td><td class="sig sig-yes">***</td></tr>
+<tr><td>CIMA</td><td>43</td><td>1,161</td><td>20,153.0</td><td>3.18 &times; 10<sup>&minus;2</sup></td><td class="sig sig-yes">*</td></tr>
+<tr><td>Inflammation Atlas</td><td>108</td><td>2,728</td><td>151,017.5</td><td>6.57 &times; 10<sup>&minus;1</sup></td><td class="sig sig-no">ns</td></tr>
+<tr><td>scAtlas (Normal)</td><td>1,013</td><td>27,154</td><td>10,768,935.0</td><td>7.44 &times; 10<sup>&minus;32</sup></td><td class="sig sig-yes">***</td></tr>
+<tr><td>scAtlas (Cancer)</td><td>295</td><td>7,809</td><td>897,463.0</td><td>1.13 &times; 10<sup>&minus;10</sup></td><td class="sig sig-yes">***</td></tr>
+</table>
+
+<h3>Notes on sample sizes</h3>
+<p>Sample sizes vary across atlases because:</p>
+<ul>
+<li><strong>GTEx and TCGA</strong> are bulk RNA-seq atlases with one aggregation level (donor only), yielding one &rho; per target.</li>
+<li><strong>CIMA</strong> is a single-cohort PBMC atlas; at donor level, each target has one &rho;.</li>
+<li><strong>Inflammation Atlas</strong> merges three independent cohorts (main, validation, external), so each target contributes up to 3 &rho; values (one per cohort), giving n<sub>CytoSig</sub> = 108 (not 43).</li>
+<li><strong>scAtlas Normal/Cancer</strong> have multiple organs/tissue types per donor, so at the donor &times; organ level each target contributes one &rho; per organ, giving larger sample sizes.</li>
+</ul>
+
+<h2>Matched Comparison (Wilcoxon Signed-Rank Test)</h2>
+
+<h3>Rationale</h3>
+<p>The <strong>Wilcoxon signed-rank test</strong> is a non-parametric paired test. It tests whether the median of the paired differences is zero.</p>
+<p>This test is appropriate here because:</p>
+<ul>
+<li>22 targets are shared between CytoSig and SecAct (matched by target name, i.e., both methods predict activity for the same gene).</li>
+<li>Each shared target serves as <strong>its own control</strong> &mdash; one &rho; from CytoSig and one from SecAct for the same cytokine.</li>
+<li>This is a <strong>paired design</strong> with 22 pairs.</li>
+</ul>
+
+<h3>The 22 shared targets</h3>
+<p>BDNF, BMP2, BMP4, BMP6, CXCL12, FGF2, GDF11, HGF, IFNG, IL10, IL15, IL1A, IL1B, IL21, IL27, IL6, LIF, LTA, OSM, TGFB1, TGFB3, VEGFA</p>
+
+<h3>Procedure</h3>
+<ol>
+<li>For each atlas, collect the Spearman &rho; for each of the 22 shared targets in both CytoSig and SecAct.</li>
+<li>For atlases where each target has multiple &rho; values (e.g., multiple organs or sub-cohorts), <strong>average each target&rsquo;s &rho; across cell types/organs/sub-cohorts</strong> to yield one paired value per target.</li>
+<li>Compute the paired differences: &Delta;<sub>i</sub> = &rho;<sub>SecAct,i</sub> &minus; &rho;<sub>CytoSig,i</sub> for each target i.</li>
+<li>Apply the two-sided Wilcoxon signed-rank test (<code>scipy.stats.wilcoxon</code>) on the non-zero differences.</li>
+<li>Report the W statistic and p-value.</li>
+</ol>
+
+<h3>Results</h3>
+<table>
+<tr><th>Atlas</th><th>n<sub>pairs</sub></th><th>W statistic</th><th>p-value</th><th>Significance</th></tr>
+<tr><td>GTEx</td><td>22</td><td>43.0</td><td>5.28 &times; 10<sup>&minus;3</sup></td><td class="sig sig-yes">**</td></tr>
+<tr><td>TCGA</td><td>22</td><td>16.0</td><td>8.06 &times; 10<sup>&minus;5</sup></td><td class="sig sig-yes">***</td></tr>
+<tr><td>CIMA</td><td>22</td><td>67.0</td><td>5.42 &times; 10<sup>&minus;2</sup></td><td class="sig sig-no">ns</td></tr>
+<tr><td>Inflammation Atlas</td><td>22</td><td>86.0</td><td>1.98 &times; 10<sup>&minus;1</sup></td><td class="sig sig-no">ns</td></tr>
+<tr><td>scAtlas (Normal)</td><td>22</td><td>18.0</td><td>1.21 &times; 10<sup>&minus;4</sup></td><td class="sig sig-yes">***</td></tr>
+<tr><td>scAtlas (Cancer)</td><td>22</td><td>34.0</td><td>1.67 &times; 10<sup>&minus;3</sup></td><td class="sig sig-yes">**</td></tr>
+</table>
+
+<h2>Significance Thresholds</h2>
+<table>
+<tr><th>Symbol</th><th>Threshold</th></tr>
+<tr><td>***</td><td>p &lt; 0.001</td></tr>
+<tr><td>**</td><td>p &lt; 0.01</td></tr>
+<tr><td>*</td><td>p &lt; 0.05</td></tr>
+<tr><td>ns</td><td>p &ge; 0.05 (not significant)</td></tr>
+</table>
+
+<h2>Software</h2>
+<p>All tests computed using <code>scipy.stats</code> (Python). Mann&ndash;Whitney U: <code>scipy.stats.mannwhitneyu(secact_rhos, cytosig_rhos, alternative='two-sided')</code>. Wilcoxon signed-rank: <code>scipy.stats.wilcoxon(differences)</code> on non-zero paired differences.</p>
+
+</body>
+</html>

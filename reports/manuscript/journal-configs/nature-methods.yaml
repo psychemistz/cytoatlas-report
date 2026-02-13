@@ -1,0 +1,56 @@
+journal: Nature Methods
+url: https://www.nature.com/nmeth/for-authors
+article_type: Resource     # appropriate for atlas/tool papers
+
+limits:
+  word_count: 5000          # main text (3000-5000 for Resource)
+  abstract_words: 150
+  abstract_style: single_paragraph
+  main_figures: 6
+  extended_data_items: 10
+  supplementary: unlimited
+  references: ~50
+  methods_words: 3000
+
+structure:
+  sections:
+    - name: abstract
+      required: true
+      notes: Single paragraph, max 150 words, no references.
+    - name: introduction
+      required: true
+    - name: results
+      required: true
+      notes: >
+        For Resource articles, Results typically demonstrate the
+        resource's utility through benchmarking and validation.
+    - name: discussion
+      required: true
+    - name: online_methods
+      required: true
+    - name: data_availability
+      required: true
+    - name: code_availability
+      required: true
+    - name: acknowledgements
+      required: true
+    - name: author_contributions
+      required: true
+    - name: competing_interests
+      required: true
+
+figures:
+  format: [eps, pdf, tiff]
+  min_dpi: 300
+  max_width_cm: 18
+  notes: >
+    Benchmark comparisons expected for method/tool papers.
+    Extended Data items are peer-reviewed.
+
+special_requirements:
+  - "Resource article type ideal for atlas + method papers"
+  - "Must demonstrate clear methodological advance"
+  - "Benchmarking against existing methods expected"
+  - "Code/software availability is especially important"
+  - "Follows Nature family formatting"
+  - "Life sciences reporting checklist required"
