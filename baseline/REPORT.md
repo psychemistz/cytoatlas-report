@@ -137,8 +137,8 @@ Most single-cell analysis tools use complex models (variational autoencoders, gr
 
 1. **Which cytokines are active in which cell types across diseases?** — IL1B/TNFA in monocytes/macrophages, IFNG in CD8+ T and NK cells, IL17A in Th17, VEGFA in endothelial/tumor cells, TGFB family in stromal cells — quantified across 20 diseases, 35 organs, and 15 cancer types.
 2. **Are cytokine activities consistent across independent cohorts?** — Yes. IL1B, TNFA, VEGFA, and TGFB family show consistent positive correlations across all 6 validation atlases (Figure 6).
-3. **Does cell-type-specific biology matter for cytokine inference?** — For select immune types, yes: LinCytoSig improves prediction for Basophils (+0.21 Δρ), NK cells (+0.19), and DCs (+0.18), but global CytoSig wins overall (Figures 9–10).
-4. **Which secreted proteins beyond cytokines show validated activity?** — SecAct (1,170 targets) achieves the highest correlations across all atlases (median ρ=0.33–0.49), with novel validated targets like Activin A (ρ=0.98), CXCL12 (ρ=0.92), and BMP family (Figure 11).
+3. **Does cell-type-specific biology matter for cytokine inference?** — For select immune types, yes: LinCytoSig improves prediction for Basophils (+0.21 Δρ), NK cells (+0.19), and DCs (+0.18), but global CytoSig wins overall (Figures 11–12).
+4. **Which secreted proteins beyond cytokines show validated activity?** — SecAct (1,170 targets) achieves the highest correlations across all atlases (median ρ=0.33–0.49), with novel validated targets like Activin A (ρ=0.98), CXCL12 (ρ=0.92), and BMP family (Figure 13).
 5. **Can we predict treatment response from cytokine activity?** — We are incorporating cytokine-blocking therapy outcomes from bulk RNA-seq to test whether predicted cytokine activity associates with therapy response. Additionally, Inflammation Atlas responder/non-responder labels enable treatment response prediction using cytokine activity profiles as features.
 
 ### 3.3 Validation Philosophy
@@ -151,55 +151,86 @@ This is a conservative validation — it only captures signatures where the targ
 
 ## 4. Validation Results
 
-Validation uses a simple, conservative principle: if a method predicts high activity for a target, that target's gene expression should be high. All Spearman ρ values below use each dataset's **primary independent level** — the coarsest aggregation where every sample is statistically independent — preventing inflation from repeated measures across tissues, cancer types, or cell types. Full detail tables and supplementary levels are in the linked HTML supplements.
+Validation uses a simple, conservative principle: if a method predicts high activity for a target, that target's gene expression should be high. All Spearman ρ values below use **independence-corrected** statistics at each dataset's primary independent level — preventing inflation from repeated measures across tissues, cancer types, or cell types. For GTEx and TCGA, each target's representative ρ is the **median across per-tissue/per-cancer values** (median-of-medians); for single-cell atlases, each target has one ρ at the independent donor/tumor level. Full detail tables and supplementary levels are in the linked HTML supplements.
 
 ### 4.1 Overall Performance Summary ([full details](stats_section_4.1.html))
 
-> **Figure 15** (`fig15_summary_table.png`): Complete validation statistics table.
-> **Figure 2** (`fig2_correlation_summary_boxplot.png`): Spearman ρ distributions across atlases.
+> **Figure 2** (`fig2_summary_table.png`): Complete validation statistics table.
 
-| Dataset | Independent Level | CytoSig | LinCytoSig | SecAct |
-|---------|------------------|---------|------------|--------|
-| GTEx | by_tissue (29 tissues) | 0.170 | [TBD] | 0.277 |
-| TCGA | primary_by_cancer (33 types) | 0.147 | 0.151 | 0.279 |
-| CIMA | donor_only (421 donors) | 0.114 | 0.131 | 0.191 |
-| Inflammation Main | donor_only (817 samples) | 0.323 | 0.178 | 0.173 |
-| scAtlas Normal | donor_only (317 donors) | 0.173 | 0.124 | 0.455 |
-| scAtlas Cancer | tumor_only (601 donors) | 0.184 | 0.166 | 0.399 |
+| Dataset (Independent Level) | Method | N Targets | Median ρ | % Sig (BH q<0.05) | % Pos |
+|-----------------------------|--------|-----------|----------|-------------------|-------|
+| GTEx (by_tissue, 29 tissues) | CytoSig | 43 | 0.151 | 81.4% | 83.7% |
+| | SecAct | 1,132 | 0.314 | 88.8% | 90.5% |
+| TCGA (primary_by_cancer, 33 types) | CytoSig | 41 | 0.214 | 68.3% | 92.7% |
+| | SecAct | 1,085 | 0.357 | 81.5% | 95.8% |
+| CIMA (donor_only, 421 donors) | CytoSig | 43 | 0.114 | 69.8% | 58.1% |
+| | SecAct | 1,161 | 0.191 | 75.0% | 76.1% |
+| Inflam Main (donor_only, 817 samples) | CytoSig | 33 | 0.323 | 78.8% | 69.7% |
+| | SecAct | 805 | 0.173 | 84.8% | 72.7% |
+| scAtlas Normal (donor_only, 317 donors) | CytoSig | 43 | 0.173 | 74.4% | 69.8% |
+| | SecAct | 1,140 | 0.455 | 83.9% | 87.8% |
+| scAtlas Cancer (tumor_only, 601 donors) | CytoSig | 43 | 0.184 | 81.4% | 83.7% |
+| | SecAct | 1,140 | 0.399 | 92.3% | 95.0% |
 
-**Column values** are median Spearman ρ between predicted activity and target gene expression. **Independent Level** = aggregation where samples are fully independent (see [analytics](../reports/weekly/dataset_analytics.html)).
+**Column values:** Median Spearman ρ between predicted activity and target gene expression. For GTEx/TCGA, values are median-of-medians (each target's ρ = median across tissues/cancers, then median across targets). % Sig = Benjamini-Hochberg FDR-corrected significance rate (q < 0.05). **Independent Level** = aggregation where samples are fully independent (see [analytics](../reports/weekly/dataset_analytics.html)).
 
-- **SecAct achieves the highest median ρ in 4 of 6 datasets** (GTEx, TCGA, scAtlas Normal, scAtlas Cancer), benefiting from broad secreted protein coverage and spatial-transcriptomics-derived signatures
-- **CytoSig dominates Inflammation Main** (0.323 vs 0.178/0.173) — disease-driven cytokine variance amplifies signal for canonical cytokine signatures
-- **CIMA shows the lowest correlations** (0.114 CytoSig) because healthy donors have narrow activity ranges
-- **Bulk independent levels are lower than pooled** — GTEx by_tissue (0.170) vs donor_only (0.211); TCGA primary_by_cancer (0.147) vs donor_only (0.238). The pooled values are inflated by cross-tissue/cross-cancer confounding (Section 4.5)
-- **scAtlas Normal donor_only** achieves remarkably high SecAct ρ (0.455) with full independence across 317 donors
+**Summary ranking:** SecAct > CytoSig in 5 of 6 datasets (GTEx, TCGA, CIMA, scAtlas Normal, scAtlas Cancer). CytoSig leads Inflammation Main (0.323 vs 0.173 SecAct) where disease-driven cytokine variance amplifies canonical signatures. SecAct achieves the highest median ρ in scAtlas Normal (0.455) and TCGA (0.357), benefiting from broad secreted protein coverage and spatial-transcriptomics-derived signatures. CIMA shows the lowest correlations (0.114 CytoSig) because healthy donors have narrow activity ranges.
+
 - Inflammation Val (144 samples) and Ext (86 samples) replicate directionally; full results in [supplement](stats_section_4.1.html)
 
-### 4.2 Correlation Distributions ([statistical methods](stats_section_4.2.html))
+### 4.2 Cross-Dataset Comparison: CytoSig vs SecAct ([statistical methods](stats_section_4.2.html))
 
-> **Figure 2** (interactive): CytoSig vs SecAct Spearman ρ distributions across atlases, with Total/Matched tabs.
+> **Figure 3** (`fig3_cross_dataset_boxplot.png`): CytoSig vs SecAct Spearman ρ distributions across atlases, with Total/Matched tabs.
 
-**Independence-corrected approach:** Each target gets one representative ρ at the independent level. For datasets with per-stratum correlations (GTEx 29 tissues, TCGA 33 cancers), the representative ρ is the **median across strata**. For donor-only datasets (CIMA, Inflammation Main, scAtlas Normal, scAtlas Cancer), each target already has one ρ. This yields n = 43 CytoSig values and n = 1,085–1,140 SecAct values per dataset — fixing the inflated sample sizes in the prior analysis (e.g., scAtlas Normal was 1,013 = 43 × ~24 organs, not independent).
+**Independence-corrected approach:** Each target gets one representative ρ at the independent level. For datasets with per-stratum correlations (GTEx 29 tissues, TCGA 33 cancers), the representative ρ is the **median across strata** (median-of-medians). For donor-only datasets (CIMA, Inflammation Main, scAtlas Normal/Cancer), each target already has one ρ. This yields n = 43 CytoSig values and n = 1,085–1,140 SecAct values per dataset.
 
 **Total comparison (Mann-Whitney U):** Compares all CytoSig targets vs all SecAct targets.
 
-**Matched comparison (Wilcoxon signed-rank):** Restricts to 32 shared targets (30 for TCGA due to missing IFNL1/IL36A). After full alias resolution (TNFA→TNF, GMCSF→CSF2, etc.), the CytoSig–SecAct overlap is 32 targets — 10 more than the previous 22-target list which only matched raw cytokine names.
+**Matched comparison (Wilcoxon signed-rank):** Restricts to 32 shared targets (30 for TCGA due to missing IFNL1/IL36A; 27 for Inflammation Main due to smaller target set). After full alias resolution (TNFA→TNF, GMCSF→CSF2, CD40L→CD40LG, TRAIL→TNFSF10, TWEAK→TNFSF12, Activin A→INHBA, GCSF→CSF3, MCSF→CSF1, IFNL→IFNL1, IL36→IL36A), the CytoSig–SecAct overlap is 32 targets — 10 more than the previous 22-target list which only matched raw cytokine names.
 
 | Dataset | Mann-Whitney U p | Wilcoxon p | N pairs | Direction |
 |---------|-----------------|-----------|---------|-----------|
-| GTEx | [TBD] | [TBD] | 32 | SecAct > CytoSig |
-| TCGA | [TBD] | [TBD] | 30 | SecAct > CytoSig |
-| CIMA | [TBD] | [TBD] | 32 | SecAct > CytoSig |
-| Inflammation Main | [TBD] | [TBD] | 32 | CytoSig > SecAct |
-| scAtlas Normal | [TBD] | [TBD] | 32 | SecAct > CytoSig |
-| scAtlas Cancer | [TBD] | [TBD] | 32 | SecAct > CytoSig |
+| GTEx | 4.75 × 10⁻⁴ | 3.54 × 10⁻⁵ | 32 | SecAct > CytoSig |
+| TCGA | 2.80 × 10⁻³ | 3.24 × 10⁻⁶ | 30 | SecAct > CytoSig |
+| CIMA | 3.18 × 10⁻² | 2.28 × 10⁻² | 32 | SecAct > CytoSig |
+| Inflammation Main | 0.548 (ns) | 0.141 (ns) | 27 | CytoSig > SecAct |
+| scAtlas Normal | 1.04 × 10⁻⁴ | 3.54 × 10⁻⁵ | 32 | SecAct > CytoSig |
+| scAtlas Cancer | 1.06 × 10⁻⁵ | 3.54 × 10⁻⁵ | 32 | SecAct > CytoSig |
 
-SecAct's advantage derives from broad secreted protein coverage (1,170 targets vs 43). The Inflammation Main exception reflects disease-driven cytokine variance that preferentially boosts CytoSig's canonical targets. Per-tissue (GTEx) and per-cancer (TCGA) stratified tests with BH-FDR correction are in the [supplement](stats_section_4.2.html).
+SecAct significantly outperforms CytoSig in 5 of 6 datasets on both total and matched comparisons. The Inflammation Main exception (p = 0.548 total, p = 0.141 matched) reflects disease-driven cytokine variance that preferentially boosts CytoSig's canonical targets — in inflammatory conditions, the 43 CytoSig cytokines are the most biologically active, giving CytoSig a domain advantage.
 
-### 4.3 Best and Worst Correlated Targets ([per-atlas details](stats_section_4.3.html))
+### 4.3 Per-Tissue and Per-Cancer Stratified Validation ([full results](stats_section_4.3.html))
 
-> **Figure 3** (`fig3_good_bad_correlations_cytosig.png`): Top 15 and bottom 15 targets per atlas.
+> **Figure 4a** (`fig4a_gtex_per_tissue.png`): GTEx per-tissue stratified validation (29 tissues).
+> **Figure 4b** (`fig4b_tcga_per_cancer.png`): TCGA per-cancer stratified validation (33 cancer types).
+
+Four datasets have per-stratum breakdowns:
+- **GTEx**: 29 tissues (47–3,234 donors each)
+- **TCGA**: 33 cancer types (36–1,092 each)
+- **scAtlas Normal**: 19 organs (10–124 donors each; 7 Tier A ≥30, 12 Tier B <30)
+- **scAtlas Cancer**: 17 cancer types (10–88 tumors each; 9 Tier A ≥30, 8 Tier B <30)
+
+**Statistical tests per stratum:** Mann-Whitney U (CytoSig vs SecAct total targets within each tissue/cancer) and Wilcoxon signed-rank (32 shared targets). BH-FDR correction applied within each dataset (29 tests for GTEx, 33 for TCGA, etc.). Full per-stratum results with FDR q-values are in the [supplement](stats_section_4.3.html).
+
+**Key findings:**
+- SecAct significantly outperforms CytoSig in the majority of individual tissues and cancer types
+- Tissue/cancer-specific variation is substantial: GTEx CytoSig ρ ranges widely across tissues, reflecting tissue-specific regulatory contexts
+- Inflammation-rich tissues/cancers (Lung, Liver, Colon) show the highest CytoSig correlations, consistent with the CytoSig signature matrix being derived from cytokine stimulation experiments
+- scAtlas strata with Tier B sample sizes (<30 donors) are shown with reduced confidence
+
+#### 4.3.1 Cross-Platform Comparison
+
+> **Figure 4c** (`fig4c_cross_platform_concordance.png`): Cross-platform concordance scatter (GTEx vs scAtlas Normal, TCGA vs scAtlas Cancer).
+
+**GTEx vs scAtlas Normal** (matching tissues): For tissues present in both datasets, we compare the per-tissue median ρ between bulk RNA-seq (GTEx) and single-cell pseudobulk (scAtlas Normal). This tests whether the expression-activity relationship replicates across technologies.
+
+**TCGA vs scAtlas Cancer** (matching cancer types): Same comparison for overlapping cancer types.
+
+**Interpretation:** This is presented as cross-platform concordance rather than a formal hypothesis test, due to: (1) different sample sizes per tissue (GTEx 47–3,234 vs scAtlas 10–124), (2) different gene sets (GTEx 72.9k vs scAtlas 21.8k genes), (3) bulk vs pseudobulk composition differences, (4) different donor demographics (GTEx postmortem vs scAtlas surgical/biopsy), and (5) small paired N limiting statistical power. A high Spearman correlation of the ρ values across tissues indicates platform-independent biological signal.
+
+### 4.4 Best and Worst Correlated Targets ([per-atlas details](stats_section_4.3.html))
+
+> **Figure 5** (`fig5_good_bad_correlations_cytosig.png`): Top 15 and bottom 15 targets per atlas.
 
 **Consistently well-correlated targets:** IL1B (ρ 0.3–0.7 across atlases), TNFA (0.3–0.6), VEGFA (0.5–0.9), and the TGFB family (0.3–0.6) — canonical cytokines with strong, well-characterized transcriptional programs that produce clear expression-activity concordance.
 
@@ -207,7 +238,7 @@ SecAct's advantage derives from broad secreted protein coverage (1,170 targets v
 
 **SecAct novel discoveries:** Activin A (ρ up to 0.98 in scAtlas), CXCL12 (0.92), and BMP family members — secreted proteins with strong validated activity-expression correlations that would be missed by CytoSig's 43-cytokine panel. Full per-atlas top-15/bottom-15 lists in [supplement](stats_section_4.3.html).
 
-### 4.4 Cross-Atlas Consistency
+### 4.5 Cross-Atlas Consistency
 
 > **Figure 6** (`fig6_cross_atlas_consistency.png`): Key targets tracked across 6 atlases at independent levels.
 
@@ -219,7 +250,7 @@ Most cytokines show **consistent positive correlations** across all 6 atlases:
 
 The distinction between **universal targets** (IL1B, TNFA, VEGFA — consistent across contexts) and **context-dependent targets** (IL4, IL17A, TGFB1 — driven by specific cell populations or disease states) provides biological insight into which cytokine axes are fundamental vs. specialized.
 
-### 4.5 Effect of Aggregation Level ([statistical methods](stats_section_4.5.html))
+### 4.6 Effect of Aggregation Level ([statistical methods](stats_section_4.6.html))
 
 > **Figure 7** (`fig7_validation_levels.png`): Aggregation level comparison across all 6 datasets.
 
@@ -240,36 +271,7 @@ The distinction between **universal targets** (IL1B, TNFA, VEGFA — consistent 
 - **CIMA and Inflammation Main** have no confounding at donor level (one compartment per donor), so pooled = independent
 - **scAtlas Normal donor_only** (0.173) exceeds donor_organ (0.120) because pooling all organs per donor creates a more complete transcriptional profile with less noise, despite the donor_organ level having more data points
 
-Per-tissue GTEx breakdowns, per-cancer TCGA breakdowns, and per-level Mann-Whitney/Wilcoxon tests for all 3 methods are in the [supplement](stats_section_4.5.html).
-
-### 4.6 Comprehensive Validation
-
-> **Figure 12** (`fig12_bulk_validation.png`): Bulk RNA-seq validation results.
-> **Figure 15** (`fig15_summary_table.png`): Complete validation statistics table.
-
-Full 3-method comparison at each dataset's independent level:
-
-| Dataset (Independent Level) | Method | N Targets | Median ρ | % Sig | % Pos |
-|-----------------------------|--------|-----------|----------|-------|-------|
-| GTEx (by_tissue) | CytoSig | 43 | 0.170 | [TBD] | [TBD] |
-| | SecAct | 1,132 | 0.277 | [TBD] | [TBD] |
-| TCGA (primary_by_cancer) | CytoSig | 41 | 0.147 | [TBD] | [TBD] |
-| | LinCytoSig | 152 | 0.151 | [TBD] | [TBD] |
-| | SecAct | 1,085 | 0.279 | [TBD] | [TBD] |
-| CIMA (donor_only) | CytoSig | 43 | 0.114 | 72.1% | 58.1% |
-| | LinCytoSig | 156 | 0.131 | [TBD] | [TBD] |
-| | SecAct | 1,161 | 0.191 | 76.3% | 76.1% |
-| Inflam Main (donor_only) | CytoSig | 33 | 0.323 | [TBD] | [TBD] |
-| | LinCytoSig | 123 | 0.178 | [TBD] | [TBD] |
-| | SecAct | 805 | 0.173 | [TBD] | [TBD] |
-| scAtlas Normal (donor_only) | CytoSig | 43 | 0.173 | [TBD] | [TBD] |
-| | LinCytoSig | 156 | 0.124 | [TBD] | [TBD] |
-| | SecAct | 1,140 | 0.455 | [TBD] | [TBD] |
-| scAtlas Cancer (tumor_only) | CytoSig | 43 | 0.184 | [TBD] | [TBD] |
-| | LinCytoSig | 156 | 0.166 | [TBD] | [TBD] |
-| | SecAct | 1,140 | 0.399 | [TBD] | [TBD] |
-
-**Summary ranking:** SecAct > CytoSig > LinCytoSig in 4 of 6 datasets (GTEx, TCGA, scAtlas Normal, scAtlas Cancer). CytoSig leads Inflammation Main (0.323 vs 0.173 SecAct) where disease-driven cytokine variance amplifies canonical signatures. LinCytoSig's cell-type-specific signatures show modest improvement over CytoSig in TCGA (0.151 vs 0.147) but generally underperform at donor-level aggregation where global signatures have more power (see Section 5 for cell-type-specific analysis).
+Per-tissue GTEx breakdowns, per-cancer TCGA breakdowns, and per-level Mann-Whitney/Wilcoxon tests for all 3 methods are in the [supplement](stats_section_4.6.html).
 
 ---
 
@@ -277,7 +279,7 @@ Full 3-method comparison at each dataset's independent level:
 
 ### 5.1 Method Overview
 
-> **Figure 8** (`fig8_method_comparison.png`): 10-way method comparison across all atlases.
+> **Figure 10** (`fig10_method_comparison.png`): 10-way method comparison across all atlases.
 
 We evaluate ten approaches for cytokine activity inference, covering three signature matrices and eight LinCytoSig strategies:
 
@@ -308,7 +310,7 @@ We evaluate ten approaches for cytokine activity inference, covering three signa
 | **scAtlas Normal** | 0.216 | 0.173 | 0.193 | 0.298 | 0.230 | 0.231 | 0.169 | 0.179 | 0.203 | 0.391 |
 | **scAtlas Cancer** | 0.344 | 0.172 | 0.146 | 0.275 | 0.267 | 0.300 | 0.167 | 0.267 | 0.182 | 0.492 |
 
-**Key observations from Figure 8:**
+**Key observations from Figure 10:**
 - **SecAct consistently achieves the highest median ρ** across all 4 atlases (0.334–0.492), benefiting from its broad gene coverage and spatial-transcriptomics-derived signatures.
 - **CytoSig outperforms most LinCytoSig variants** at donor level. The gap is largest in CIMA (0.225 vs best LinCytoSig variant 0.166). However, in scAtlas Normal, LinCytoSig Best-combined (0.298) exceeds CytoSig (0.216), suggesting cell-type-specific selection can help for organ-level analyses.
 - **Gene filtering improves LinCytoSig** in 3 of 4 atlases (all except scAtlas Cancer), suggesting that the extra ~15K genes in LinCytoSig introduce noise at donor level. The improvement is most pronounced in CIMA (0.082 → 0.166, +102%).
@@ -318,10 +320,10 @@ We evaluate ten approaches for cytokine activity inference, covering three signa
 
 ### 5.2 When Does LinCytoSig Outperform CytoSig?
 
-> **Figure 9** (`fig9_lincytosig_vs_cytosig_scatter.png`): Matched target scatter plots.
-> **Figure 10** (`fig10_lincytosig_advantage_by_celltype.png`): Cell-type-specific advantage analysis.
+> **Figure 11** (`fig11_lincytosig_vs_cytosig_scatter.png`): Matched target scatter plots.
+> **Figure 12** (`fig12_lincytosig_advantage_by_celltype.png`): Cell-type-specific advantage analysis.
 
-**Key finding from Figure 9:** In matched comparisons across 4 atlases (136 matched targets each):
+**Key finding from Figure 11:** In matched comparisons across 4 atlases (136 matched targets each):
 
 | Atlas | LinCytoSig Wins | CytoSig Wins | Tie |
 |-------|----------------|-------------|-----|
@@ -332,7 +334,7 @@ We evaluate ten approaches for cytokine activity inference, covering three signa
 
 **CytoSig wins overall**, but LinCytoSig has specific advantages:
 
-**LinCytoSig wins (Figure 10, top cell types):**
+**LinCytoSig wins (Figure 12, top cell types):**
 - **Basophil** (+0.21 mean Δρ): Basophil-specific IL3 response not captured by global CytoSig
 - **NK Cell** (+0.19): NK-specific IL15/IL2 responses differ from global average
 - **Dendritic Cell** (+0.18): DC-specific GMCSF and IL12 responses
@@ -361,7 +363,7 @@ We evaluate ten approaches for cytokine activity inference, covering three signa
 
 ### 5.4 SecAct: Breadth Over Depth
 
-> **Figure 11** (`fig11_secact_novel_signatures.png`): Novel SecAct targets with consistent high correlation.
+> **Figure 13** (`fig13_secact_novel_signatures.png`): Novel SecAct targets with consistent high correlation.
 
 SecAct covers 1,170 secreted proteins vs CytoSig's 43 cytokines. Key advantages:
 
@@ -374,9 +376,9 @@ SecAct covers 1,170 secreted proteins vs CytoSig's 43 cytokines. Key advantages:
 
 ### 5.5 Biologically Important Targets Deep Dive
 
-> **Figure 4** (`fig4_bio_targets_heatmap.png`): Heatmap across all atlases.
-> **Figure 13** (`fig13_lincytosig_specificity.png`): LinCytoSig advantage/disadvantage cases.
-> **Figure 14** (`fig14_celltype_scatter_examples.png`): Cell-type-level scatter examples.
+> **Figure 8** (`fig8_bio_targets_heatmap.png`): Heatmap across all atlases.
+> **Figure 15** (`fig15_lincytosig_specificity.png`): LinCytoSig advantage/disadvantage cases.
+> **Figure 16** (`fig16_celltype_scatter_examples.png`): Cell-type-level scatter examples.
 
 **Interferon family:**
 - IFNG: ρ = 0.25-0.68 across atlases (CytoSig), consistently positive
@@ -433,20 +435,23 @@ SecAct covers 1,170 secreted proteins vs CytoSig's 43 cytokines. Key advantages:
 | Figure | File | Description |
 |--------|------|-------------|
 | 1 | `fig1_dataset_overview.png` | Dataset scale, signature matrices, validation layers |
-| 2 | `fig2_correlation_summary_boxplot.png` | Spearman ρ distributions across atlases (donor-level) |
-| 3 | `fig3_good_bad_correlations_cytosig.png` | Top/bottom 15 targets per atlas (CytoSig) |
-| 4 | `fig4_bio_targets_heatmap.png` | Heatmap of biologically important targets |
-| 5 | `fig5_representative_scatter_cima.png` | Representative good/bad scatter plots (CIMA) |
+| 2 | `fig2_summary_table.png` | Complete validation statistics table |
+| 3 | `fig3_cross_dataset_boxplot.png` | CytoSig vs SecAct ρ distributions (independence-corrected) |
+| 4a | `fig4a_gtex_per_tissue.png` | GTEx per-tissue stratified validation (29 tissues) |
+| 4b | `fig4b_tcga_per_cancer.png` | TCGA per-cancer stratified validation (33 cancer types) |
+| 4c | `fig4c_cross_platform_concordance.png` | Cross-platform concordance scatter (GTEx vs scAtlas) |
+| 5 | `fig5_good_bad_correlations_cytosig.png` | Top/bottom 15 targets per atlas (CytoSig) |
 | 6 | `fig6_cross_atlas_consistency.png` | Cross-atlas target consistency profiles |
 | 7 | `fig7_validation_levels.png` | Aggregation level effect on correlation |
-| 8 | `fig8_method_comparison.png` | 10-way method comparison (CytoSig, LinCytoSig ×8, SecAct) |
-| 9 | `fig9_lincytosig_vs_cytosig_scatter.png` | Matched target scatter (Lin vs Cyto) |
-| 10 | `fig10_lincytosig_advantage_by_celltype.png` | Cell-type-specific LinCytoSig advantage |
-| 11 | `fig11_secact_novel_signatures.png` | Novel SecAct high-correlation targets |
-| 12 | `fig12_bulk_validation.png` | GTEx/TCGA bulk RNA-seq validation |
-| 13 | `fig13_lincytosig_specificity.png` | LinCytoSig wins vs CytoSig wins |
-| 14 | `fig14_celltype_scatter_examples.png` | Cell-type-level scatter examples |
-| 15 | `fig15_summary_table.png` | Complete summary statistics table |
+| 8 | `fig8_bio_targets_heatmap.png` | Heatmap of biologically important targets |
+| 9 | `fig9_representative_scatter_cima.png` | Representative good/bad scatter plots (CIMA) |
+| 10 | `fig10_method_comparison.png` | 10-way method comparison (CytoSig, LinCytoSig ×8, SecAct) |
+| 11 | `fig11_lincytosig_vs_cytosig_scatter.png` | Matched target scatter (Lin vs Cyto) |
+| 12 | `fig12_lincytosig_advantage_by_celltype.png` | Cell-type-specific LinCytoSig advantage |
+| 13 | `fig13_secact_novel_signatures.png` | Novel SecAct high-correlation targets |
+| 14 | `fig14_bulk_validation.png` | GTEx/TCGA bulk RNA-seq validation |
+| 15 | `fig15_lincytosig_specificity.png` | LinCytoSig wins vs CytoSig wins |
+| 16 | `fig16_celltype_scatter_examples.png` | Cell-type-level scatter examples |
 
 All figures saved at: `/data/parks34/projects/2cytoatlas/report/figures/`
 (Both PNG at 300 DPI and PDF vector formats)

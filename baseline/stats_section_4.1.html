@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Section 4.1 Overall Performance Summary &mdash; CytoAtlas Reports</title>
+<style>
+    :root {
+        --bg: #ffffff;
+        --fg: #1a1a2e;
+        --accent: #2563eb;
+        --accent-hover: #1d4ed8;
+        --card-bg: #f8fafc;
+        --card-border: #e2e8f0;
+        --muted: #64748b;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        color: var(--fg);
+        background: var(--bg);
+        line-height: 1.6;
+    }
+    header {
+        border-bottom: 1px solid var(--card-border);
+        padding: 2rem 1.5rem 1.5rem;
+        max-width: 960px;
+        margin: 0 auto;
+    }
+    header h1 { font-size: 1.8rem; font-weight: 700; }
+    header p { color: var(--muted); margin-top: 0.25rem; }
+    main {
+        max-width: 960px;
+        margin: 0 auto;
+        padding: 2rem 1.5rem 4rem;
+    }
+    footer {
+        max-width: 960px;
+        margin: 0 auto;
+        padding: 1rem 1.5rem;
+        border-top: 1px solid var(--card-border);
+        font-size: 0.8rem;
+        color: var(--muted);
+    }
+
+    /* Navigation */
+    .back-link {
+        display: inline-block;
+        margin-bottom: 1.5rem;
+        padding: 0.35em 0.75em;
+        background: var(--card-bg);
+        border: 1px solid var(--card-border);
+        border-radius: 6px;
+        font-size: 0.85rem;
+        color: var(--accent);
+        text-decoration: none;
+        transition: border-color 0.15s;
+    }
+    .back-link:hover { border-color: var(--accent); }
+
+    /* Headings */
+    h2 {
+        font-size: 1.4rem;
+        margin: 2.5rem 0 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid var(--accent);
+    }
+    h3 { font-size: 1.1rem; margin: 1.5rem 0 0.6rem; color: var(--accent); }
+    p { margin-bottom: 0.75rem; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* Tables */
+    table { width: 100%; border-collapse: collapse; margin: 1rem 0 1.25rem; font-size: 0.875rem; }
+    th, td { padding: 0.6rem 0.85rem; text-align: left; border: 1px solid var(--card-border); }
+    th { background: var(--card-bg); font-weight: 600; }
+    tr:hover { background: var(--card-bg); }
+
+    /* Code */
+    code {
+        background: var(--card-bg);
+        border: 1px solid var(--card-border);
+        padding: 0.15em 0.4em;
+        border-radius: 4px;
+        font-size: 0.85rem;
+        font-family: 'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
+    }
+
+    /* Significance markers */
+    .sig { font-weight: bold; }
+    .sig-yes { color: #059669; }
+    .sig-no { color: var(--muted); }
+
+    /* Lists */
+    ul, ol { margin: 0.5rem 0 1rem 1.5rem; }
+    li { margin-bottom: 0.4rem; }
+
+    .page-title {
+        font-size: 1.6rem;
+        font-weight: 700;
+        margin-top: 0;
+        margin-bottom: 1.5rem;
+    }
+
+    /* Method color coding */
+    .method-cytosig { background-color: #DBEAFE; }
+    .method-lincytosig { background-color: #FEF3C7; }
+    .method-secact { background-color: #D1FAE5; }
+</style>
+</head>
+<body>
+
+<header>
+    <h1>CytoAtlas Reports</h1>
+    <p>Pan-Disease Single-Cell Cytokine Activity Atlas &mdash; reporting hub</p>
+</header>
+
+<main>
+
+<a href="index.html" class="back-link">&larr; Back to report</a>
+
+<div class="page-title">Section 4.1: Overall Performance Summary &mdash; Full Details</div>
+
+<h2>Overview</h2>
+<p>Section 4.1 provides the definitive CytoSig vs SecAct summary across 6 datasets at each dataset&rsquo;s primary independent level. This supplement includes all aggregation levels (not just the primary independent level shown in the main report).</p>
+
+<h2>Independence-Corrected Methodology</h2>
+<p>All correlations use a <strong>median-of-medians</strong> approach to ensure statistical independence:</p>
+<ul>
+<li><strong>GTEx (by_tissue, 29 tissues)</strong>: Each target&rsquo;s representative &rho; = median of its per-tissue Spearman &rho; values across 29 tissues.</li>
+<li><strong>TCGA (primary_by_cancer, 33 cancer types)</strong>: Same median-of-medians approach across 33 cancer types.</li>
+<li><strong>CIMA, Inflammation Main, scAtlas Normal, scAtlas Cancer</strong>: Each target has one &rho; at the donor/tumor level (no tissue/cancer stratification needed), so no median-of-medians aggregation is required.</li>
+</ul>
+<p><strong>% Sig</strong>: Benjamini&ndash;Hochberg FDR correction (q &lt; 0.05) applied within each dataset &times; method group.</p>
+
+<h2>Primary Independent Level Summary</h2>
+<table>
+<tr>
+    <th>Dataset</th>
+    <th>Method</th>
+    <th>N Targets</th>
+    <th>Median &rho;</th>
+    <th>% Sig (BH q&lt;0.05)</th>
+    <th>% Pos</th>
+</tr>
+<tr class="method-cytosig">
+    <td>GTEx (by_tissue)</td>
+    <td>CytoSig</td>
+    <td>43</td>
+    <td>0.151</td>
+    <td>81.4%</td>
+    <td>83.7%</td>
+</tr>
+<tr class="method-secact">
+    <td>GTEx (by_tissue)</td>
+    <td>SecAct</td>
+    <td>1,132</td>
+    <td>0.314</td>
+    <td>88.8%</td>
+    <td>90.5%</td>
+</tr>
+<tr class="method-cytosig">
+    <td>TCGA (primary_by_cancer)</td>
+    <td>CytoSig</td>
+    <td>41</td>
+    <td>0.214</td>
+    <td>68.3%</td>
+    <td>92.7%</td>
+</tr>
+<tr class="method-secact">
+    <td>TCGA (primary_by_cancer)</td>
+    <td>SecAct</td>
+    <td>1,085</td>
+    <td>0.357</td>
+    <td>81.5%</td>
+    <td>95.8%</td>
+</tr>
+<tr class="method-cytosig">
+    <td>CIMA (donor_only)</td>
+    <td>CytoSig</td>
+    <td>43</td>
+    <td>0.114</td>
+    <td>69.8%</td>
+    <td>58.1%</td>
+</tr>
+<tr class="method-secact">
+    <td>CIMA (donor_only)</td>
+    <td>SecAct</td>
+    <td>1,161</td>
+    <td>0.191</td>
+    <td>75.0%</td>
+    <td>76.1%</td>
+</tr>
+<tr class="method-cytosig">
+    <td>Inflam Main (donor_only)</td>
+    <td>CytoSig</td>
+    <td>33</td>
+    <td>0.323</td>
+    <td>78.8%</td>
+    <td>69.7%</td>
+</tr>
+<tr class="method-secact">
+    <td>Inflam Main (donor_only)</td>
+    <td>SecAct</td>
+    <td>805</td>
+    <td>0.173</td>
+    <td>84.8%</td>
+    <td>72.7%</td>
+</tr>
+<tr class="method-cytosig">
+    <td>scAtlas Normal (donor_only)</td>
+    <td>CytoSig</td>
+    <td>43</td>
+    <td>0.173</td>
+    <td>74.4%</td>
+    <td>69.8%</td>
+</tr>
+<tr class="method-secact">
+    <td>scAtlas Normal (donor_only)</td>
+    <td>SecAct</td>
+    <td>1,140</td>
+    <td>0.455</td>
+    <td>83.9%</td>
+    <td>87.8%</td>
+</tr>
+<tr class="method-cytosig">
+    <td>scAtlas Cancer (tumor_only)</td>
+    <td>CytoSig</td>
+    <td>43</td>
+    <td>0.184</td>
+    <td>81.4%</td>
+    <td>83.7%</td>
+</tr>
+<tr class="method-secact">
+    <td>scAtlas Cancer (tumor_only)</td>
+    <td>SecAct</td>
+    <td>1,140</td>
+    <td>0.399</td>
+    <td>92.3%</td>
+    <td>95.0%</td>
+</tr>
+</table>
+
+<h2>Supplementary Datasets</h2>
+<p><strong>Inflammation Val</strong> (144 samples) and <strong>Inflammation Ext</strong> (86 samples) replicate directionally. Full results are available in the validation correlation CSVs.</p>
+
+<h2>Software</h2>
+<p>All statistics computed using Python <code>scipy.stats</code> (Spearman correlations) and <code>statsmodels.stats.multitest</code> (Benjamini&ndash;Hochberg FDR correction).</p>
+
+</main>
+
+<footer>
+    CytoAtlas &mdash; generated reports are served via GitHub Pages
+</footer>
+
+</body>
+</html>

@@ -88,6 +88,30 @@ for fam, targets in BIO_FAMILIES.items():
     for t in targets:
         TARGET_TO_FAMILY[t] = fam
 
+# CytoSig → SecAct alias map (common name → HGNC gene symbol)
+ALIAS_MAP = {
+    'Activin A': 'INHBA', 'CD40L': 'CD40LG', 'GCSF': 'CSF3', 'GMCSF': 'CSF2',
+    'IFNL': 'IFNL1', 'IL36': 'IL36A', 'MCSF': 'CSF1', 'TNFA': 'TNF',
+    'TRAIL': 'TNFSF10', 'TWEAK': 'TNFSF12',
+}
+DIRECT_MATCHED = [
+    'BDNF', 'BMP2', 'BMP4', 'BMP6', 'CXCL12', 'FGF2', 'GDF11', 'HGF',
+    'IFNG', 'IL10', 'IL15', 'IL1A', 'IL1B', 'IL21', 'IL27', 'IL6',
+    'LIF', 'LTA', 'OSM', 'TGFB1', 'TGFB3', 'VEGFA',
+]
+ALL_32_CS = DIRECT_MATCHED + list(ALIAS_MAP.keys())
+ALL_32_SA = DIRECT_MATCHED + list(ALIAS_MAP.values())
+
+# Independent levels per dataset
+INDEPENDENT_LEVELS = {
+    'gtex': ('by_tissue', True),        # (level, needs_median_of_medians)
+    'tcga': ('primary_by_cancer', True),
+    'cima': ('donor_only', False),
+    'inflammation_main': ('donor_only', False),
+    'scatlas_normal': ('donor_only', False),
+    'scatlas_cancer': ('tumor_only', False),
+}
+
 FAMILY_COLORS = {
     'Interferon': '#DC2626',
     'TGF-β': '#2563EB',
@@ -1464,7 +1488,270 @@ def fig14_celltype_scatter_examples(df):
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# FIGURE 15: Summary Statistics Table
+# HELPER: Independence-corrected ρ per target
+# ═══════════════════════════════════════════════════════════════════════════════
+def get_independent_rhos(df, atlas, sig_type):
+    """Get one ρ per target at the independence-corrected level.
+
+    For GTEx/TCGA: median across tissues/cancers (median-of-medians).
+    For others: direct value at donor_only/tumor_only.
+    """
+    level, needs_mom = INDEPENDENT_LEVELS.get(atlas, ('donor_only', False))
+    sub = df[(df['atlas'] == atlas) & (df['level'] == level) & (df['signature'] == sig_type)]
+    if needs_mom:
+        sub = sub[~sub['celltype'].isin(['all', 'unmappable'])]
+        return sub.groupby('target')['spearman_rho'].median()
+    else:
+        return sub.set_index('target')['spearman_rho']
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# FIGURE 4a: GTEx Per-Tissue Stratified Validation
+# ═══════════════════════════════════════════════════════════════════════════════
+def fig4a_gtex_per_tissue(df):
+    """Horizontal dot plot: CytoSig vs SecAct median ρ per GTEx tissue.
+
+    Data source:
+        gtex_correlations.csv at by_tissue level.
+    Method:
+        For each tissue: compute median ρ across all CytoSig targets and
+        all SecAct targets. Sort by SecAct median ρ descending. Show as
+        paired dots (CytoSig blue, SecAct green) per tissue row.
+    Output:
+        fig4a_gtex_per_tissue.png, fig4a_gtex_per_tissue.pdf
+    """
+    gtex = df[(df['atlas'] == 'gtex') & (df['level'] == 'by_tissue')]
+    gtex = gtex[~gtex['celltype'].isin(['all', 'unmappable'])]
+    tissues = sorted(gtex['celltype'].unique())
+
+    rows = []
+    for tissue in tissues:
+        t_data = gtex[gtex['celltype'] == tissue]
+        for sig_type in ['cytosig', 'secact']:
+            sub = t_data[t_data['signature'] == sig_type]
+            if len(sub) > 0:
+                rhos = sub['spearman_rho'].dropna()
+                n_samples = sub['n_samples'].iloc[0] if 'n_samples' in sub.columns else 0
+                rows.append({
+                    'tissue': tissue, 'signature': sig_type,
+                    'median_rho': rhos.median(), 'n_targets': len(rhos),
+                    'n_samples': n_samples,
+                })
+    plot_df = pd.DataFrame(rows)
+
+    # Sort by SecAct median
+    secact_order = plot_df[plot_df['signature'] == 'secact'].sort_values('median_rho', ascending=True)
+    tissue_order = secact_order['tissue'].tolist()
+
+    fig, ax = plt.subplots(figsize=(10, max(8, len(tissue_order) * 0.35)))
+    y_pos = {t: i for i, t in enumerate(tissue_order)}
+
+    for sig_type, color, marker, label in [
+        ('cytosig', COLORS['cytosig'], 'o', 'CytoSig'),
+        ('secact', COLORS['secact'], 's', 'SecAct'),
+    ]:
+        sub = plot_df[plot_df['signature'] == sig_type]
+        for _, row in sub.iterrows():
+            if row['tissue'] in y_pos:
+                ax.scatter(row['median_rho'], y_pos[row['tissue']],
+                          color=color, marker=marker, s=50, alpha=0.8,
+                          zorder=3, label=label if row['tissue'] == tissue_order[0] else '')
+
+    ax.set_yticks(range(len(tissue_order)))
+    ax.set_yticklabels(tissue_order, fontsize=8)
+    ax.set_xlabel('Median Spearman ρ (across targets)')
+    ax.set_title('GTEx Per-Tissue Validation: CytoSig vs SecAct\n(29 tissues, by_tissue level)',
+                 fontsize=12, fontweight='bold')
+    ax.axvline(0, color='gray', linestyle='--', alpha=0.5)
+    ax.legend(fontsize=9, loc='lower right')
+
+    plt.tight_layout()
+    fig.savefig(FIG_DIR / 'fig4a_gtex_per_tissue.png')
+    fig.savefig(FIG_DIR / 'fig4a_gtex_per_tissue.pdf')
+    plt.close(fig)
+    print('  ✓ Figure 4a: GTEx per-tissue stratified validation')
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# FIGURE 4b: TCGA Per-Cancer Stratified Validation
+# ═══════════════════════════════════════════════════════════════════════════════
+def fig4b_tcga_per_cancer(df):
+    """Horizontal dot plot: CytoSig vs SecAct median ρ per TCGA cancer type.
+
+    Data source:
+        tcga_correlations.csv at primary_by_cancer level.
+    Method:
+        Same as fig4a but for TCGA. 33 cancer types sorted by SecAct median.
+    Output:
+        fig4b_tcga_per_cancer.png, fig4b_tcga_per_cancer.pdf
+    """
+    tcga = df[(df['atlas'] == 'tcga') & (df['level'] == 'primary_by_cancer')]
+    tcga = tcga[~tcga['celltype'].isin(['all', 'unmappable'])]
+    cancers = sorted(tcga['celltype'].unique())
+
+    rows = []
+    for cancer in cancers:
+        c_data = tcga[tcga['celltype'] == cancer]
+        for sig_type in ['cytosig', 'secact']:
+            sub = c_data[c_data['signature'] == sig_type]
+            if len(sub) > 0:
+                rhos = sub['spearman_rho'].dropna()
+                n_samples = sub['n_samples'].iloc[0] if 'n_samples' in sub.columns else 0
+                rows.append({
+                    'cancer': cancer, 'signature': sig_type,
+                    'median_rho': rhos.median(), 'n_targets': len(rhos),
+                    'n_samples': n_samples,
+                })
+    plot_df = pd.DataFrame(rows)
+
+    secact_order = plot_df[plot_df['signature'] == 'secact'].sort_values('median_rho', ascending=True)
+    cancer_order = secact_order['cancer'].tolist()
+
+    fig, ax = plt.subplots(figsize=(10, max(8, len(cancer_order) * 0.35)))
+    y_pos = {c: i for i, c in enumerate(cancer_order)}
+
+    for sig_type, color, marker, label in [
+        ('cytosig', COLORS['cytosig'], 'o', 'CytoSig'),
+        ('secact', COLORS['secact'], 's', 'SecAct'),
+    ]:
+        sub = plot_df[plot_df['signature'] == sig_type]
+        for _, row in sub.iterrows():
+            if row['cancer'] in y_pos:
+                ax.scatter(row['median_rho'], y_pos[row['cancer']],
+                          color=color, marker=marker, s=50, alpha=0.8,
+                          zorder=3, label=label if row['cancer'] == cancer_order[0] else '')
+
+    ax.set_yticks(range(len(cancer_order)))
+    ax.set_yticklabels(cancer_order, fontsize=7)
+    ax.set_xlabel('Median Spearman ρ (across targets)')
+    ax.set_title('TCGA Per-Cancer Validation: CytoSig vs SecAct\n(33 cancer types, primary_by_cancer level)',
+                 fontsize=12, fontweight='bold')
+    ax.axvline(0, color='gray', linestyle='--', alpha=0.5)
+    ax.legend(fontsize=9, loc='lower right')
+
+    plt.tight_layout()
+    fig.savefig(FIG_DIR / 'fig4b_tcga_per_cancer.png')
+    fig.savefig(FIG_DIR / 'fig4b_tcga_per_cancer.pdf')
+    plt.close(fig)
+    print('  ✓ Figure 4b: TCGA per-cancer stratified validation')
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# FIGURE 4c: Cross-Platform Concordance
+# ═══════════════════════════════════════════════════════════════════════════════
+def fig4c_cross_platform_concordance(df):
+    """Scatter: GTEx vs scAtlas Normal per-tissue ρ concordance.
+
+    Data source:
+        gtex_correlations.csv (by_tissue), scatlas_normal_correlations.csv
+        (donor_organ). Tissues matched by name mapping.
+    Method:
+        For matching tissues in GTEx and scAtlas Normal, compute per-tissue
+        median CytoSig ρ. Scatter GTEx ρ (x) vs scAtlas ρ (y). Compute
+        Spearman correlation of the ρ values across tissues.
+    Output:
+        fig4c_cross_platform_concordance.png, fig4c_cross_platform_concordance.pdf
+    """
+    # Tissue/organ mappings (GTEx tissue → scAtlas organ)
+    tissue_map_normal = {
+        'Blood': 'Blood', 'Breast': 'Breast', 'Colon': 'Colon',
+        'Esophagus': 'Esophagus', 'Heart': 'Heart', 'Kidney': 'Kidney',
+        'Liver': 'Liver', 'Lung': 'Lung', 'Ovary': 'Ovary',
+        'Skin': 'Skin', 'Spleen': 'Spleen',
+    }
+
+    fig, axes = plt.subplots(1, 2, figsize=(14, 6))
+
+    # Panel A: GTEx vs scAtlas Normal
+    ax = axes[0]
+    gtex_bt = df[(df['atlas'] == 'gtex') & (df['level'] == 'by_tissue') & (df['signature'] == 'cytosig')]
+    sn_do = df[(df['atlas'] == 'scatlas_normal') & (df['level'] == 'donor_organ') & (df['signature'] == 'cytosig')]
+
+    gtex_rhos, sn_rhos, labels = [], [], []
+    for gtex_tissue, sn_organ in tissue_map_normal.items():
+        g_sub = gtex_bt[gtex_bt['celltype'] == gtex_tissue]
+        s_sub = sn_do[sn_do['celltype'] == sn_organ]
+        if len(g_sub) > 0 and len(s_sub) > 0:
+            gtex_rhos.append(g_sub['spearman_rho'].median())
+            sn_rhos.append(s_sub['spearman_rho'].median())
+            labels.append(gtex_tissue)
+
+    if len(gtex_rhos) >= 3:
+        rho_concordance, p_conc = stats.spearmanr(gtex_rhos, sn_rhos)
+        ax.scatter(gtex_rhos, sn_rhos, c=COLORS['cytosig'], s=60, alpha=0.8, zorder=3)
+        for i, label in enumerate(labels):
+            ax.annotate(label, (gtex_rhos[i], sn_rhos[i]),
+                       fontsize=7, xytext=(5, 5), textcoords='offset points')
+        lim = [min(min(gtex_rhos), min(sn_rhos)) - 0.05,
+               max(max(gtex_rhos), max(sn_rhos)) + 0.05]
+        ax.plot(lim, lim, 'k--', alpha=0.4)
+        ax.set_xlim(lim)
+        ax.set_ylim(lim)
+        ax.set_xlabel('GTEx per-tissue median ρ (CytoSig)')
+        ax.set_ylabel('scAtlas Normal per-organ median ρ (CytoSig)')
+        ax.set_title(f'GTEx vs scAtlas Normal\n(n={len(labels)} tissues, '
+                     f'ρ_concordance={rho_concordance:.3f}, p={p_conc:.3f})',
+                     fontsize=10, fontweight='bold')
+    else:
+        ax.text(0.5, 0.5, 'Insufficient matching tissues', ha='center',
+                va='center', transform=ax.transAxes)
+
+    # Panel B: TCGA vs scAtlas Cancer
+    ax = axes[1]
+    cancer_map = {
+        'Breast Invasive Carcinoma': 'BRCA',
+        'Colon Adenocarcinoma': 'CRC',
+        'Head & Neck Squamous Cell Carcinoma': 'HNSC',
+        'Kidney Clear Cell Carcinoma': 'KIRC',
+        'Liver Hepatocellular Carcinoma': 'HCC',
+        'Lung Adenocarcinoma': 'LUAD',
+        'Ovarian Serous Cystadenocarcinoma': 'OV',
+        'Pancreatic Adenocarcinoma': 'PAAD',
+    }
+
+    tcga_pbc = df[(df['atlas'] == 'tcga') & (df['level'] == 'primary_by_cancer') & (df['signature'] == 'cytosig')]
+    sc_tbc = df[(df['atlas'] == 'scatlas_cancer') & (df['level'] == 'tumor_by_cancer') & (df['signature'] == 'cytosig')]
+
+    tcga_rhos, sc_rhos, cancer_labels = [], [], []
+    for tcga_cancer, sc_cancer in cancer_map.items():
+        t_sub = tcga_pbc[tcga_pbc['celltype'] == tcga_cancer]
+        s_sub = sc_tbc[sc_tbc['celltype'] == sc_cancer]
+        if len(t_sub) > 0 and len(s_sub) > 0:
+            tcga_rhos.append(t_sub['spearman_rho'].median())
+            sc_rhos.append(s_sub['spearman_rho'].median())
+            cancer_labels.append(sc_cancer)
+
+    if len(tcga_rhos) >= 3:
+        rho_concordance, p_conc = stats.spearmanr(tcga_rhos, sc_rhos)
+        ax.scatter(tcga_rhos, sc_rhos, c=COLORS['secact'], s=60, alpha=0.8, zorder=3)
+        for i, label in enumerate(cancer_labels):
+            ax.annotate(label, (tcga_rhos[i], sc_rhos[i]),
+                       fontsize=7, xytext=(5, 5), textcoords='offset points')
+        lim = [min(min(tcga_rhos), min(sc_rhos)) - 0.05,
+               max(max(tcga_rhos), max(sc_rhos)) + 0.05]
+        ax.plot(lim, lim, 'k--', alpha=0.4)
+        ax.set_xlim(lim)
+        ax.set_ylim(lim)
+        ax.set_xlabel('TCGA per-cancer median ρ (CytoSig)')
+        ax.set_ylabel('scAtlas Cancer per-cancer median ρ (CytoSig)')
+        ax.set_title(f'TCGA vs scAtlas Cancer\n(n={len(cancer_labels)} cancers, '
+                     f'ρ_concordance={rho_concordance:.3f}, p={p_conc:.3f})',
+                     fontsize=10, fontweight='bold')
+    else:
+        ax.text(0.5, 0.5, 'Insufficient matching cancers', ha='center',
+                va='center', transform=ax.transAxes)
+
+    fig.suptitle('Cross-Platform Concordance: Bulk RNA-seq vs Single-Cell Pseudobulk',
+                 fontsize=13, fontweight='bold')
+    plt.tight_layout()
+    fig.savefig(FIG_DIR / 'fig4c_cross_platform_concordance.png')
+    fig.savefig(FIG_DIR / 'fig4c_cross_platform_concordance.pdf')
+    plt.close(fig)
+    print('  ✓ Figure 4c: Cross-platform concordance')
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# FIGURE 2 (was 15): Summary Statistics Table
 # ═══════════════════════════════════════════════════════════════════════════════
 def fig15_summary_table(df):
     """Publication-ready summary statistics table.
@@ -1550,13 +1837,13 @@ def fig15_summary_table(df):
     ax.set_title('Cross-Sample Validation Summary Statistics\n(Donor-Level Pseudobulk Spearman Correlation)',
                  fontsize=14, fontweight='bold', pad=20)
     plt.tight_layout()
-    fig.savefig(FIG_DIR / 'fig15_summary_table.png')
-    fig.savefig(FIG_DIR / 'fig15_summary_table.pdf')
+    fig.savefig(FIG_DIR / 'fig2_summary_table.png')
+    fig.savefig(FIG_DIR / 'fig2_summary_table.pdf')
     plt.close(fig)
 
     # Also save as CSV
     table_df.to_csv(FIG_DIR / 'summary_statistics.csv', index=False)
-    print('  ✓ Figure 15: Summary statistics table')
+    print('  ✓ Figure 2: Summary statistics table')
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -1582,21 +1869,27 @@ def main():
     print(f'  Atlases: {df["atlas"].nunique()} | Signatures: {df["signature"].nunique()} | Targets: {df["target"].nunique()}')
 
     print('\nGenerating figures...')
+    # Section 1
     fig1_dataset_overview()
-    fig2_correlation_summary(df)
-    fig3_good_bad_correlations(df)
-    fig4_bio_targets_heatmap(df)
-    fig5_representative_scatter(df)
-    fig6_cross_atlas_consistency(df)
-    fig7_validation_levels(df)
-    fig8_method_comparison()
-    fig9_lincytosig_vs_cytosig()
-    fig10_lincytosig_advantage()
-    fig11_celltype_delta_rho()
-    fig12_bulk_validation(df)
-    fig13_lincytosig_specificity()
-    fig14_celltype_scatter_examples(df)
-    fig15_summary_table(df)
+    # Section 4: Validation Results
+    fig15_summary_table(df)           # Now Fig 2: Summary statistics table
+    fig2_correlation_summary(df)      # Now Fig 3: Cross-dataset boxplot
+    fig4a_gtex_per_tissue(df)         # Fig 4a: GTEx per-tissue (NEW)
+    fig4b_tcga_per_cancer(df)         # Fig 4b: TCGA per-cancer (NEW)
+    fig4c_cross_platform_concordance(df)  # Fig 4c: Cross-platform (NEW)
+    fig3_good_bad_correlations(df)    # Now Fig 5: Best/worst targets
+    fig6_cross_atlas_consistency(df)  # Fig 6: Cross-atlas consistency
+    fig7_validation_levels(df)        # Fig 7: Aggregation levels
+    # Section 5: Method Comparison
+    fig4_bio_targets_heatmap(df)      # Now Fig 8: Bio targets heatmap
+    fig5_representative_scatter(df)   # Now Fig 9: Representative scatter
+    fig8_method_comparison()          # Now Fig 10: 10-way comparison
+    fig9_lincytosig_vs_cytosig()      # Now Fig 11: Lin vs Cyto scatter
+    fig10_lincytosig_advantage()      # Now Fig 12: LinCytoSig advantage
+    fig11_celltype_delta_rho()        # Now Fig 13: Celltype delta rho
+    fig12_bulk_validation(df)         # Now Fig 14: Bulk validation
+    fig13_lincytosig_specificity()    # Now Fig 15: LinCytoSig specificity
+    fig14_celltype_scatter_examples(df)  # Now Fig 16: Celltype scatter
 
     print('\n' + '=' * 60)
     print(f'All figures saved to: {FIG_DIR}/')
