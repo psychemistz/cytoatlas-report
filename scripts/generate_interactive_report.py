@@ -274,7 +274,9 @@ def prepare_boxplot_data(df):
     Output:
         Dict of {atlas_label: {cytosig, secact, cytosig_matched, secact_matched,
         stats_total, stats_matched}} embedded as JSON in the interactive HTML.
+        Stats include BH-FDR corrected q-values across 6 atlases.
     """
+    from statsmodels.stats.multitest import multipletests
     reverse_alias = {v: k for k, v in ALIAS_MAP.items()}
     result = {}
     for atlas in ATLAS_ORDER:
@@ -356,6 +358,27 @@ def prepare_boxplot_data(df):
             }
         else:
             result[label]['stats_matched'] = None
+
+    # --- BH-FDR correction across 6 atlases ---
+    atlas_labels = [ATLAS_LABELS[ATLAS_ORDER.index(a)] for a in ATLAS_ORDER]
+
+    # Mann-Whitney
+    mw_entries = [(lbl, result[lbl]['stats_total']['p_value'])
+                  for lbl in atlas_labels if result[lbl].get('stats_total')]
+    if mw_entries:
+        mw_lbls, mw_ps = zip(*mw_entries)
+        _, mw_qs, _, _ = multipletests(list(mw_ps), method='fdr_bh')
+        for lbl, q in zip(mw_lbls, mw_qs):
+            result[lbl]['stats_total']['q_bh'] = round(float(q), 6)
+
+    # Wilcoxon
+    wx_entries = [(lbl, result[lbl]['stats_matched']['p_value'])
+                  for lbl in atlas_labels if result[lbl].get('stats_matched')]
+    if wx_entries:
+        wx_lbls, wx_ps = zip(*wx_entries)
+        _, wx_qs, _, _ = multipletests(list(wx_ps), method='fdr_bh')
+        for lbl, q in zip(wx_lbls, wx_qs):
+            result[lbl]['stats_matched']['q_bh'] = round(float(q), 6)
 
     return result
 
@@ -2116,10 +2139,10 @@ window.renderBoxplot = function(mode) {{
     // Add significance annotations per atlas
     atlases.forEach(function(a, i) {{
       var st = bd[a] ? bd[a].stats_total : null;
-      if (st && st.p_value !== null) {{
+      if (st && st.q_bh !== undefined) {{
         annotations.push({{
           x: a, y: 1.05, xref:'x', yref:'paper',
-          text: '<b>' + sigStars(st.p_value) + '</b><br><span style="font-size:9px">' + formatPval(st.p_value) + '</span>',
+          text: '<b>' + sigStars(st.q_bh) + '</b><br><span style="font-size:9px">' + formatQval(st.q_bh) + '</span>',
           showarrow: false, font:{{size:11}}, align:'center',
         }});
       }}
@@ -2127,7 +2150,7 @@ window.renderBoxplot = function(mode) {{
     document.getElementById('boxplot-caption').innerHTML =
       '<strong>Figure 3.</strong> Spearman \\u03c1 distributions: CytoSig (43 targets) vs SecAct (1,170 targets) across atlases. ' +
       'Independence-corrected: GTEx/TCGA use median-of-medians (one \\u03c1 per target). ' +
-      'Mann-Whitney U test. Significance: *** p&lt;0.001, ** p&lt;0.01, * p&lt;0.05, ns = not significant.';
+      'Mann-Whitney U test, BH-FDR corrected across 6 atlases. Significance: *** q&lt;0.001, ** q&lt;0.01, * q&lt;0.05, ns = not significant.';
   }} else {{
     // Matched: CytoSig (32) vs SecAct (32) on shared targets
     var cfgs = [
@@ -2150,17 +2173,17 @@ window.renderBoxplot = function(mode) {{
     // Add significance annotations per atlas
     atlases.forEach(function(a, i) {{
       var sm = bd[a] ? bd[a].stats_matched : null;
-      if (sm && sm.p_value !== null) {{
+      if (sm && sm.q_bh !== undefined) {{
         annotations.push({{
           x: a, y: 1.05, xref:'x', yref:'paper',
-          text: '<b>' + sigStars(sm.p_value) + '</b><br><span style="font-size:9px">' + formatPval(sm.p_value) + '</span>',
+          text: '<b>' + sigStars(sm.q_bh) + '</b><br><span style="font-size:9px">' + formatQval(sm.q_bh) + '</span>',
           showarrow: false, font:{{size:11}}, align:'center',
         }});
       }}
     }});
     document.getElementById('boxplot-caption').innerHTML =
       '<strong>Figure 3.</strong> Spearman \\u03c1 distributions: CytoSig vs SecAct on 32 matched targets shared between both methods (22 direct + 10 alias-resolved). ' +
-      'Wilcoxon signed-rank test (paired by target). Significance: *** p&lt;0.001, ** p&lt;0.01, * p&lt;0.05, ns = not significant. Donor-level pseudobulk.';
+      'Wilcoxon signed-rank test (paired by target), BH-FDR corrected across 6 atlases. Significance: *** q&lt;0.001, ** q&lt;0.01, * q&lt;0.05, ns = not significant.';
   }}
 
   var title = mode === 'total'
