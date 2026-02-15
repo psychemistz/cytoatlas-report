@@ -1771,7 +1771,7 @@ Ridge regression (L2-regularized linear regression) was chosen deliberately over
 
 <!-- Item 4: DNN-based → DL-based -->
 <div class="callout">
-<p><strong>The key insight:</strong> CytoAtlas is not trying to replace DL-based tools. It provides an <strong>orthogonal, complementary signal</strong> that a human scientist can directly inspect. When CytoAtlas says "IFNG activity is elevated in CD8+ T cells from RA patients," you can verify this by checking the IFNG signature genes in those cells.</p>
+<p><strong>The key insight:</strong> CytoAtlas is not trying to replace DL-based tools. It provides a linear, interpretable readout: when CytoAtlas reports &ldquo;IFNG activity is elevated in CD8+ T cells from RA patients,&rdquo; the contributing signature genes and their weights can be examined directly in those cells.</p>
 </div>
 
 <h3>3.2 What Scientific Questions Does CytoAtlas Answer?</h3>
@@ -1784,8 +1784,8 @@ Ridge regression (L2-regularized linear regression) was chosen deliberately over
 </ol>
 
 <h3>3.3 Validation Philosophy</h3>
-<p>CytoAtlas validates against a simple but powerful principle: <strong>if CytoSig predicts high IFNG activity for a sample, that sample should have high IFNG gene expression.</strong> This expression-activity correlation is computed via Spearman rank correlation across donors/samples.</p>
-<p>This is a <em>conservative</em> validation &mdash; it only captures signatures where the target gene itself is expressed. Signatures that act through downstream effectors would not be captured, meaning our validation <strong>underestimates</strong> true accuracy.</p>
+<p>CytoAtlas validates against a direct principle: <strong>if CytoSig predicts high IFNG activity for a sample, that sample should have high IFNG gene expression.</strong> This expression-activity correlation is computed via Spearman rank correlation across donors/samples.</p>
+<p>This validation only captures signatures where the target gene itself is expressed. Signatures that act primarily through downstream effectors without upregulating the ligand gene itself would not be captured by this metric.</p>
 
 <hr>
 
@@ -1818,10 +1818,10 @@ Ridge regression (L2-regularized linear regression) was chosen deliberately over
 
 <div class="callout">
 <p><strong>Why does SecAct appear to underperform CytoSig in Inflammation Atlas Main?</strong></p>
-<p>This is a <strong>composition effect</strong>, not a genuine performance gap, confirmed by two complementary statistical tests:</p>
+<p>The total comparison includes ~1,170 SecAct targets vs 43 CytoSig targets, so differences in the non-overlapping targets drive the result. Two complementary tests separate this from matched-target performance:</p>
 <p><strong>Total comparison (Mann&ndash;Whitney U test):</strong> Compares the full &rho; distributions of CytoSig (43 cytokine signatures) vs SecAct (~1,170 secreted protein signatures) using <strong>independence-corrected</strong> values. For GTEx/TCGA, each target&rsquo;s representative &rho; is the median across per-tissue/cancer values (median-of-medians); for other datasets, donor_only/tumor_only &rho; is used directly. SecAct achieves a significantly higher median &rho; in 5 of 6 datasets (GTEx: <em>p</em> = 4.76 &times; 10<sup>&minus;4</sup>; TCGA: <em>p</em> = 2.85 &times; 10<sup>&minus;3</sup>; CIMA: <em>p</em> = 3.18 &times; 10<sup>&minus;2</sup>; scAtlas Normal: <em>p</em> = 1.04 &times; 10<sup>&minus;4</sup>; scAtlas Cancer: <em>p</em> = 1.06 &times; 10<sup>&minus;5</sup>). Inflammation Atlas Main is the sole exception (U = 14,101, <em>p</em> = 0.548, not significant) and the only dataset where CytoSig&rsquo;s median &rho; (0.323) exceeds SecAct&rsquo;s (0.173).</p>
 <p><strong>Matched comparison (Wilcoxon signed-rank test):</strong> Restricts to the 32 targets shared between both methods (22 direct + 10 alias-resolved), each target serving as its own control. SecAct&rsquo;s median &rho; is consistently higher across all 6 datasets, reaching significance in 5 (GTEx: <em>p</em> = 3.54 &times; 10<sup>&minus;5</sup>; TCGA: <em>p</em> = 3.24 &times; 10<sup>&minus;6</sup>; CIMA: <em>p</em> = 2.28 &times; 10<sup>&minus;2</sup>; scAtlas Normal: <em>p</em> = 3.54 &times; 10<sup>&minus;5</sup>; scAtlas Cancer: <em>p</em> = 3.54 &times; 10<sup>&minus;5</sup>). Inflammation Atlas Main is not significant (<em>p</em> = 0.141).</p>
-<p>Inflammation Atlas Main is largely blood-derived, so many SecAct targets that perform well in multi-organ contexts contribute near-zero or negative correlations here. In fact, 99 SecAct targets are negative <em>only</em> in Inflammation Atlas Main but positive in all other datasets, reflecting tissue-specific expression limitations rather than inference failure. The &ldquo;Matched&rdquo; tab above demonstrates the fair comparison on equal footing.</p>
+<p>Inflammation Atlas Main is largely blood-derived; 99 SecAct targets show negative &rho; only in this dataset while remaining positive in all other datasets. The &ldquo;Matched&rdquo; tab above restricts the comparison to the 32 shared targets, removing the effect of non-overlapping targets.</p>
 </div>
 
 <!-- Per-tissue/per-cancer stratified validation -->
@@ -1873,7 +1873,7 @@ Ridge regression (L2-regularized linear regression) was chosen deliberately over
 
 <div class="callout">
 <p><strong>Cross-platform concordance:</strong> This section tests whether expression&ndash;activity relationships replicate across measurement technologies. For each tissue (GTEx) or cancer type (TCGA), we compute per-target Spearman &rho; from bulk RNA-seq data and compare it to the same target&rsquo;s &rho; from single-cell pseudobulk data (scAtlas). Wilcoxon signed-rank tests (paired by target) with BH-FDR correction assess whether &rho; values differ between platforms.</p>
-<p><strong>Key finding:</strong> Using all targets, SecAct shows significant bulk&ndash;pseudobulk differences in most strata (11/13 GTEx tissues, 5/11 TCGA cancers), while CytoSig shows almost none (1/13, 0/11). However, the <em>Matched</em> tabs reveal this is a <strong>statistical power effect, not a signal quality difference</strong>: when restricted to the same 32 shared targets, both CytoSig and SecAct show no significant platform differences (0/13 and 0/13 for GTEx; 0/11 and 1/11 for TCGA). The apparent platform sensitivity in SecAct&rsquo;s full panel is a <strong>statistical power effect</strong>, not a signal quality difference: matched and unmatched SecAct targets show the same per-target platform shift (mean |&Delta;| = 0.298 vs 0.302, Mann&ndash;Whitney p = 0.82), but SecAct&rsquo;s ~1,000 paired targets per tissue provide 25&times; more observations than CytoSig&rsquo;s ~40, easily detecting the same tiny systematic shift (&Delta; &asymp; 0.03) that CytoSig lacks power to detect. Core cytokine targets are platform-robust.</p>
+<p><strong>Key finding:</strong> Using all targets, SecAct shows significant bulk&ndash;pseudobulk differences in most strata (11/13 GTEx tissues, 5/11 TCGA cancers), while CytoSig shows almost none (1/13, 0/11). When restricted to the same 32 shared targets, both CytoSig and SecAct show no significant platform differences (0/13 and 0/13 for GTEx; 0/11 and 1/11 for TCGA). Matched and unmatched SecAct targets show the same per-target platform shift (mean |&Delta;| = 0.298 vs 0.302, Mann&ndash;Whitney p = 0.82), but SecAct&rsquo;s ~1,000 paired targets per tissue provide 25&times; more observations than CytoSig&rsquo;s ~40, allowing detection of a small systematic shift (&Delta; &asymp; 0.03) that is not detectable with CytoSig&rsquo;s sample size.</p>
 </div>
 
 <h3>4.5 Best and Worst Correlated Targets</h3>
@@ -1934,7 +1934,7 @@ Ridge regression (L2-regularized linear regression) was chosen deliberately over
 <p style="font-size:0.9em;color:#555;">Remaining 5 targets do not fit either category: VEGFA and IFNL are CytoSig-only (CytoSig mean +0.38/+0.21, SecAct &lt; 0.2), GDF11 and GCSF are borderline (CytoSig mean +0.23 each, SecAct +0.43/+0.35), and IL36 shows near-zero correlations in both methods.</p>
 
 <div class="callout">
-<p><strong>Key insight:</strong> CytoSig&rsquo;s median log2FC signatures reliably detect 16 canonical cytokines with strong transcriptional programs. SecAct&rsquo;s spatial correlation signatures additionally rescue 11 targets where CytoSig averages near zero&mdash;including membrane-bound (CD40L, TRAIL), paracrine (HGF, FGF2), and heteromeric (LTA) signaling targets. TWEAK and IL21 are the clearest cases: CytoSig averages near zero across all datasets, while SecAct achieves +0.44 and +0.22. Note: this section uses donor-level aggregation (matching Figure 5), not the independence-corrected median-of-medians used in &sect;4.1&ndash;4.3. Select &ldquo;SecAct&rdquo; in the dropdown above to explore interactively.</p>
+<p><strong>Key insight:</strong> 16 of 32 matched targets show mean &rho; &gt; 0.25 for both CytoSig and SecAct. For 11 additional targets, CytoSig averages near zero while SecAct achieves mean &rho; &gt; 0.2 (e.g., TWEAK: CytoSig &minus;0.02 vs SecAct +0.44; LTA: &minus;0.02 vs +0.53; HGF: +0.06 vs +0.58). Note: this section uses donor-level aggregation (matching Figure 5), not the independence-corrected median-of-medians used in &sect;4.1&ndash;4.3. Select &ldquo;SecAct&rdquo; in the dropdown above to explore interactively.</p>
 </div>
 
 <!-- Item 10: Interactive consistency plot -->
@@ -1952,7 +1952,7 @@ Ridge regression (L2-regularized linear regression) was chosen deliberately over
 </table>
 
 <div class="callout">
-<p><strong>Key insight:</strong> No systematic bulk vs single-cell advantage exists&mdash;mean |&rho;| across 14 targets: GTEx 0.26, TCGA 0.33, CIMA 0.26, Inflammation Main 0.44, scAtlas Normal 0.36, scAtlas Cancer 0.37. Variation is target-specific and cohort-specific rather than platform-driven. The universal tier (IL1B, TNFA, IFNG, IL6) represents cytokine axes fundamental to inflammation biology, while context-dependent targets (IL4, IL17A) reflect Th2/Th17 pathways active only in specific disease cohorts.</p>
+<p><strong>Key insight:</strong> Mean |&rho;| across 14 targets does not separate by platform: GTEx 0.26, TCGA 0.33, CIMA 0.26, Inflammation Main 0.44, scAtlas Normal 0.36, scAtlas Cancer 0.37. The universal tier (IL1B, TNFA, IFNG, IL6) shows &rho; &gt; 0.1 in all 6 datasets; context-dependent targets (IL4, IL17A) show sign changes and are absent from Inflammation Main.</p>
 </div>
 
 <!-- Item 11: Aggregation levels with Total / Matched tabs -->
@@ -1974,7 +1974,7 @@ Ridge regression (L2-regularized linear regression) was chosen deliberately over
 
 <div class="callout">
 <p><strong>Aggregation levels explained:</strong> Pseudobulk profiles are aggregated at increasingly fine cell-type resolution. At coarser levels, each pseudobulk profile averages more cells, yielding smoother expression estimates but masking cell-type-specific signals. At finer levels, each profile is more cell-type-specific but based on fewer cells.</p>
-<p><strong>Key insight:</strong> Beyond ~L2 annotation depth, correlations become noise-dominated&mdash;cell-type stratification fragments the donor pool below the sample size needed for reliable correlation (signal/null ratio &lt;2&times;, % positive &rarr; 50%). The practical limit is samples-per-group, not annotation depth: Inflammation Main retains signal at L2 (553 samples/group) while scAtlas Normal is marginal at its shallowest stratification (22 samples/group). In aggregate, SecAct&rsquo;s larger target pool (~1,170) shows higher retention than CytoSig (43 targets), but on matched targets the advantage disappears.</p>
+<p><strong>Key insight:</strong> Beyond ~L2 annotation depth, % positive correlations approach 50% and signal/null ratio drops below 2&times;. Inflammation Main retains signal at L2 (553 samples/group) while scAtlas Normal shows weaker correlations at its shallowest stratification (22 samples/group). SecAct&rsquo;s larger target pool (~1,170) shows higher retention than CytoSig (43 targets) in aggregate, but on matched targets the difference disappears.</p>
 </div>
 
 <table>
@@ -2162,10 +2162,10 @@ Ridge regression (L2-regularized linear regression) was chosen deliberately over
 </ol>
 <p><strong>Key findings:</strong></p>
 <ul>
-  <li><strong>SecAct achieves the highest median &rho;</strong> across all 4 combined datasets, benefiting from spatial-transcriptomics-derived signatures.</li>
+  <li><strong>SecAct achieves the highest median &rho;</strong> across all 4 combined datasets.</li>
   <li><strong>CytoSig outperforms most LinCytoSig variants</strong> at donor level, with one notable exception: scAtlas Normal Best-orig (0.298) exceeds CytoSig (0.216).</li>
-  <li><strong>Gene filtering improves LinCytoSig</strong> in most datasets (CIMA +102%, Inflammation Atlas Main), confirming noise reduction from restricting the gene space.</li>
-  <li><strong>GTEx-selected best</strong> performs comparably to combined-selected in most datasets but slightly better in scAtlas Cancer (0.300 vs 0.275). <strong>TCGA-selected best</strong> generally underperforms other selection strategies, suggesting GTEx&rsquo;s broader tissue coverage provides more generalizable selections.</li>
+  <li><strong>Gene filtering improves LinCytoSig</strong> in most datasets (CIMA +102%, Inflammation Atlas Main).</li>
+  <li><strong>GTEx-selected best</strong> performs comparably to combined-selected in most datasets but slightly better in scAtlas Cancer (0.300 vs 0.275). <strong>TCGA-selected best</strong> generally underperforms other selection strategies.</li>
   <li><strong>Gene filtering of GTEx/TCGA-selected:</strong> GTEx+filt and TCGA+filt show mixed results &mdash; filtering sometimes improves (e.g., TCGA+filt in Inflammation Atlas Main: 0.260 vs TCGA-orig 0.168) but can also reduce performance, indicating the optimal gene space depends on both the selection dataset and target dataset context.</li>
   <li><strong>General ranking:</strong> SecAct &gt; CytoSig &gt; LinCytoSig Best variants &gt; LinCytoSig (filt) &gt; LinCytoSig (orig), though dataset-specific exceptions exist.</li>
 </ul>
@@ -2210,7 +2210,7 @@ Ridge regression (L2-regularized linear regression) was chosen deliberately over
   <li><strong>At every level, LinCytoSig underperforms CytoSig</strong> (mean &Delta;&rho; ranges from &minus;0.08 at coarse L1 to &minus;0.02 at fine L4 in CIMA). Finer cell types reduce the gap slightly but never close it.</li>
   <li><strong>SecAct wins at every level</strong> in CIMA and scAtlas. In Inflammation Atlas Main L2, LinCytoSig is nearly tied with SecAct (&Delta;&rho; = +0.01) but still loses to CytoSig.</li>
   <li><strong>Per cell type:</strong> Only 5 of 43 cell types show consistent LinCytoSig advantage vs CytoSig (NK Cell, Basophil, DC, Trophoblast, Arterial Endothelial). No cell type beats SecAct.</li>
-  <li><strong>Interpretation:</strong> CytoSig&rsquo;s global signature, derived from median log2FC across all cell types, already captures the dominant transcriptional response. Restricting to a single cell type&rsquo;s response introduces noise from small sample sizes without gaining meaningful lineage specificity. The hypothesis that finer resolution should favor LinCytoSig is not supported by the data.</li>
+  <li><strong>Summary:</strong> LinCytoSig does not outperform CytoSig at any aggregation level tested. The gap narrows at finer levels (L1 &Delta;&rho; = &minus;0.08 &rarr; L4 &Delta;&rho; = &minus;0.02 in CIMA) but does not close.</li>
 </ul>
 <p style="font-size:0.9em;color:#6B7280;">See <a href="lincytosig_issues.html#issue3">Issue 3: Celltype-Level Evaluation</a> for a matched celltype-level analysis where LinCytoSig is tested on its intended target (e.g., Fibroblast__TGFB1 on fibroblast pseudobulk).</p>
 </div>
