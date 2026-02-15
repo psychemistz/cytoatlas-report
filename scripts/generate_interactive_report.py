@@ -878,6 +878,95 @@ def prepare_bulk_validation_data(df):
     return result
 
 
+def prepare_cross_platform_data(df):
+    """Prepare cross-platform comparison data (§4.4).
+
+    Compares bulk RNA-seq (GTEx/TCGA) vs single-cell pseudobulk (scAtlas)
+    for matching tissues/cancer types. For each pair, computes per-target
+    Spearman ρ and returns side-by-side distributions.
+
+    GTEx by_tissue vs scAtlas Normal donor_organ: matching tissues
+    TCGA primary_by_cancer vs scAtlas Cancer tumor_by_cancer: matching cancers
+    """
+    # Tissue name mapping: GTEx name → scAtlas Normal name
+    TISSUE_MAP = {
+        'Blood': 'Blood', 'Breast': 'Breast', 'Colon': 'Colon',
+        'Esophagus': 'Esophagus', 'Heart': 'Heart', 'Kidney': 'Kidney',
+        'Liver': 'Liver', 'Lung': 'Lung', 'Ovary': 'Ovary',
+        'Skin': 'Skin', 'Spleen': 'Spleen', 'Small Intestine': 'SmallIntestine',
+        'Uterus': 'Uterus',
+    }
+    # Cancer type mapping: TCGA full name → scAtlas abbreviation
+    CANCER_MAP = {
+        'Breast Invasive Carcinoma': 'BRCA',
+        'Colon Adenocarcinoma': 'CRC',
+        'Esophageal Carcinoma': 'ESCA',
+        'Head & Neck Squamous Cell Carcinoma': 'HNSC',
+        'Kidney Clear Cell Carcinoma': 'KIRC',
+        'Liver Hepatocellular Carcinoma': 'HCC',
+        'Lung Adenocarcinoma': 'LUAD',
+        'Ovarian Serous Cystadenocarcinoma': 'OV',
+        'Pancreatic Adenocarcinoma': 'PAAD',
+        'Prostate Adenocarcinoma': 'PRAD',
+        'Stomach Adenocarcinoma': 'STAD',
+    }
+
+    result = {}
+
+    for comparison, atlas_bulk, level_bulk, atlas_sc, level_sc, match_map, label_bulk, label_sc in [
+        ('GTEx vs scAtlas Normal', 'gtex', 'by_tissue', 'scatlas_normal', 'donor_organ',
+         TISSUE_MAP, 'GTEx', 'scAtlas Normal'),
+        ('TCGA vs scAtlas Cancer', 'tcga', 'primary_by_cancer', 'scatlas_cancer', 'tumor_by_cancer',
+         CANCER_MAP, 'TCGA', 'scAtlas Cancer'),
+    ]:
+        bulk_df = df[(df['atlas'] == atlas_bulk) & (df['level'] == level_bulk)]
+        sc_df = df[(df['atlas'] == atlas_sc) & (df['level'] == level_sc)]
+        # Exclude aggregate rows
+        bulk_df = bulk_df[~bulk_df['celltype'].isin(['all', 'unmappable'])]
+        sc_df = sc_df[~sc_df['celltype'].isin(['all', 'unmappable'])]
+
+        comp_data = {'strata': [], 'label_bulk': label_bulk, 'label_sc': label_sc, 'data': {}}
+
+        for bulk_name, sc_name in match_map.items():
+            # Short display label
+            display_name = sc_name if comparison.startswith('TCGA') else bulk_name
+
+            bulk_sub = bulk_df[bulk_df['celltype'] == bulk_name]
+            sc_sub = sc_df[sc_df['celltype'] == sc_name]
+
+            if len(bulk_sub) == 0 or len(sc_sub) == 0:
+                continue
+
+            comp_data['strata'].append(display_name)
+            entry = {}
+            for sig in ['cytosig', 'secact']:
+                b = bulk_sub[bulk_sub['signature'] == sig]['spearman_rho'].dropna().tolist()
+                s = sc_sub[sc_sub['signature'] == sig]['spearman_rho'].dropna().tolist()
+                entry[f'{sig}_bulk'] = [round(r, 4) for r in b]
+                entry[f'{sig}_sc'] = [round(r, 4) for r in s]
+
+                # Concordance: per-target ρ pairs for scatter
+                bt = bulk_sub[bulk_sub['signature'] == sig][['target', 'spearman_rho']].rename(
+                    columns={'spearman_rho': 'rho_bulk'})
+                st = sc_sub[sc_sub['signature'] == sig][['target', 'spearman_rho']].rename(
+                    columns={'spearman_rho': 'rho_sc'})
+                merged = bt.merge(st, on='target')
+                if len(merged) > 1:
+                    rho_corr, _ = scipy_stats.spearmanr(merged['rho_bulk'], merged['rho_sc'])
+                    entry[f'{sig}_concordance'] = {
+                        'targets': merged['target'].tolist(),
+                        'rho_bulk': [round(r, 4) for r in merged['rho_bulk'].tolist()],
+                        'rho_sc': [round(r, 4) for r in merged['rho_sc'].tolist()],
+                        'concordance_rho': round(float(rho_corr), 3),
+                        'n_shared': int(len(merged)),
+                    }
+            comp_data['data'][display_name] = entry
+
+        result[comparison] = comp_data
+
+    return result
+
+
 def prepare_scatter_data():
     """Prepare donor scatter data for key targets (CytoSig + SecAct)."""
     key_targets = ['IFNG', 'IL1B', 'TNFA', 'TGFB1', 'IL6', 'IL10', 'VEGFA', 'CD40L', 'TRAIL', 'HGF']
@@ -1219,7 +1308,7 @@ def prepare_good_bad_data(df):
 def generate_html(summary_table, boxplot_data, consistency_data, heatmap_data,
                   levels_data, bulk_data, scatter_data, good_bad_data,
                   method_boxplot_data, celltype_comparison_data,
-                  level_comparison_data, stratified_data):
+                  level_comparison_data, stratified_data, cross_platform_data):
 
     # Serialize all data as JSON for embedding
     data_json = json.dumps({
@@ -1238,6 +1327,7 @@ def generate_html(summary_table, boxplot_data, consistency_data, heatmap_data,
         'methodBoxplot': method_boxplot_data,
         'celltypeComp': celltype_comparison_data,
         'levelComp': level_comparison_data,
+        'crossPlatform': cross_platform_data,
     }, separators=(',', ':'))
 
     # Embed Figure 1 as base64 so HTML is self-contained
@@ -1657,7 +1747,29 @@ Ridge regression (L2-regularized linear regression) was chosen deliberately over
 <p><strong>Stratified validation:</strong> Instead of aggregating tissues/cancers into a single median-of-medians, this view shows the CytoSig vs SecAct comparison <em>within each individual tissue</em> (GTEx) or <em>cancer type</em> (TCGA). Mann-Whitney U test (Total tab: all targets) and Wilcoxon signed-rank test (Matched tab: 32 shared targets) with BH-FDR correction across all strata within each dataset.</p>
 </div>
 
-<h3>4.4 Best and Worst Correlated Targets</h3>
+<!-- Cross-Platform Comparison: bulk vs pseudobulk -->
+<h3>4.4 Cross-Platform Comparison: Bulk vs Pseudobulk</h3>
+<div class="plotly-container">
+  <div class="tab-bar" id="crossplat-tabs">
+    <button class="tab-btn active" onclick="renderCrossPlatform('cytosig')">CytoSig</button>
+    <button class="tab-btn" onclick="renderCrossPlatform('secact')">SecAct</button>
+  </div>
+  <div class="controls">
+    <label>Comparison:</label>
+    <select id="crossplat-comp-select" onchange="renderCrossPlatform()">
+      <option value="GTEx vs scAtlas Normal">GTEx vs scAtlas Normal (matching tissues)</option>
+      <option value="TCGA vs scAtlas Cancer">TCGA vs scAtlas Cancer (matching cancers)</option>
+    </select>
+  </div>
+  <div id="crossplat-chart" style="height:600px;"></div>
+  <div id="crossplat-caption" class="caption"><strong>Figure 4.</strong> Cross-platform concordance: per-target Spearman &rho; distributions from bulk RNA-seq (GTEx/TCGA) vs single-cell pseudobulk (scAtlas) for matching tissues/cancer types. Side-by-side boxplots show the correlation distribution for each tissue/cancer.</div>
+</div>
+
+<div class="callout">
+<p><strong>Cross-platform concordance:</strong> This section tests whether expression-activity relationships replicate across measurement technologies. For each tissue (GTEx) or cancer type (TCGA), we compute per-target Spearman &rho; from bulk RNA-seq data and compare it to the same target&rsquo;s &rho; from single-cell pseudobulk data (scAtlas). High concordance between platforms would indicate that cytokine activity inference is robust to the underlying measurement technology.</p>
+</div>
+
+<h3>4.5 Best and Worst Correlated Targets</h3>
 <div class="plotly-container">
   <div class="controls">
     <label>Signature:</label>
@@ -1735,15 +1847,15 @@ Ridge regression (L2-regularized linear regression) was chosen deliberately over
 </div>
 
 <!-- Item 10: Interactive consistency plot -->
-<h3>4.5 Cross-Atlas Consistency</h3>
+<h3>4.6 Cross-Atlas Consistency</h3>
 <div class="plotly-container">
   <div id="consistency-chart" style="height:550px;"></div>
-  <div class="caption"><strong>Figure 5.</strong> Key cytokine target correlations tracked across 6 independent datasets (donor-level). Solid lines = CytoSig; dashed lines = SecAct. Lines colored by cytokine family. Click legend entries to show/hide targets.</div>
+  <div class="caption"><strong>Figure 6.</strong> Key cytokine target correlations tracked across 6 independent datasets (donor-level). Solid lines = CytoSig; dashed lines = SecAct. Lines colored by cytokine family. Click legend entries to show/hide targets.</div>
 </div>
 
 <!-- Item 11: Aggregation levels with Total / Matched tabs -->
-<h3>4.6 Effect of Aggregation Level
-    <a href="stats_section_4.6.html" style="font-size:14px;font-weight:400;color:var(--blue);text-decoration:none;">[Statistical Methods]</a></h3>
+<h3>4.7 Effect of Aggregation Level
+    <a href="stats_section_4.1.html#aggregation-level" style="font-size:14px;font-weight:400;color:var(--blue);text-decoration:none;">[Statistical Methods]</a></h3>
 <div class="plotly-container">
   <div class="tab-bar" id="levels-tabs">
     <button class="tab-btn active" onclick="renderLevels('total')">Total</button>
@@ -2986,6 +3098,9 @@ def main():
     bulk_data = prepare_bulk_validation_data(df)
     print(f'  Bulk validation: {len(bulk_data)} datasets')
 
+    cross_platform_data = prepare_cross_platform_data(df)
+    print(f'  Cross-platform: {len(cross_platform_data)} comparisons')
+
     scatter_data = prepare_scatter_data()
     print(f'  Scatter data: {len(scatter_data)} atlases')
 
@@ -3005,7 +3120,7 @@ def main():
     html = generate_html(summary_table, boxplot_data, consistency_data,
                          heatmap_data, levels_data, bulk_data, scatter_data,
                          good_bad_data, method_boxplot_data, celltype_comparison_data,
-                         level_comparison_data, stratified_data)
+                         level_comparison_data, stratified_data, cross_platform_data)
 
     output_path = REPORT_DIR / 'REPORT.html'
     output_path.write_text(html, encoding='utf-8')

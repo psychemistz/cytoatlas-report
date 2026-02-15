@@ -248,7 +248,7 @@ Most cytokines show **consistent positive correlations** across all 6 atlases:
 
 The distinction between **universal targets** (IL1B, TNFA, VEGFA — consistent across contexts) and **context-dependent targets** (IL4, IL17A, TGFB1 — driven by specific cell populations or disease states) provides biological insight into which cytokine axes are fundamental vs. specialized.
 
-### 4.6 Effect of Aggregation Level ([statistical methods](stats_section_4.6.html))
+### 4.6 Effect of Aggregation Level ([statistical methods](stats_section_4.1.html#aggregation-level))
 
 > **Figure 7** (`fig7_validation_levels.png`): Aggregation level comparison across all 6 datasets.
 
@@ -269,7 +269,7 @@ The distinction between **universal targets** (IL1B, TNFA, VEGFA — consistent 
 - **CIMA and Inflammation Main** have no confounding at donor level (one compartment per donor), so pooled = independent
 - **scAtlas Normal donor_only** (0.173) exceeds donor_organ (0.120) because pooling all organs per donor creates a more complete transcriptional profile with less noise, despite the donor_organ level having more data points
 
-Per-tissue GTEx breakdowns, per-cancer TCGA breakdowns, and per-level Mann-Whitney/Wilcoxon tests for all 3 methods are in the [supplement](stats_section_4.6.html).
+Per-tissue GTEx breakdowns, per-cancer TCGA breakdowns, and per-level Mann-Whitney/Wilcoxon tests for all 3 methods are in the [supplement](stats_section_4.1.html#aggregation-level).
 
 ---
 
