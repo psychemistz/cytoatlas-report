@@ -2045,7 +2045,7 @@ Ridge regression (L2-regularized linear regression) was chosen deliberately over
 </div>
 
 <div class="callout">
-<p><strong>Key insight:</strong> A core set of ~10 CytoSig targets validates universally (IL1B, TNFA, IL6, IL1A, IL27, IFNG, TGFB3, LIF, BMP2, VEGFA), showing positive &rho; (&gt;0.15) across all 6 datasets. These span inflammatory, immunomodulatory, and growth/remodeling families. Conversely, T-cell cytokines IL2, IL22, IL21, IL3, and IL17A systematically fail validation with near-zero or negative &rho;, likely because their signaling effects are too cell-type-specific to produce detectable transcriptomic signatures in bulk/pseudobulk data. SecAct outperforms CytoSig on 26 of 32 matched targets, with the advantage particularly stark for LTA (CytoSig &rho;&asymp;0.01 vs SecAct &rho;&asymp;0.46), CD40L (0.06 vs 0.50), and IL15 (0.03 vs 0.56). High-variability targets like CD40L, HGF, and TRAIL flip sign between datasets (e.g., HGF is +0.65 in scAtlas Normal but &minus;0.30 in Inflammation Main), revealing dataset-specific biology rather than methodological artifacts.</p>
+<p><strong>Key insight:</strong> A core set of ~10 CytoSig targets shows positive &rho; (&gt;0.15) across all 6 datasets (IL1B, TNFA, IL6, IL1A, IL27, IFNG, TGFB3, LIF, BMP2, VEGFA). Conversely, IL2, IL22, IL21, IL3, and IL17A show near-zero or negative &rho; across all datasets. SecAct outperforms CytoSig on 26 of 32 matched targets, with the largest differences for LTA (CytoSig &rho;&asymp;0.01 vs SecAct &rho;&asymp;0.46), CD40L (0.06 vs 0.50), and IL15 (0.03 vs 0.56). CD40L, HGF, and TRAIL flip sign between datasets (e.g., HGF is +0.65 in scAtlas Normal but &minus;0.30 in Inflammation Main).</p>
 </div>
 
 <!-- Item 13: Interactive comprehensive validation -->
@@ -2072,7 +2072,7 @@ Ridge regression (L2-regularized linear regression) was chosen deliberately over
 </div>
 
 <div class="callout">
-<p><strong>Key insight:</strong> The top and bottom CytoSig targets are remarkably consistent across datasets. IL1B, IL10, TGFB3, and IL1A appear in the top 10 of 5/6 datasets, while IL2, IL22, and IL3 appear in the bottom 10 of 5/6 datasets&mdash;strong evidence that ranking order reflects genuine biology rather than dataset-specific noise. SecAct rankings are dramatically compressed upward: in scAtlas Normal, every displayed SecAct target exceeds &rho;=0.21, whereas CytoSig ranges from &minus;0.42 to +0.69. Inflammation Main shows the widest CytoSig dynamic range (&rho; from &minus;0.55 to +0.79) with only 33 targets passing the filter, but those that pass show stronger polarization, with VEGFA (&rho;=0.79) and IL1A (&rho;=0.69) reaching their highest values in any dataset.</p>
+<p><strong>Key insight:</strong> CytoSig target rankings are consistent across datasets: IL1B, IL10, TGFB3, and IL1A appear in the top 10 of 5/6 datasets, while IL2, IL22, and IL3 appear in the bottom 10 of 5/6 datasets. SecAct rankings are compressed into a narrower, higher range: in scAtlas Normal, every displayed SecAct target exceeds &rho;=0.21, whereas CytoSig ranges from &minus;0.42 to +0.69. Inflammation Main has the widest CytoSig range (&rho; from &minus;0.55 to +0.79) with only 33 targets passing the filter; VEGFA (&rho;=0.79) and IL1A (&rho;=0.69) reach their highest values in this dataset.</p>
 </div>
 
 <hr>
