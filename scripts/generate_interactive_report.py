@@ -1927,7 +1927,7 @@ Ridge regression (L2-regularized linear regression) was chosen deliberately over
 </table>
 
 <div class="callout">
-<p><strong>Key insight:</strong> CytoSig&rsquo;s in-vitro stimulation signatures reliably detect 15 canonical cytokines with strong transcriptional programs (IL1B, TNFA, IFNG, etc.). SecAct&rsquo;s Visium-derived spatial signatures additionally rescue 10 targets where CytoSig averages near zero&mdash;including membrane-bound (CD40L, TRAIL), paracrine (HGF, FGF2), and heteromeric (LTA) signaling targets that require tissue-level spatial context. TWEAK and IL21 are the clearest cases: CytoSig never exceeds &rho;=0.11 in any dataset, while SecAct achieves +0.44 and +0.22. Select &ldquo;SecAct&rdquo; in the dropdown above to explore interactively.</p>
+<p><strong>Key insight:</strong> CytoSig&rsquo;s median log2FC signatures reliably detect 15 canonical cytokines with strong transcriptional programs (IL1B, TNFA, IFNG, etc.). SecAct&rsquo;s spatial correlation signatures additionally rescue 10 targets where CytoSig averages near zero&mdash;including membrane-bound (CD40L, TRAIL), paracrine (HGF, FGF2), and heteromeric (LTA) signaling targets that require tissue-level spatial context. TWEAK and IL21 are the clearest cases: CytoSig never exceeds &rho;=0.11 in any dataset, while SecAct achieves +0.44 and +0.22. Select &ldquo;SecAct&rdquo; in the dropdown above to explore interactively.</p>
 </div>
 
 <!-- Item 10: Interactive consistency plot -->

@@ -271,7 +271,7 @@ Of the 29 matched CytoSig targets with data in ≥4 datasets, two categories eme
 | IL21 | −0.02 | −0.22 to +0.09 | **+0.22** | +0.24 |
 | BDNF | +0.11 | −0.07 to +0.20 | **+0.33** | +0.21 |
 
-**Key insight:** CytoSig's in-vitro stimulation signatures reliably detect 15 canonical cytokines with strong transcriptional programs. SecAct's Visium-derived spatial signatures additionally rescue 10 targets where CytoSig averages near zero — including membrane-bound (CD40L, TRAIL), paracrine (HGF, FGF2), and heteromeric (LTA) signaling targets that require tissue-level spatial context. TWEAK and IL21 are the clearest cases: CytoSig never exceeds ρ=0.11, while SecAct achieves +0.44 and +0.22. Full per-atlas top-15/bottom-15 lists in [supplement](stats_section_4.1.html#per-tissue-stratified).
+**Key insight:** CytoSig's median log2FC signatures reliably detect 15 canonical cytokines with strong transcriptional programs. SecAct's spatial correlation signatures additionally rescue 10 targets where CytoSig averages near zero — including membrane-bound (CD40L, TRAIL), paracrine (HGF, FGF2), and heteromeric (LTA) signaling targets that require tissue-level spatial context. TWEAK and IL21 are the clearest cases: CytoSig never exceeds ρ=0.11, while SecAct achieves +0.44 and +0.22. Full per-atlas top-15/bottom-15 lists in [supplement](stats_section_4.1.html#per-tissue-stratified).
 
 ### 4.6 Cross-Atlas Consistency
 
