@@ -18,7 +18,7 @@ Changes from previous version:
  10) Interactive consistency plot
  11) Add LinCytoSig/SecAct to aggregation levels
  12) Interactive heatmap with tabs
- 13) Interactive bulk validation with dropdown
+ 13) Interactive per-target correlation rankings with dropdown
  14) Interactive cell-type scatter with dropdown
 """
 
@@ -574,7 +574,7 @@ def prepare_consistency_data(df):
         family color, and sig_type.
     Output:
         Dict of {target_key: {rhos: [...], family, color, sig_type}}
-        for the interactive consistency line chart (Section 4.5).
+        for the interactive consistency line chart (Section 4.6).
     """
     key_targets = ['IFNG', 'IL1B', 'TNFA', 'TGFB1', 'IL6', 'IL10', 'IL17A',
                    'IL4', 'BMP2', 'EGF', 'HGF', 'VEGFA', 'CXCL12', 'GMCSF']
@@ -1270,7 +1270,7 @@ def prepare_good_bad_data(df):
         Return target name and rho (rounded to 4 decimal places).
     Output:
         Nested dict: {sig: {atlas_label: {top: [...], bottom: [...]}}}
-        for interactive top/bottom bar charts (Section 4.2).
+        for interactive top/bottom bar charts (Section 4.5).
     """
     atlas_configs = [
         ('gtex', 'donor_only', 'GTEx'),
@@ -1590,9 +1590,9 @@ Ridge regression (L2-regularized linear regression) was chosen deliberately over
 <table>
   <tr><th>Level</th><th>Description</th><th>Datasets</th><th>Report Section</th></tr>
   <tr><td><strong>Donor pseudobulk</strong></td><td>One value per donor, averaging across cell types</td><td>CIMA, Inflammation Atlas Main, scAtlas Normal/Cancer</td><td>&sect;4.1, &sect;4.3</td></tr>
-  <tr><td><strong>Donor &times; cell-type</strong></td><td>Stratified by cell type within each donor</td><td>CIMA, Inflammation Atlas Main, scAtlas Normal/Cancer</td><td>&sect;4.6</td></tr>
-  <tr><td><strong>Per-tissue / per-cancer</strong></td><td>Median-of-medians across tissues or cancer types</td><td>GTEx (29 tissues), TCGA (33 cancer types)</td><td>&sect;4.2</td></tr>
-  <tr><td><strong>Bulk RNA-seq</strong></td><td>Sample-level expression vs predicted activity</td><td>GTEx (19.8K), TCGA (11.1K)</td><td>&sect;4.7</td></tr>
+  <tr><td><strong>Donor &times; cell-type</strong></td><td>Stratified by cell type within each donor</td><td>CIMA, Inflammation Atlas Main, scAtlas Normal/Cancer</td><td>&sect;4.7</td></tr>
+  <tr><td><strong>Per-tissue / per-cancer</strong></td><td>Median-of-medians across tissues or cancer types</td><td>GTEx (29 tissues), TCGA (33 cancer types)</td><td>&sect;4.2, &sect;4.3</td></tr>
+  <tr><td><strong>Cross-platform</strong></td><td>Bulk vs pseudobulk concordance per tissue/cancer</td><td>GTEx vs scAtlas Normal, TCGA vs scAtlas Cancer</td><td>&sect;4.4</td></tr>
 </table>
 
 <p>All statistics use <strong>independence-corrected</strong> values &mdash; preventing inflation from repeated measures across tissues, cancer types, or cell types. CytoSig vs SecAct comparisons use Mann-Whitney U (total) and Wilcoxon signed-rank (32 matched targets) with BH-FDR correction. See Section 3.3 for the validation philosophy and Section 4 for full results.</p>
@@ -1675,9 +1675,9 @@ Ridge regression (L2-regularized linear regression) was chosen deliberately over
 <h3>3.2 What Scientific Questions Does CytoAtlas Answer?</h3>
 <ol>
   <li><strong>Which cytokines are active in which cell types across diseases?</strong> &mdash; IL1B/TNFA in monocytes/macrophages, IFNG in CD8+ T and NK cells, IL17A in Th17, VEGFA in endothelial/tumor cells, TGFB family in stromal cells &mdash; quantified across 20 diseases, 35 organs, and 15 cancer types.</li>
-  <li><strong>Are cytokine activities consistent across independent cohorts?</strong> &mdash; Yes. IL1B, TNFA, VEGFA, and TGFB family show consistent positive correlations across all 6 validation datasets (Figure 7).</li>
-  <li><strong>Does cell-type-specific biology matter for cytokine inference?</strong> &mdash; For select immune types, yes: LinCytoSig improves prediction for Basophils (+0.21 &Delta;&rho;), NK cells (+0.19), and DCs (+0.18), but global CytoSig wins overall (Figures 10&ndash;11).</li>
-  <li><strong>Which secreted proteins beyond cytokines show validated activity?</strong> &mdash; SecAct (1,170 targets) achieves the highest correlations across all datasets (median &rho;=0.33&ndash;0.49), with novel validated targets like Activin A (&rho;=0.98), CXCL12 (&rho;=0.92), and BMP family (Figure 12).</li>
+  <li><strong>Are cytokine activities consistent across independent cohorts?</strong> &mdash; Yes. IL1B, TNFA, VEGFA, and TGFB family show consistent positive correlations across all 6 validation datasets (Figure 8).</li>
+  <li><strong>Does cell-type-specific biology matter for cytokine inference?</strong> &mdash; For select immune types, yes: LinCytoSig improves prediction for Basophils (+0.21 &Delta;&rho;), NK cells (+0.19), and DCs (+0.18), but global CytoSig wins overall (Figures 11&ndash;12).</li>
+  <li><strong>Which secreted proteins beyond cytokines show validated activity?</strong> &mdash; SecAct (1,170 targets) achieves the highest correlations across all datasets (median &rho;=0.33&ndash;0.49), with novel validated targets like Activin A (&rho;=0.98), CXCL12 (&rho;=0.92), and BMP family (Figure 13).</li>
   <li><strong>Can we predict treatment response from cytokine activity?</strong> &mdash; We are incorporating cytokine-blocking therapy outcomes from bulk RNA-seq to test whether predicted cytokine activity associates with therapy response. Additionally, Inflammation Atlas responder/non-responder labels enable treatment response prediction using cytokine activity profiles as features.</li>
 </ol>
 
@@ -1782,7 +1782,7 @@ Ridge regression (L2-regularized linear regression) was chosen deliberately over
     </select>
   </div>
   <div id="goodbad-chart" style="height:700px;"></div>
-  <div class="caption"><strong>Figure 4.</strong> Top 15 (best) and bottom 15 (worst) correlated targets. Select signature type and dataset from dropdowns.</div>
+  <div class="caption"><strong>Figure 5.</strong> Top 15 (best) and bottom 15 (worst) correlated targets. Select signature type and dataset from dropdowns.</div>
 </div>
 
 <p><strong>Consistently well-correlated targets (&rho; &gt; 0.3 across multiple datasets):</strong></p>
@@ -1867,7 +1867,7 @@ Ridge regression (L2-regularized linear regression) was chosen deliberately over
     </select>
   </div>
   <div id="levels-chart" style="height:500px;"></div>
-  <div id="levels-caption" class="caption"><strong>Figure 6.</strong> Effect of cell-type annotation granularity on validation correlations. <strong>Total:</strong> CytoSig (43 targets) vs SecAct (1,170 targets). <strong>Matched:</strong> 32 shared targets only. Select atlas from dropdown.</div>
+  <div id="levels-caption" class="caption"><strong>Figure 7.</strong> Effect of cell-type annotation granularity on validation correlations. <strong>Total:</strong> CytoSig (43 targets) vs SecAct (1,170 targets). <strong>Matched:</strong> 32 shared targets only. Select atlas from dropdown.</div>
 </div>
 
 <div class="callout">
@@ -1896,7 +1896,7 @@ Ridge regression (L2-regularized linear regression) was chosen deliberately over
   <tr><td>Tumor &times; Cancer &times; CT1</td><td>Broad cell types within each cancer type</td><td>~120</td></tr>
 </table>
 
-<h3>Representative Scatter Plots</h3>
+<h3>4.8 Representative Scatter Plots</h3>
 <div class="plotly-container">
   <div class="controls">
     <label>Target:</label>
@@ -1912,18 +1912,18 @@ Ridge regression (L2-regularized linear regression) was chosen deliberately over
     </select>
   </div>
   <div id="scatter-chart" style="height:500px;"></div>
-  <div class="caption"><strong>Figure 7.</strong> Donor-level expression vs predicted activity. Select target, atlas, and signature method from dropdowns.</div>
+  <div class="caption"><strong>Figure 8.</strong> Donor-level expression vs predicted activity. Select target, atlas, and signature method from dropdowns.</div>
 </div>
 
 <!-- Item 12: Interactive heatmap with tabs -->
-<h3>Biologically Important Targets Heatmap</h3>
+<h3>4.9 Biologically Important Targets Heatmap</h3>
 <div class="plotly-container">
   <div class="tab-bar" id="heatmap-tabs">
     <button class="tab-btn cytosig active" onclick="switchHeatmapTab('cytosig')">CytoSig</button>
     <button class="tab-btn secact" onclick="switchHeatmapTab('secact')">SecAct</button>
   </div>
   <div id="heatmap-chart" style="min-height:500px;"></div>
-  <div class="caption"><strong>Figure 8.</strong> Spearman &rho; heatmap for biologically important targets across all datasets. Switch between signature types. Hover over cells for details.</div>
+  <div class="caption"><strong>Figure 9.</strong> Spearman &rho; heatmap for biologically important targets across all datasets. Switch between signature types. Hover over cells for details.</div>
 </div>
 
 <div class="callout">
@@ -1937,7 +1937,7 @@ Ridge regression (L2-regularized linear regression) was chosen deliberately over
 </div>
 
 <!-- Item 13: Interactive comprehensive validation -->
-<h3>Comprehensive Validation Across All Datasets</h3>
+<h3>4.10 Per-Target Correlation Rankings</h3>
 <div class="plotly-container">
   <div class="controls">
     <label>Dataset:</label>
@@ -1956,7 +1956,7 @@ Ridge regression (L2-regularized linear regression) was chosen deliberately over
     </select>
   </div>
   <div id="bulk-chart" style="height:500px;"></div>
-  <div class="caption"><strong>Figure 9.</strong> Validation: targets ranked by Spearman &rho; across all datasets and signature types. Select dataset and signature from dropdowns.</div>
+  <div class="caption"><strong>Figure 10.</strong> Validation: targets ranked by Spearman &rho; across all datasets and signature types. Select dataset and signature from dropdowns.</div>
 </div>
 
 <hr>
@@ -2026,7 +2026,7 @@ Ridge regression (L2-regularized linear regression) was chosen deliberately over
     </select>
   </div>
   <div id="method-boxplot-chart" style="height:600px;"></div>
-  <div class="caption"><strong>Figure 10.</strong> Ten-way signature method comparison at matched (cell type, cytokine) pair level across 4 combined datasets. All 10 methods are evaluated on the <em>same set</em> of matched pairs per dataset (identical n). Use dropdown to view individual dataset boxplots. For LinCytoSig construction, see <a href="methodology.html">LinCytoSig Methodology</a>.</div>
+  <div class="caption"><strong>Figure 11.</strong> Ten-way signature method comparison at matched (cell type, cytokine) pair level across 4 combined datasets. All 10 methods are evaluated on the <em>same set</em> of matched pairs per dataset (identical n). Use dropdown to view individual dataset boxplots. For LinCytoSig construction, see <a href="methodology.html">LinCytoSig Methodology</a>.</div>
 </div>
 
 <div class="callout">
@@ -2068,7 +2068,7 @@ Ridge regression (L2-regularized linear regression) was chosen deliberately over
     </select>
   </div>
   <div id="level-comp-chart" style="height:550px;"></div>
-  <div class="caption"><strong>Figure 11.</strong> Distribution of Spearman &rho; at each cell-type aggregation level. All three methods evaluated on identical matched pairs per level. Finer levels (more cell types) should theoretically favor lineage-specific methods.</div>
+  <div class="caption"><strong>Figure 12.</strong> Distribution of Spearman &rho; at each cell-type aggregation level. All three methods evaluated on identical matched pairs per level. Finer levels (more cell types) should theoretically favor lineage-specific methods.</div>
 </div>
 
 <h4>5.2.2 Summary</h4>
@@ -2106,7 +2106,7 @@ Ridge regression (L2-regularized linear regression) was chosen deliberately over
 
 <div class="plotly-container">
   <div id="celltype-delta-rho-chart" style="height:900px;"></div>
-  <div class="caption"><strong>Figure 12.</strong> Per-celltype mean &Delta;&rho; (LinCytoSig &minus; CytoSig) aggregated across 4 datasets at donor &times; celltype level. Orange = LinCytoSig advantage; blue = CytoSig advantage. Error bars show SEM.</div>
+  <div class="caption"><strong>Figure 13.</strong> Per-celltype mean &Delta;&rho; (LinCytoSig &minus; CytoSig) aggregated across 4 datasets at donor &times; celltype level. Orange = LinCytoSig advantage; blue = CytoSig advantage. Error bars show SEM.</div>
 </div>
 
 <hr>
@@ -2424,13 +2424,84 @@ window.renderStratified = function(mode) {{
 renderStratified('total');
 
 // ═══════════════════════════════════════════════════════════════════════════
-// 4.4 GOOD/BAD CORRELATIONS (interactive with signature + atlas dropdown)
+// 4.4 CROSS-PLATFORM COMPARISON (bulk vs pseudobulk)
+// ═══════════════════════════════════════════════════════════════════════════
+var currentCrossPlatSig = 'cytosig';
+window.renderCrossPlatform = function(sig) {{
+  if (sig) currentCrossPlatSig = sig;
+  else sig = currentCrossPlatSig;
+
+  document.querySelectorAll('#crossplat-tabs .tab-btn').forEach(function(b) {{ b.classList.remove('active'); }});
+  var btns = document.querySelectorAll('#crossplat-tabs .tab-btn');
+  if (sig === 'cytosig') btns[0].classList.add('active');
+  else btns[1].classList.add('active');
+
+  var comp = document.getElementById('crossplat-comp-select').value;
+  var cpData = DATA.crossPlatform[comp];
+  if (!cpData) return;
+
+  var strata = cpData.strata;
+  var d = cpData.data;
+  var labelBulk = cpData.label_bulk;
+  var labelSC = cpData.label_sc;
+
+  var bulkKey = sig + '_bulk';
+  var scKey = sig + '_sc';
+
+  // Build grouped boxplot traces
+  var bulkY = [], bulkX = [], scY = [], scX = [];
+  strata.forEach(function(s) {{
+    var entry = d[s];
+    if (!entry) return;
+    var bArr = entry[bulkKey] || [];
+    var sArr = entry[scKey] || [];
+    bArr.forEach(function(v) {{ bulkY.push(s); bulkX.push(v); }});
+    sArr.forEach(function(v) {{ scY.push(s); scX.push(v); }});
+  }});
+
+  var traces = [
+    {{
+      type: 'box', orientation: 'h',
+      y: bulkY, x: bulkX,
+      name: labelBulk + ' (bulk)', marker: {{color: '#6366F1'}},
+      line: {{width: 1.5}}, boxpoints: false,
+    }},
+    {{
+      type: 'box', orientation: 'h',
+      y: scY, x: scX,
+      name: labelSC + ' (pseudobulk)', marker: {{color: '#10B981'}},
+      line: {{width: 1.5}}, boxpoints: false,
+    }},
+  ];
+
+  var height = Math.max(400, strata.length * 55 + 140);
+  document.getElementById('crossplat-chart').style.height = height + 'px';
+
+  var sigLabel = sig === 'cytosig' ? 'CytoSig' : 'SecAct';
+  Plotly.newPlot('crossplat-chart', traces, {{
+    title: sigLabel + ': ' + labelBulk + ' (bulk) vs ' + labelSC + ' (pseudobulk)',
+    xaxis: {{title: 'Spearman \\u03c1', zeroline: true, zerolinecolor: '#ccc'}},
+    yaxis: {{automargin: true, tickfont: {{size: 11}}}},
+    boxmode: 'group',
+    legend: {{orientation: 'h', y: 1.05, x: 0.5, xanchor: 'center'}},
+    margin: {{t: 60, l: 200, b: 50, r: 50}},
+  }}, PLOTLY_CONFIG);
+
+  document.getElementById('crossplat-caption').innerHTML =
+    '<strong>Figure 4.</strong> Cross-platform concordance (' + sigLabel + '): per-target Spearman \\u03c1 from ' +
+    labelBulk + ' (bulk RNA-seq) vs ' + labelSC + ' (single-cell pseudobulk) for matching ' +
+    (comp.indexOf('GTEx') >= 0 ? 'tissues' : 'cancer types') + '.';
+}};
+renderCrossPlatform('cytosig');
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 4.5 GOOD/BAD CORRELATIONS (interactive with signature + atlas dropdown)
 // ═══════════════════════════════════════════════════════════════════════════
 (function() {{
   var gb = DATA.goodBad;
   var atlasSel = document.getElementById('goodbad-atlas-select');
   var sigSel = document.getElementById('goodbad-sig-select');
-  // Populate atlas dropdown in consistent order matching boxplot (Section 4.3)
+  // Populate atlas dropdown in consistent order matching boxplot (Section 4.2)
   var firstSig = Object.keys(gb)[0];
   var availableAtlases = Object.keys(gb[firstSig]);
   DATA.atlasLabels.forEach(function(a) {{
@@ -2481,7 +2552,7 @@ renderStratified('total');
 }})();
 
 // ═══════════════════════════════════════════════════════════════════════════
-// 4.5 CROSS-ATLAS CONSISTENCY (interactive Plotly line chart)
+// 4.6 CROSS-ATLAS CONSISTENCY (interactive Plotly line chart)
 // ═══════════════════════════════════════════════════════════════════════════
 (function() {{
   var cd = DATA.consistency;
@@ -2512,7 +2583,7 @@ renderStratified('total');
 }})();
 
 // ═══════════════════════════════════════════════════════════════════════════
-// 4.6 AGGREGATION LEVELS (Total / Matched tabs, per atlas)
+// 4.7 AGGREGATION LEVELS (Total / Matched tabs, per atlas)
 // ═══════════════════════════════════════════════════════════════════════════
 (function() {{
   var ld = DATA.levels;
@@ -2602,9 +2673,9 @@ renderStratified('total');
     // Update caption
     var cap = document.getElementById('levels-caption');
     if (currentMode === 'total') {{
-      cap.innerHTML = '<strong>Figure 6.</strong> ' + atlasName + ' \u2014 CytoSig (all ~43 targets) vs SecAct (all ~1,170 targets) across aggregation levels. Mann-Whitney U test, BH-FDR corrected. Significance: *** q&lt;0.001, ** q&lt;0.01, * q&lt;0.05, ns = not significant.';
+      cap.innerHTML = '<strong>Figure 7.</strong> ' + atlasName + ' \u2014 CytoSig (all ~43 targets) vs SecAct (all ~1,170 targets) across aggregation levels. Mann-Whitney U test, BH-FDR corrected. Significance: *** q&lt;0.001, ** q&lt;0.01, * q&lt;0.05, ns = not significant.';
     }} else {{
-      cap.innerHTML = '<strong>Figure 6.</strong> ' + atlasName + ' \u2014 CytoSig vs SecAct restricted to 32 shared targets across aggregation levels. Wilcoxon signed-rank test, BH-FDR corrected. Significance: *** q&lt;0.001, ** q&lt;0.01, * q&lt;0.05, ns = not significant.';
+      cap.innerHTML = '<strong>Figure 7.</strong> ' + atlasName + ' \u2014 CytoSig vs SecAct restricted to 32 shared targets across aggregation levels. Wilcoxon signed-rank test, BH-FDR corrected. Significance: *** q&lt;0.001, ** q&lt;0.01, * q&lt;0.05, ns = not significant.';
     }}
   }};
   renderLevels('total');
@@ -2984,7 +3055,7 @@ updateBulk();
 }})();
 
 // ═══════════════════════════════════════════════════════════════════════════
-// 5.3 CELLTYPE Δρ BAR CHART (Figure 12)
+// 5.3 CELLTYPE Δρ BAR CHART (Figure 13)
 // ═══════════════════════════════════════════════════════════════════════════
 (function() {{
   var cc = DATA.celltypeComp;

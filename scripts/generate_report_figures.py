@@ -469,13 +469,13 @@ def fig1_dataset_overview():
 
     val_top = TOP
     val_items = [
-        ('Overall Performance',      'Spearman ρ across all targets',       '#2563EB', '§4.1'),
-        ('Per-Tissue Stratified',    'GTEx tissues / TCGA cancer types',    '#7C3AED', '§4.2'),
-        ('Cross-Dataset Comparison', 'CytoSig vs SecAct across 6 datasets', '#059669', '§4.3'),
-        ('Best/Worst Targets',       'Top and bottom correlated targets',   '#DC2626', '§4.4'),
-        ('Cross-Dataset Consistency','Same targets across datasets',        '#D97706', '§4.5'),
-        ('Aggregation Levels',       'Donor → celltype → single-cell',     '#0891B2', '§4.6'),
-        ('Bulk RNA-seq Validation',  'GTEx + TCGA concordance',             '#6366F1', '§4.7'),
+        ('Overall Performance',       'Spearman ρ across all targets',       '#2563EB', '§4.1'),
+        ('Per-Tissue Stratified',     'GTEx tissues / TCGA cancer types',    '#7C3AED', '§4.2'),
+        ('Cross-Dataset Comparison',  'CytoSig vs SecAct across 6 datasets', '#059669', '§4.3'),
+        ('Cross-Platform Comparison', 'Bulk vs pseudobulk concordance',      '#6366F1', '§4.4'),
+        ('Best/Worst Targets',        'Top and bottom correlated targets',   '#DC2626', '§4.5'),
+        ('Cross-Dataset Consistency', 'Same targets across datasets',        '#D97706', '§4.6'),
+        ('Aggregation Levels',        'Donor → celltype → single-cell',     '#0891B2', '§4.7'),
     ]
     # Validation outline box (extends to global bottom)
     draw_group(col3_x, global_bottom, col3_w,

@@ -54,9 +54,9 @@ CytoAtlas validates at **four aggregation levels**, each testing whether predict
 | Level | Description | Datasets | Report Section |
 |-------|-------------|----------|----------------|
 | **Donor pseudobulk** | One value per donor, averaging across cell types | CIMA, Inflammation Atlas Main, scAtlas Normal/Cancer | §4.1, §4.3 |
-| **Donor × cell-type** | Stratified by cell type within each donor | CIMA, Inflammation Atlas Main, scAtlas Normal/Cancer | §4.6 |
-| **Per-tissue / per-cancer** | Median-of-medians across tissues or cancer types | GTEx (29 tissues), TCGA (33 cancer types) | §4.2 |
-| **Bulk RNA-seq** | Sample-level expression vs predicted activity | GTEx (19.8K), TCGA (11.1K) | §4.7 |
+| **Donor × cell-type** | Stratified by cell type within each donor | CIMA, Inflammation Atlas Main, scAtlas Normal/Cancer | §4.7 |
+| **Per-tissue / per-cancer** | Median-of-medians across tissues or cancer types | GTEx (29 tissues), TCGA (33 cancer types) | §4.2, §4.3 |
+| **Cross-platform** | Bulk vs pseudobulk concordance per tissue/cancer | GTEx vs scAtlas Normal, TCGA vs scAtlas Cancer | §4.4 |
 
 All statistics use **independence-corrected** values — preventing inflation from repeated measures across tissues, cancer types, or cell types. CytoSig vs SecAct comparisons use Mann-Whitney U (total) and Wilcoxon signed-rank (32 matched targets) with BH-FDR correction. See Section 3.3 for the validation philosophy and Section 4 for full results.
 
@@ -216,17 +216,19 @@ Four datasets have per-stratum breakdowns:
 - Inflammation-rich tissues/cancers (Lung, Liver, Colon) show the highest CytoSig correlations, consistent with the CytoSig signature matrix being derived from cytokine stimulation experiments
 - scAtlas strata with Tier B sample sizes (<30 donors) are shown with reduced confidence
 
-#### 4.3.1 Cross-Platform Comparison
+### 4.4 Cross-Platform Comparison: Bulk vs Pseudobulk
 
 > **Figure 4c** (`fig4c_cross_platform_concordance.png`): Cross-platform concordance scatter (GTEx vs scAtlas Normal, TCGA vs scAtlas Cancer).
 
-**GTEx vs scAtlas Normal** (matching tissues): For tissues present in both datasets, we compare the per-tissue median ρ between bulk RNA-seq (GTEx) and single-cell pseudobulk (scAtlas Normal). This tests whether the expression-activity relationship replicates across technologies.
+This section tests whether expression-activity relationships replicate across measurement technologies. For each matching tissue or cancer type, per-target Spearman ρ from bulk RNA-seq is compared to the same target's ρ from single-cell pseudobulk.
 
-**TCGA vs scAtlas Cancer** (matching cancer types): Same comparison for overlapping cancer types.
+**GTEx vs scAtlas Normal** (13 matching tissues: Blood, Breast, Colon, Esophagus, Heart, Kidney, Liver, Lung, Ovary, Skin, Small Intestine, Spleen, Uterus): Per-tissue CytoSig concordance ranges from ρ = −0.10 (Uterus) to 0.49 (Breast, Liver), with most tissues showing moderate positive concordance.
 
-**Interpretation:** This is presented as cross-platform concordance rather than a formal hypothesis test, due to: (1) different sample sizes per tissue (GTEx 47–3,234 vs scAtlas 10–124), (2) different gene sets (GTEx 72.9k vs scAtlas 21.8k genes), (3) bulk vs pseudobulk composition differences, (4) different donor demographics (GTEx postmortem vs scAtlas surgical/biopsy), and (5) small paired N limiting statistical power. A high Spearman correlation of the ρ values across tissues indicates platform-independent biological signal.
+**TCGA vs scAtlas Cancer** (11 matching cancer types: BRCA, CRC, ESCA, HCC, HNSC, KIRC, LUAD, OV, PAAD, PRAD, STAD): Per-cancer concordance is generally stronger, ranging from ρ = 0.23 (OV) to 0.83 (PAAD), suggesting cancer-type-specific activity patterns are more consistent across platforms than normal tissue patterns.
 
-### 4.4 Best and Worst Correlated Targets ([per-atlas details](stats_section_4.1.html#per-tissue-stratified))
+**Interpretation:** Cross-platform concordance rather than a formal hypothesis test, due to: (1) different sample sizes per tissue (GTEx 47–3,234 vs scAtlas 10–124), (2) different gene sets (GTEx 72.9k vs scAtlas 21.8k genes), (3) bulk vs pseudobulk composition differences, (4) different donor demographics (GTEx postmortem vs scAtlas surgical/biopsy), and (5) small paired N limiting statistical power. A high Spearman correlation of the ρ values across tissues indicates platform-independent biological signal. The interactive HTML report includes side-by-side boxplots of per-target ρ distributions for each matching tissue/cancer with CytoSig/SecAct toggle.
+
+### 4.5 Best and Worst Correlated Targets ([per-atlas details](stats_section_4.1.html#per-tissue-stratified))
 
 > **Figure 5** (`fig5_good_bad_correlations_cytosig.png`): Top 15 and bottom 15 targets per atlas.
 
@@ -236,7 +238,7 @@ Four datasets have per-stratum breakdowns:
 
 **SecAct novel discoveries:** Activin A (ρ up to 0.98 in scAtlas), CXCL12 (0.92), and BMP family members — secreted proteins with strong validated activity-expression correlations that would be missed by CytoSig's 43-cytokine panel. Full per-atlas top-15/bottom-15 lists in [supplement](stats_section_4.1.html#per-tissue-stratified).
 
-### 4.5 Cross-Atlas Consistency
+### 4.6 Cross-Atlas Consistency
 
 > **Figure 6** (`fig6_cross_atlas_consistency.png`): Key targets tracked across 6 atlases at independent levels.
 
@@ -248,7 +250,7 @@ Most cytokines show **consistent positive correlations** across all 6 atlases:
 
 The distinction between **universal targets** (IL1B, TNFA, VEGFA — consistent across contexts) and **context-dependent targets** (IL4, IL17A, TGFB1 — driven by specific cell populations or disease states) provides biological insight into which cytokine axes are fundamental vs. specialized.
 
-### 4.6 Effect of Aggregation Level ([statistical methods](stats_section_4.1.html#aggregation-level))
+### 4.7 Effect of Aggregation Level ([statistical methods](stats_section_4.1.html#aggregation-level))
 
 > **Figure 7** (`fig7_validation_levels.png`): Aggregation level comparison across all 6 datasets.
 

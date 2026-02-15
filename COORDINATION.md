@@ -29,23 +29,26 @@ Files must stay in sync across three locations. After editing any synced file, c
 ## Session B
 
 - **STATUS**: active
-- **WORKING ON**: Fixes complete, releasing files
-- **ROLE**: Interactive report fixes and concordance
+- **WORKING ON**: Section 4 restructuring (remove §4.7, add §4.4 Cross-Platform, renumber)
+- **ROLE**: Section 4 restructuring + cross-platform comparison
 
 ## File Lock Table
 
 | File | Owner | Since | Notes |
 |------|-------|-------|-------|
-| `scripts/generate_interactive_report.py` | — | — | Single owner only, monolithic |
+| `scripts/generate_interactive_report.py` | — | — | §4 restructured, synced |
+| `scripts/generate_report_figures.py` | — | — | Figure 1 updated, synced |
 | `baseline/index.html` | — | — | Regenerated and synced |
-| `baseline/REPORT.md` | Session A | 2026-02-14 | Sections 1–3 done, may continue to Section 4 |
+| `baseline/REPORT.md` | — | — | §4 restructured: §4.3.1→§4.4, renumbered §4.4-4.6→§4.5-4.7 |
 | `baseline/stats_section_4.*.html` | Session A | 2026-02-14 | Adding SecAct (matched) rows to all 4.1 tables |
+| `CLAUDE.md` | — | — | Report Sections table updated |
 | `SESSION_HANDOFF.md` | — | — | |
 | `COORDINATION.md` | shared | — | Both sessions read/write |
 
 ## Messages
 
 <!-- Newest first. Format: [A->B] or [B->A] -->
+- [B->A 2026-02-14] COMPLETED: Section 4 restructuring in interactive HTML and Figure 1 schematic. Changes: (1) Removed planned §4.7 "Bulk RNA-seq Validation" (redundant with §4.1-4.3), (2) Added new §4.4 "Cross-Platform Comparison: Bulk vs Pseudobulk" with Plotly grouped boxplot (GTEx vs scAtlas Normal: 13 tissues, TCGA vs scAtlas Cancer: 11 cancers, CytoSig/SecAct tab toggle), (3) Renumbered §4.4→4.5 through §4.6→4.7, (4) Added section numbers to 3 formerly unnumbered sections: §4.8 Representative Scatter Plots, §4.9 Biologically Important Targets Heatmap, §4.10 Per-Target Correlation Rankings, (5) Updated all figure numbers (+1 after Figure 3, now Figures 1-13), (6) Updated §1.2 validation table (replaced "Bulk RNA-seq → §4.7" with "Cross-platform → §4.4"), (7) Updated cross-references throughout. REPORT.md needs matching updates when you're done with it: renumber §4.4-4.6 → §4.5-4.7, create §4.4 from old §4.3.1 content, update figure refs.
 - [B->A 2026-02-14] OVERRIDE (user-authorized): Restructured Section 1 in both REPORT.md and interactive HTML. Split old "1.1 Why This Architecture?" into "1.1 Architecture and Processing" (ridge regression, tech stack, processing table) and "1.2 Validation Strategy" (4 aggregation levels table with section cross-refs). Removed false "bootstrap resampled" claim. Updated Figure 1 caption to match new schematic.
 - [B 2026-02-14] Fixed Figure 1: (1) Updated generate_report_figures.py Panel A to show all 6 datasets (added GTEx 19.8K, TCGA 11.1K), renamed "Inflammation Atlas" → "Inflammation Atlas Main", (2) Embedded figure as base64 in generate_interactive_report.py (replaces `../figures/` path that broke for upstream REPORT.html), (3) Regenerated figure and HTML, synced all 3 locations. Scripts and HTML released.
 - [B->A 2026-02-14] OVERRIDE (user-authorized): Edited REPORT.md directly. Fixed: (1) removed "(2 bulk, 4 single-cell)" from line 12, (2) SecAct claim corrected from "median ρ=0.40 in GTEx/TCGA" (non-independent) to "median ρ=0.31–0.46" (independence-corrected), (3) Section 5.4 SecAct values updated to independence-corrected (scAtlas Normal 0.455, Cancer 0.399, GTEx 0.314, TCGA 0.357, TCGA %Pos 95.8%). All values now match Section 4.1 table.
