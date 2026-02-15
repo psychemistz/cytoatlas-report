@@ -2246,6 +2246,203 @@ Ridge regression (L2-regularized linear regression) was chosen deliberately over
   <li><strong>Differential:</strong> Wilcoxon rank-sum test with effect size</li>
 </ul>
 
+<!-- DETAILED SYSTEM ARCHITECTURE DOCUMENT -->
+<h3 id="sec-arch-detail">C. Detailed System Architecture</h3>
+
+<p>This section provides an in-depth technical description of each layer in the CytoAtlas platform, covering the two primary software packages (<code>cytoatlas-pipeline</code> and <code>cytoatlas-api</code>) and how they work together to serve cytokine activity data to end users.</p>
+
+<h4>C.1 How CytoAtlas Serves Users</h4>
+
+<p>CytoAtlas is a full-stack bioinformatics platform that transforms raw single-cell RNA-seq data into actionable cytokine and secreted protein activity scores, then makes those results explorable through a web application and an AI-powered chat assistant. The system operates in two phases:</p>
+
+<ol>
+  <li><strong>Offline phase (cytoatlas-pipeline):</strong> GPU-accelerated batch jobs on SLURM/A100 infrastructure process ~29M single cells and ~31K bulk RNA-seq samples through ridge regression against 3 signature matrices, producing activity z-scores, cross-sample correlations, and validation metrics. Results are stored in DuckDB columnar databases.</li>
+  <li><strong>Online phase (cytoatlas-api):</strong> A FastAPI server reads pre-computed results from DuckDB and serves them to a React single-page application. Users can interactively explore activity patterns, compare across datasets, search genes, export data, and ask natural-language questions to an AI chat assistant backed by dual LLMs and a RAG knowledge base.</li>
+</ol>
+
+<h4>C.2 Offline Pipeline (<code>cytoatlas-pipeline</code>)</h4>
+
+<p>The pipeline package (<code>cytoatlas-pipeline</code>, 91 Python modules organized into 14 subpackages) orchestrates the entire compute-intensive data processing workflow.</p>
+
+<p><strong>Pipeline stages</strong> (25 numbered scripts executed via SLURM):</p>
+
+<table>
+  <tr><th>Stage</th><th>Scripts</th><th>Operation</th><th>Output</th></tr>
+  <tr><td>1. Activity inference</td><td>01&ndash;05</td><td>Ridge regression on each dataset (CIMA, Inflammation, scAtlas Normal/Cancer, parse_10M) against CytoSig (43), LinCytoSig (178), and SecAct (1,170) signatures</td><td>Activity H5AD files (signatures &times; samples)</td></tr>
+  <tr><td>2. Pseudobulk aggregation</td><td>11&ndash;12</td><td>Multi-level aggregation: donor-only, donor&times;celltype (L1&ndash;L4). Single-pass streaming through H5AD with min_cells=10 filter</td><td>Pseudobulk H5AD per (atlas, level)</td></tr>
+  <tr><td>3. Cross-sample correlation</td><td>12&ndash;13</td><td>Spearman &rho; between predicted activity and target gene expression for each (atlas, level, signature). Alias resolution for CytoSig target names (e.g., TNFA &rarr; TNF)</td><td>Correlation CSV files</td></tr>
+  <tr><td>4. Bulk validation</td><td>14&ndash;15</td><td>Ridge regression on GTEx (19.8K TPM samples) and TCGA (11.1K RSEM samples) with format-specific preprocessing and gene ID mapping (versioned ENSG for GTEx, symbol|entrezID for TCGA)</td><td>Bulk activity H5AD + validation JSON</td></tr>
+  <tr><td>5. Bootstrap validation</td><td>16</td><td>100 bootstrap resamples of pseudobulk for confidence intervals on correlation estimates</td><td>Resampled activity with 95% CI</td></tr>
+  <tr><td>6. Visualization prep</td><td>06, 17, 24&ndash;25</td><td>Flatten nested results into JSON arrays for web visualization; generate scatter plot point clouds</td><td>Flat JSON files</td></tr>
+  <tr><td>7. Database generation</td><td>convert_*_to_duckdb.py</td><td>Import JSON/CSV into DuckDB columnar tables with indexes; 10&times; compression vs raw JSON</td><td>3 DuckDB databases</td></tr>
+</table>
+
+<p><strong>SecActpy ridge regression</strong> is the core mathematical operation. For each dataset, the expression matrix <em>Y</em> (genes &times; samples) is regressed against a signature matrix <em>X</em> (genes &times; signatures) using L2-regularized linear regression:</p>
+
+<p style="text-align:center;font-family:serif;font-size:1.05em;">&beta; = (X<sup>T</sup>X + &lambda;I)<sup>&minus;1</sup> X<sup>T</sup>Y &nbsp;&nbsp;&nbsp; (&lambda; = 5&times;10<sup>5</sup>)</p>
+
+<p>Significance is assessed via 1,000 permutation tests (random column shuffles of <em>Y</em>), yielding z-scores and p-values for each signature&times;sample pair. The function returns <code>beta</code>, <code>se</code>, <code>zscore</code>, and <code>pvalue</code> matrices. For datasets exceeding 1,000 samples, <code>ridge_batch()</code> streams the computation in chunks of 5,000&ndash;10,000 samples while keeping the precomputed projection matrix T = (X<sup>T</sup>X + &lambda;I)<sup>&minus;1</sup>X<sup>T</sup> on the GPU, achieving 10&ndash;34&times; speedup over NumPy via CuPy&rsquo;s cuBLAS backend.</p>
+
+<p><strong>SLURM resource profiles:</strong></p>
+<table>
+  <tr><th>Profile</th><th>GPU</th><th>RAM</th><th>CPUs</th><th>Time Limit</th><th>Use Case</th></tr>
+  <tr><td>gpu_heavy</td><td>A100</td><td>128 GB</td><td>16</td><td>24&ndash;48h</td><td>Atlas activity inference</td></tr>
+  <tr><td>gpu_medium</td><td>A100</td><td>128 GB</td><td>8</td><td>4&ndash;8h</td><td>Validation, bulk processing</td></tr>
+  <tr><td>cpu_heavy</td><td>&mdash;</td><td>128 GB</td><td>16</td><td>6h</td><td>Preprocessing, aggregation</td></tr>
+  <tr><td>cpu_normal</td><td>&mdash;</td><td>64 GB</td><td>8</td><td>2&ndash;4h</td><td>Flattening, DuckDB conversion</td></tr>
+</table>
+<p>GPU nodes require <code>module load CUDA/12.8.1 cuDNN</code> and the <code>secactpy</code> conda environment for <code>libcublas.so.12</code> and CuPy availability.</p>
+
+<p><strong>Atlas registry</strong> (<code>cytoatlas-pipeline/batch/atlas_config.py</code>) defines each dataset&rsquo;s H5AD path, annotation levels, sample column, and cell count. Six atlases are registered: CIMA (6.5M cells, 4 annotation levels L1&ndash;L4), Inflammation Main/Val/Ext (4M/1.5M/0.8M cells, 2 levels), scAtlas Normal and Cancer (3M/3.4M cells each, organ&times;celltype levels).</p>
+
+<h4>C.3 Client Layer: React SPA</h4>
+
+<p>The frontend is a React 19.2.0 single-page application built with TypeScript 5.9, Vite 7.3, and Tailwind CSS 4.1. Users interact with CytoAtlas exclusively through this browser-based interface.</p>
+
+<p><strong>Pages</strong> (15 routes via React Router 7.13):</p>
+<table>
+  <tr><th>Page</th><th>Function</th><th>Key Visualizations</th></tr>
+  <tr><td>Home</td><td>Landing page with atlas overview cards</td><td>Atlas summary statistics</td></tr>
+  <tr><td>Explore</td><td>Browse available datasets and signatures</td><td>Filterable data tables</td></tr>
+  <tr><td>Atlas Detail</td><td>Deep-dive into a single atlas (CIMA, Inflammation, scAtlas) with tabbed panels</td><td>Activity heatmaps, disease comparisons, cell-type profiles</td></tr>
+  <tr><td>Search</td><td>Global search across genes, cytokines, proteins, cell types, diseases, organs</td><td>Ranked result cards</td></tr>
+  <tr><td>Gene Detail</td><td>Gene-centric view: CytoSig activity, SecAct activity, correlations, diseases, expression</td><td>Multi-tab gene explorer</td></tr>
+  <tr><td>Compare</td><td>Cross-atlas comparison: conserved signatures, cell-type mapping, meta-analysis</td><td>Side-by-side boxplots, Sankey diagrams</td></tr>
+  <tr><td>Validate</td><td>Data quality metrics and validation results</td><td>Correlation scatter, quality grades</td></tr>
+  <tr><td>Perturbation</td><td>Cytokine stimulation experiments (parse_10M, Tahoe)</td><td>Dose-response curves, drug sensitivity</td></tr>
+  <tr><td>Spatial</td><td>Spatial transcriptomics data</td><td>2D/3D tissue maps, gene coverage</td></tr>
+  <tr><td>Chat</td><td>AI assistant for natural-language data queries</td><td>Inline Plotly/D3 charts generated by LLM tool calls</td></tr>
+  <tr><td>Submit</td><td>User dataset submission workflow</td><td>Upload form, progress tracking</td></tr>
+</table>
+
+<p><strong>State management:</strong> Zustand 5.0 stores global UI state (current atlas, selected signature type, sidebar/filter state, user session). TanStack React Query 5.90 manages server state with automatic caching, background refetching, and optimistic updates. API calls go through a typed client (<code>src/api/client.ts</code>) using the Fetch API with JWT Bearer or API Key authentication.</p>
+
+<p><strong>Visualization:</strong> 12 chart component types built on Plotly.js 3.3 and D3.js 7.9: bar, scatter, heatmap, boxplot, violin, forest plot, volcano, Sankey, lollipop, and line charts. Each atlas has 5&ndash;6 specialized panels (e.g., CIMA: biochemistry, eQTL, metabolites, population; Inflammation: disease, treatment, severity, drivers; scAtlas: immune infiltration, exhaustion, CAF signatures).</p>
+
+<h4>C.4 Gateway Layer: Nginx Reverse Proxy</h4>
+
+<p>In production, Nginx sits between the browser and FastAPI, providing rate limiting, connection limiting, SSL termination, and static file caching. It is deployed as an optional Docker Compose service (production profile).</p>
+
+<table>
+  <tr><th>Feature</th><th>Configuration</th></tr>
+  <tr><td>Rate limiting</td><td>10 requests/second per IP, burst of 20 (nodelay)</td></tr>
+  <tr><td>Connection limiting</td><td>10 concurrent connections per IP</td></tr>
+  <tr><td>Gzip compression</td><td>Level 6, min 1,000 bytes; JSON, CSS, JS types</td></tr>
+  <tr><td>Upstream keepalive</td><td>32 persistent connections to FastAPI (port 8000)</td></tr>
+  <tr><td>Timeouts</td><td>60s connect/send/read</td></tr>
+  <tr><td>Static file cache</td><td>30-day expiry, immutable headers for <code>/static/</code></td></tr>
+  <tr><td>Health checks</td><td><code>/api/v1/health</code> excluded from rate limiting</td></tr>
+  <tr><td>SSL/TLS</td><td>TLS 1.2+ template (production)</td></tr>
+</table>
+
+<h4>C.5 Application Layer: FastAPI</h4>
+
+<p>The FastAPI application (<code>cytoatlas-api/app/main.py</code>) is the central routing and orchestration layer. It processes all API requests, enforces authentication, and dispatches to the appropriate service.</p>
+
+<p><strong>Middleware stack</strong> (7 layers, applied in reverse order):</p>
+<ol>
+  <li><strong>GZipMiddleware</strong> &mdash; compresses responses &gt; 1,000 bytes</li>
+  <li><strong>SecurityHeadersMiddleware</strong> (53 lines) &mdash; sets CSP (allows Plotly CDN, D3), X-Content-Type-Options, X-Frame-Options, HSTS (production), Permissions-Policy</li>
+  <li><strong>CORSMiddleware</strong> &mdash; configurable allowed origins</li>
+  <li><strong>AuditMiddleware</strong> (220 lines) &mdash; logs all API calls to rotating JSONL files (100 MB max, 5 backups) with token redaction</li>
+  <li><strong>RequestLoggingMiddleware</strong> (164 lines) &mdash; HTTP request timing and error tracking</li>
+  <li><strong>MetricsMiddleware</strong> &mdash; Prometheus metrics collection</li>
+  <li><strong>Cache headers</strong> &mdash; adds <code>X-API-Version: 1.0</code></li>
+</ol>
+
+<p><strong>Authentication:</strong> JWT tokens (HS256, 30-min expiry) stored in HttpOnly cookies, plus API key support (PBKDF2-SHA256 hashed, prefix-indexed for O(1) lookup via <code>X-API-Key</code> header). Password hashing uses bcrypt. Role-based access control (RBAC) with 4 roles: admin, analyst, viewer, contributor.</p>
+
+<p><strong>Routers</strong> (17 modules, ~5,900 lines, ~260+ endpoints):</p>
+<table>
+  <tr><th>Router</th><th>Endpoints</th><th>Purpose</th></tr>
+  <tr><td>Health</td><td>3</td><td>Liveness, readiness, status probes</td></tr>
+  <tr><td>Auth</td><td>4</td><td>Login, register, verify, logout</td></tr>
+  <tr><td>Atlases</td><td>8</td><td>Atlas registry, summaries, metadata</td></tr>
+  <tr><td>CIMA</td><td>~32</td><td>CIMA-specific: activity, eQTL, biochemistry, metabolites, population</td></tr>
+  <tr><td>Inflammation</td><td>~44</td><td>Disease activity, treatment response, severity, cell drivers</td></tr>
+  <tr><td>scAtlas</td><td>~36</td><td>Organ signatures, cancer comparison, immune infiltration, exhaustion</td></tr>
+  <tr><td>Cross-Atlas</td><td>~28</td><td>Conserved signatures, cell-type mapping, meta-analysis</td></tr>
+  <tr><td>Validation</td><td>~30</td><td>5-type credibility assessment, quality grades</td></tr>
+  <tr><td>Gene</td><td>8</td><td>Gene-centric views and associations</td></tr>
+  <tr><td>Search</td><td>4</td><td>Global entity search (gene, cytokine, cell type, disease, organ)</td></tr>
+  <tr><td>Export</td><td>6</td><td>CSV/JSON data export per atlas</td></tr>
+  <tr><td>Chat</td><td>4</td><td>AI conversation, suggestions, history, streaming</td></tr>
+  <tr><td>Perturbation</td><td>12+</td><td>parse_10M cytokine stimulation, Tahoe drug sensitivity</td></tr>
+  <tr><td>Spatial</td><td>12+</td><td>Tissue maps, gene coverage, technology comparison</td></tr>
+  <tr><td>Submit</td><td>4</td><td>User dataset submission workflow</td></tr>
+  <tr><td>WebSocket</td><td>2</td><td>Real-time streaming connections</td></tr>
+  <tr><td>Pipeline</td><td>4</td><td>Pipeline status and management</td></tr>
+</table>
+
+<p><strong>Lifespan management:</strong> On startup, the application initializes the database (if configured), connects to Redis or the in-memory cache, starts the audit logger, and generates a runtime secret in development mode. On shutdown, it gracefully disconnects all resources.</p>
+
+<h4>C.6 Data Query Service</h4>
+
+<p>All science data queries go through the DuckDB repository (<code>app/repositories/duckdb_repository.py</code>), which provides a safe, async interface to the 3 pre-computed columnar databases.</p>
+
+<p><strong>Three DuckDB databases:</strong></p>
+<table>
+  <tr><th>Database</th><th>Content</th><th>Key Tables</th></tr>
+  <tr><td><code>atlas_data.duckdb</code></td><td>Activity scores, correlations, validation, biological associations</td><td>activity, cross_sample_correlations, bulk_rnaseq_validation, celltype_specific_activity, age_bmi_data, cima_correlations, inflammation_disease, scatlas_cancer_comparison</td></tr>
+  <tr><td><code>perturbation_data.duckdb</code></td><td>Cytokine stimulation and drug experiments</td><td>parse10m_activity, parse10m_treatment_effect, parse10m_ground_truth, tahoe_drug_effect, tahoe_dose_response, tahoe_drug_sensitivity</td></tr>
+  <tr><td><code>spatial_data.duckdb</code></td><td>Spatial transcriptomics data</td><td>spatial_activity, spatial_coordinates, spatial_neighborhood, spatial_gene_coverage, spatial_technology_comparison</td></tr>
+</table>
+
+<p><strong>Query safety:</strong> A safelist of 115 known tables is enforced before any query execution &mdash; queries referencing unlisted tables are rejected. All user input is passed via parameterized queries (never string interpolation), preventing SQL injection. For large result sets, batch-based streaming returns 2,000 rows per chunk. All DuckDB calls are wrapped in <code>asyncio.run_in_executor()</code> to avoid blocking the FastAPI event loop, and databases are opened in read-only mode.</p>
+
+<h4>C.7 AI Chat Service</h4>
+
+<p>The chat service allows users to ask natural-language questions about CytoAtlas data. It is implemented as a modular pipeline: ChatService (orchestrator) &rarr; LLMClient (language model) + RAGService (knowledge retrieval) + ToolExecutor (22 data tools).</p>
+
+<p><strong>Dual LLM client:</strong> The primary model is <strong>Mistral-Small-24B</strong> (Mistral-Small-3.1-24B-Instruct-2503) served via vLLM with an OpenAI-compatible endpoint. If the vLLM server is unreachable (connection timeout or error), the client automatically falls back to <strong>Claude Sonnet</strong> (claude-sonnet-4-5-20250929) via the Anthropic API. Both models receive the same system prompt (~150 lines) defining atlas descriptions, signature types, a 3-part response pattern (analysis plan &rarr; tool execution &rarr; results interpretation), and visualization rules per data type. A JSON repair strategy handles Mistral&rsquo;s occasionally malformed streaming output by scoring candidate JSON substrings against expected tool parameter keys.</p>
+
+<p><strong>RAG (Retrieval-Augmented Generation):</strong> A LanceDB vector database stores embeddings of platform documentation, column definitions, atlas summaries, and biological context (~100 indexed documents). Queries are embedded using the <code>all-MiniLM-L6-v2</code> sentence transformer (384-dim, 38M parameters, CPU-friendly) and the top-5 most similar documents are retrieved via cosine similarity to augment the LLM&rsquo;s context.</p>
+
+<p><strong>22 data tools</strong> available to the LLM for answering questions:</p>
+<table>
+  <tr><th>Category</th><th>Tools</th><th>Examples</th></tr>
+  <tr><td>Data Query (11)</td><td>search_entity, get_atlas_summary, list_cell_types, list_signatures, get_activity_data, get_correlations, get_disease_activity, compare_atlases, get_validation_metrics, export_data, create_visualization</td><td>&ldquo;Show me TNF activity in macrophages across all atlases&rdquo;</td></tr>
+  <tr><td>Documentation (6)</td><td>get_data_lineage, get_column_definition, find_source_script, list_panel_outputs, get_dataset_info, get_methodology</td><td>&ldquo;How was the CIMA pseudobulk generated?&rdquo;</td></tr>
+  <tr><td>Advanced (5)</td><td>advanced_query, create_comparison_report, suggest_analysis, generate_reproducible_code, submit_feedback</td><td>&ldquo;Generate Python code to reproduce the IL1B correlation analysis&rdquo;</td></tr>
+</table>
+
+<p>Tools execute asynchronously, with results truncated to 4,000 characters if needed. The ToolExecutor validates tool names, normalizes arguments (handling alias mappings), and formats structured responses. A ChatInputSanitizer checks for malicious patterns (SQL injection, path traversal) and enforces a 10,000-character input limit.</p>
+
+<p><strong>Conversation persistence:</strong> Chat history (conversations, messages, downloadable data) is stored in SQLite (default) or PostgreSQL (production) via SQLAlchemy async sessions.</p>
+
+<h4>C.8 Storage Layer</h4>
+
+<p>CytoAtlas uses a 3-tier storage architecture:</p>
+
+<p><strong>Tier 1 &mdash; Science data (DuckDB):</strong> Three separate <code>.duckdb</code> files store all pre-computed analytical data in columnar format. DuckDB was chosen because it requires no server process &mdash; essential on HPC where database servers are unavailable. Each database regenerates independently without affecting the others. Queries run as read-only in-process SQL, with parameterized inputs and safelist validation.</p>
+
+<p><strong>Tier 2 &mdash; Application state (SQLite/PostgreSQL):</strong> 10 ORM tables (659 lines, SQLAlchemy models) store users (email, password hash, API keys, roles), conversations and messages (chat history), jobs (background task tracking), computed statistics, validation metrics, and dataset/signature/cell-type metadata. SQLite with WAL mode is the default for HPC single-node deployment; PostgreSQL (via asyncpg, 5&ndash;10 connection pool) is used in Docker production.</p>
+
+<p><strong>Tier 3 &mdash; Cache (Redis/In-Memory):</strong> A CacheService (251 lines) with 4-tier strategy: L1 in-process Python dict (instant, ephemeral) &rarr; L2 Redis (fast, persistent) &rarr; L3 disk JSON (large results) &rarr; L4 DuckDB (source of truth). TTLs: summary stats 24h, heatmaps 1h, filtered results 5min, session data 30min. Redis runs with AOF persistence; in development, an in-memory dict with LRU eviction is used as a drop-in replacement.</p>
+
+<h4>C.9 Deployment</h4>
+
+<p>The platform supports two deployment modes:</p>
+
+<p><strong>Docker Compose (production):</strong> 5 services &mdash; FastAPI (Uvicorn on port 8000), PostgreSQL 16 (with healthcheck), Redis 7 (AOF persistence), Nginx (optional, production profile), and a Celery worker (optional, workers profile). The Dockerfile uses a 3-stage build: Node 22 for the frontend (<code>npm run build</code> &rarr; <code>/app/static/</code>), Python 3.11 with uv for the backend, and a minimal production image running as non-root <code>appuser</code> with a <code>curl /api/v1/health/live</code> healthcheck.</p>
+
+<p><strong>SLURM HPC (current):</strong> The API server runs as a 7-day SLURM job with SQLite and in-memory cache. Data volumes (<code>/data/Jiang_Lab/</code>, <code>/data/parks34/projects/2cytoatlas/</code>) are mounted read-only. GPU pipeline scripts run as separate SLURM jobs with dependency tracking via <code>submit_jobs.py</code>.</p>
+
+<h4>C.10 Request Lifecycle Example</h4>
+
+<p>When a user searches for &ldquo;IFNG activity in CIMA&rdquo;:</p>
+<ol>
+  <li><strong>Browser:</strong> React&rsquo;s TanStack Query hook calls <code>GET /api/v1/cima/activity?signature=IFNG&amp;sig_type=cytosig</code></li>
+  <li><strong>Nginx:</strong> Checks rate limit (10 req/s), passes to upstream FastAPI</li>
+  <li><strong>FastAPI middleware:</strong> Logs request, checks JWT token, adds security headers, starts metrics timer</li>
+  <li><strong>CIMA router:</strong> Validates Pydantic request model, calls CIMAService</li>
+  <li><strong>CIMAService:</strong> Checks L1/L2 cache for this query</li>
+  <li><strong>DuckDB repository:</strong> If cache miss, runs parameterized SQL: <code>SELECT * FROM activity WHERE atlas='cima' AND signature='IFNG'</code> via <code>run_in_executor()</code></li>
+  <li><strong>Response:</strong> JSON with activity z-scores per cell type &rarr; cached &rarr; returned through middleware &rarr; gzip compressed &rarr; browser renders Plotly chart</li>
+</ol>
+
+<p>For AI chat queries (e.g., &ldquo;Which cell types have the highest IFNG activity in CIMA?&rdquo;), the request goes through the chat router &rarr; ChatService, which embeds the query for RAG retrieval, builds the LLM context with relevant documentation, calls Mistral-24B (or Claude fallback), executes any tool calls (e.g., <code>get_activity_data</code>), and streams the response with inline visualizations back to the browser.</p>
+
 </div><!-- content -->
 </div><!-- container -->
 
