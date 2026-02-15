@@ -36,9 +36,9 @@ Files must stay in sync across three locations. After editing any synced file, c
 
 | File | Owner | Since | Notes |
 |------|-------|-------|-------|
-| `scripts/generate_interactive_report.py` | — | — | System arch figure moved before §1.1, caption updated |
+| `scripts/generate_interactive_report.py` | — | — | Inline arch doc extracted to standalone system_architecture.html |
 | `scripts/generate_report_figures.py` | — | — | fig_system_architecture() redesigned as top-to-bottom system design diagram |
-| `baseline/index.html` | — | — | Regenerated with new system architecture diagram |
+| `baseline/index.html` | — | — | Regenerated; arch figure moved to system_architecture.html |
 | `baseline/REPORT.md` | — | — | Figure reference updated for new diagram |
 | `baseline/stats_section_4.*.html` | — | — | §4.4 matched-target control tables added |
 | `CLAUDE.md` | — | — | Report Sections table updated |
