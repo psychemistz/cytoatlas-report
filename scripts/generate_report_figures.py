@@ -350,7 +350,7 @@ def fig1_dataset_overview():
                         TOP - val_content_h) - GROUP_PAD
 
     # Set y-limits tightly around content (title at top, global_bottom at bottom)
-    ax.set_ylim(global_bottom - 0.5, 12.9)
+    ax.set_ylim(global_bottom - 0.3, 12.65)
 
     # ═══ COLUMN 1: Data Sources (x=0.3–4.7) ═══
     col1_x, col1_w = 0.3, 4.4
