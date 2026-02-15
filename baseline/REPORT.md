@@ -10,10 +10,10 @@ CytoAtlas is a comprehensive computational resource that maps cytokine and secre
 
 **Key results:**
 - 1,213 signatures (43 CytoSig cytokines + 1,170 SecAct secreted proteins), plus 178 cell-type-specific LinCytoSig variants, validated across 6 independent datasets
-- Spearman correlations between predicted activity and target gene expression reach ρ=0.6-0.9 for well-characterized cytokines (IL1B, TNFA, VEGFA, TGFB family)
+- Spearman correlations between predicted activity and target gene expression reach ρ=0.6–0.8 at independent levels for well-characterized cytokines (IL1B, TNFA, VEGFA, TGFB family), exceeding ρ=0.9 in specific tissue/cell-type strata
 - Cross-dataset consistency demonstrates that signatures generalize across CIMA, Inflammation Atlas Main, scAtlas, GTEx, and TCGA
 - Cell-type-specific signatures (LinCytoSig) improve prediction for select immune cell types (Basophil, NK, DC: +0.18-0.21 Δρ) but generally underperform global CytoSig for non-immune cell types
-- SecAct provides the broadest validated coverage with 805–1,161 targets per dataset (varying by gene overlap), achieving the highest median correlations in 5 of 6 datasets (independence-corrected median ρ=0.31–0.46)
+- SecAct provides the broadest validated coverage with 805–1,161 targets per dataset (varying by gene overlap), achieving the highest median correlations in 5 of 6 datasets (independence-corrected median ρ=0.19–0.46)
 
 ---
 
@@ -62,7 +62,7 @@ CytoAtlas validates at **four aggregation levels**, each testing whether predict
 
 All statistics use **independence-corrected** values — preventing inflation from repeated measures across tissues, cancer types, or cell types. CytoSig vs SecAct comparisons use Mann-Whitney U (total) and Wilcoxon signed-rank (32 matched targets) with BH-FDR correction. See Section 3.3 for the validation philosophy and Section 4 for full results.
 
-> **Why independence correction matters:** Pooling across tissues or cancer types inflates correlations through confounding. For example, GTEx pooled CytoSig median ρ (0.211) is 40% higher than the independence-corrected by-tissue value (0.151); SecAct shows +30% inflation (0.394 vs 0.304). All results in this report use the corrected values. For a detailed comparison of pooled vs independent levels, including inflation magnitude and finer cell-type stratification, see the [Section 4.1 statistical supplement](stats_section_4.1.html).
+> **Why independence correction matters:** Pooling across tissues or cancer types inflates correlations through confounding. For example, GTEx pooled CytoSig median ρ (0.211) is 40% higher than the independence-corrected by-tissue value (0.151); SecAct shows +26% inflation (0.394 vs 0.314). All results in this report use the corrected values. For a detailed comparison of pooled vs independent levels, including inflation magnitude and finer cell-type stratification, see the [Section 4.1 statistical supplement](stats_section_4.1.html).
 
 > **Figure 1** (`fig1_dataset_overview.png`): Data sources, activity inference pipeline, and validation analyses.
 
@@ -92,7 +92,7 @@ All statistics use **independence-corrected** values — preventing inflation fr
 
 **CIMA (421 healthy donors):** Healthy population atlas with paired blood biochemistry (19 markers: ALT, AST, glucose, lipid panel, etc.) and plasma metabolomics (1,549 features). Enables age, BMI, sex, and smoking correlations with cytokine activity.
 
-**Inflammation Atlas (20 diseases):**
+**Inflammation Atlas (19 diseases):**
 - Autoimmune: RA, SLE, Sjogren's, PSA
 - IBD: Crohn's disease, Ulcerative Colitis
 - Infectious: COVID-19, Sepsis, HIV, HBV
@@ -135,10 +135,10 @@ Most single-cell analysis tools use complex models (variational autoencoders, gr
 
 ### 3.2 What Scientific Questions Does CytoAtlas Answer?
 
-1. **Which cytokines are active in which cell types across diseases?** — IL1B/TNFA in monocytes/macrophages, IFNG in CD8+ T and NK cells, IL17A in Th17, VEGFA in endothelial/tumor cells, TGFB family in stromal cells — quantified across 20 diseases, 35 organs, and 15 cancer types.
+1. **Which cytokines are active in which cell types across diseases?** — IL1B/TNFA in monocytes/macrophages, IFNG in CD8+ T and NK cells, IL17A in Th17, VEGFA in endothelial/tumor cells, TGFB family in stromal cells — quantified across 19 diseases, 35 organs, and 15 cancer types.
 2. **Are cytokine activities consistent across independent cohorts?** — Yes. IL1B, TNFA, VEGFA, and TGFB family show consistent positive correlations across all 6 validation datasets (Figure 6).
 3. **Does cell-type-specific biology matter for cytokine inference?** — For select immune types, yes: LinCytoSig improves prediction for Basophils (+0.21 Δρ), NK cells (+0.19), and DCs (+0.18), but global CytoSig wins overall (Figures 11–12).
-4. **Which secreted proteins beyond cytokines show validated activity?** — SecAct (1,170 targets) achieves the highest correlations across all atlases (median ρ=0.33–0.49), with novel validated targets like Activin A (ρ=0.98), CXCL12 (ρ=0.92), and BMP family (Figure 13).
+4. **Which secreted proteins beyond cytokines show validated activity?** — SecAct (1,170 targets) achieves the highest correlations in 5 of 6 datasets (median ρ=0.19–0.46), with novel validated targets like INHBA/Activin A (ρ=0.91 in TCGA Colon), CXCL12 (ρ=0.94 in scAtlas Normal Fibroblast), and BMP family (Figure 13).
 5. **Can we predict treatment response from cytokine activity?** — We are incorporating cytokine-blocking therapy outcomes from bulk RNA-seq to test whether predicted cytokine activity associates with therapy response. Additionally, Inflammation Atlas responder/non-responder labels (208 samples across 6 diseases: RA, PS, PSA, CD, UC, SLE) enable treatment response prediction using cytokine activity profiles as features.
 
 ### 3.3 Validation Philosophy

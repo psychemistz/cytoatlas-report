@@ -1630,9 +1630,9 @@ def generate_html(summary_table, boxplot_data, consistency_data, heatmap_data,
 <p><strong>Key results:</strong></p>
 <ul>
   <li>1,213 signatures (43 CytoSig + 1,170 SecAct), plus 178 cell-type-specific LinCytoSig variants, validated across 6 independent datasets</li>
-  <li>Spearman correlations reach &rho;=0.6&ndash;0.9 for well-characterized cytokines (IL1B, TNFA, VEGFA, TGFB family)</li>
+  <li>Spearman correlations reach &rho;=0.6&ndash;0.8 at independent levels for well-characterized cytokines (IL1B, TNFA, VEGFA, TGFB family), exceeding &rho;=0.9 in specific tissue/cell-type strata</li>
   <li>Cross-dataset consistency demonstrates signatures generalize across CIMA, Inflammation Atlas Main, scAtlas, GTEx, and TCGA</li>
-  <li>SecAct achieves the highest median correlations in 5 of 6 datasets (independence-corrected median &rho;=0.31&ndash;0.46)</li>
+  <li>SecAct achieves the highest median correlations in 5 of 6 datasets (independence-corrected median &rho;=0.19&ndash;0.46)</li>
 </ul>
 </div>
 
@@ -1697,7 +1697,7 @@ Ridge regression (L2-regularized linear regression) was chosen deliberately over
 <p>All statistics use <strong>independence-corrected</strong> values &mdash; preventing inflation from repeated measures across tissues, cancer types, or cell types. CytoSig vs SecAct comparisons use Mann-Whitney U (total) and Wilcoxon signed-rank (32 matched targets) with BH-FDR correction. See Section 3.3 for the validation philosophy and Section 4 for full results.</p>
 
 <div class="callout">
-<p><strong>Why independence correction matters:</strong> Pooling across tissues or cancer types inflates correlations through confounding. For example, GTEx pooled CytoSig median &rho; (0.211) is 40% higher than the independence-corrected by-tissue value (0.151); SecAct shows +30% inflation (0.394 vs 0.304). All results in this report use the corrected values. For a detailed comparison of pooled vs independent levels, including inflation magnitude and finer cell-type stratification, see the <a href="stats_section_4.1.html">Section 4.1 statistical supplement</a>.</p>
+<p><strong>Why independence correction matters:</strong> Pooling across tissues or cancer types inflates correlations through confounding. For example, GTEx pooled CytoSig median &rho; (0.211) is 40% higher than the independence-corrected by-tissue value (0.151); SecAct shows +26% inflation (0.394 vs 0.314). All results in this report use the corrected values. For a detailed comparison of pooled vs independent levels, including inflation magnitude and finer cell-type stratification, see the <a href="stats_section_4.1.html">Section 4.1 statistical supplement</a>.</p>
 </div>
 
 <div class="figure">
@@ -1731,7 +1731,7 @@ Ridge regression (L2-regularized linear regression) was chosen deliberately over
 <h3>2.2 Disease and Condition Categories</h3>
 
 <p><strong>CIMA (421 healthy donors):</strong> Healthy population atlas with paired blood biochemistry (19 markers: ALT, AST, glucose, lipid panel, etc.) and plasma metabolomics (1,549 features). Enables age, BMI, sex, and smoking correlations with cytokine activity.</p>
-<p><strong>Inflammation Atlas (20 diseases):</strong> RA, SLE, Sjogren's, PSA, Crohn's, UC, COVID-19, Sepsis, HIV, HBV, BRCA, CRC, HNSCC, NPC, COPD, Cirrhosis, MS, Asthma, Atopic Dermatitis</p>
+<p><strong>Inflammation Atlas (19 diseases):</strong> RA, SLE, Sjogren's, PSA, Crohn's, UC, COVID-19, Sepsis, HIV, HBV, BRCA, CRC, HNSCC, NPC, COPD, Cirrhosis, MS, Asthma, Atopic Dermatitis</p>
 <p><strong>scAtlas Normal (317 donors):</strong> 35 organs, 12 tissues with &ge;20 donors for per-organ stratification (Breast 124, Lung 97, Colon 65, Heart 52, Liver 43, etc.)</p>
 <p><strong>scAtlas Cancer (717 donors, 601 tumor-only):</strong> 29 cancer types, 11 with &ge;20 tumor-only donors for per-cancer stratification (HCC 88, PAAD 58, CRC 51, ESCA 48, HNSC 39, LUAD 36, NPC 36, KIRC 31, BRCA 30, ICC 29, STAD 27)</p>
 <!-- Item 2: parse_10M is NOT ground truth -->
@@ -1773,10 +1773,10 @@ Ridge regression (L2-regularized linear regression) was chosen deliberately over
 
 <h3>3.2 What Scientific Questions Does CytoAtlas Answer?</h3>
 <ol>
-  <li><strong>Which cytokines are active in which cell types across diseases?</strong> &mdash; IL1B/TNFA in monocytes/macrophages, IFNG in CD8+ T and NK cells, IL17A in Th17, VEGFA in endothelial/tumor cells, TGFB family in stromal cells &mdash; quantified across 20 diseases, 35 organs, and 15 cancer types.</li>
+  <li><strong>Which cytokines are active in which cell types across diseases?</strong> &mdash; IL1B/TNFA in monocytes/macrophages, IFNG in CD8+ T and NK cells, IL17A in Th17, VEGFA in endothelial/tumor cells, TGFB family in stromal cells &mdash; quantified across 19 diseases, 35 organs, and 15 cancer types.</li>
   <li><strong>Are cytokine activities consistent across independent cohorts?</strong> &mdash; Yes. IL1B, TNFA, VEGFA, and TGFB family show consistent positive correlations across all 6 validation datasets (Figure 8).</li>
   <li><strong>Does cell-type-specific biology matter for cytokine inference?</strong> &mdash; For select immune types, yes: LinCytoSig improves prediction for Basophils (+0.21 &Delta;&rho;), NK cells (+0.19), and DCs (+0.18), but global CytoSig wins overall (Figures 11&ndash;12).</li>
-  <li><strong>Which secreted proteins beyond cytokines show validated activity?</strong> &mdash; SecAct (1,170 targets) achieves the highest correlations across all datasets (median &rho;=0.33&ndash;0.49), with novel validated targets like Activin A (&rho;=0.98), CXCL12 (&rho;=0.92), and BMP family (Figure 13).</li>
+  <li><strong>Which secreted proteins beyond cytokines show validated activity?</strong> &mdash; SecAct (1,170 targets) achieves the highest correlations in 5 of 6 datasets (median &rho;=0.19&ndash;0.46), with novel validated targets like INHBA/Activin A (&rho;=0.91 in TCGA Colon), CXCL12 (&rho;=0.94 in scAtlas Normal Fibroblast), and BMP family (Figure 13).</li>
   <li><strong>Can we predict treatment response from cytokine activity?</strong> &mdash; We are incorporating cytokine-blocking therapy outcomes from bulk RNA-seq to test whether predicted cytokine activity associates with therapy response. Additionally, Inflammation Atlas responder/non-responder labels enable treatment response prediction using cytokine activity profiles as features.</li>
 </ol>
 
@@ -2221,7 +2221,7 @@ Ridge regression (L2-regularized linear regression) was chosen deliberately over
 <h3>6.1 What CytoAtlas Enables</h3>
 <ol>
   <li><strong>Quantitative cytokine activity per cell type per disease</strong> &mdash; 43 CytoSig cytokines + 1,170 SecAct secreted proteins across 29M cells</li>
-  <li><strong>Cross-disease comparison</strong> &mdash; same signatures validated across 20 diseases, 35 organs, 15 cancer types</li>
+  <li><strong>Cross-disease comparison</strong> &mdash; same signatures validated across 19 diseases, 35 organs, 15 cancer types</li>
   <li><strong>Independent perturbation comparison</strong> &mdash; parse_10M provides 90 cytokine perturbations &times; 12 donors &times; 18 cell types for independent comparison with CytoSig predictions</li>
   <li><strong>Multi-level validation</strong> &mdash; donor, donor &times; celltype, bulk RNA-seq (GTEx/TCGA), and resampled bootstrap validation across 6 datasets</li>
 </ol>
