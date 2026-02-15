@@ -213,7 +213,7 @@ Four datasets have per-stratum breakdowns:
 **Key findings:**
 - **Matched targets (strongest test):** On the 32 shared targets, SecAct wins direction in every stratum — 29/29 GTEx tissues and 33/33 TCGA cancer types — with 25/29 and 31/33 reaching significance (q < 0.05). This unanimous result across 62 independent strata rules out Simpson's paradox and confirms the Section 4.2 aggregate is not driven by a few dominant strata
 - **Total targets:** SecAct wins direction in 28/29 GTEx tissues (21 significant) and 30/33 TCGA cancers (15 significant). The few CytoSig-favored strata (Brain in GTEx; Kidney Chromophobe, Ovarian, Uveal Melanoma in TCGA) are all non-significant, reflecting low cytokine signaling rather than genuine CytoSig superiority
-- **Tissue context matters:** Inflammation-rich tissues/cancers (Lung, Liver, Colon, Esophagus, Pancreatic) show high CytoSig correlations, consistent with its curated cytokine focus. SecAct's advantage comes from breadth — covering ~1,170 secreted proteins that drive signaling in tissues where non-cytokine pathways dominate
+- **Tissue-dependent CytoSig performance:** CytoSig median ρ varies widely across tissues (GTEx: −0.064 Blood to 0.251 Kidney; TCGA: 0.076 AML to 0.344 Ovarian). Top CytoSig tissues/cancers (Kidney, Colon, Skin in GTEx; Ovarian, Colon, Prostate in TCGA) do not follow a simple "inflammation-rich" pattern — performance depends on tissue-specific cytokine pathway relevance. SecAct is more consistent across strata due to its broader coverage of ~1,170 secreted proteins
 - scAtlas strata with Tier B sample sizes (<30 donors) are shown with reduced confidence
 
 ### 4.4 Cross-Platform Comparison: Bulk vs Pseudobulk
