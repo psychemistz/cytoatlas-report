@@ -197,7 +197,7 @@ Validation uses a simple, conservative principle: if a method predicts high acti
 
 SecAct significantly outperforms CytoSig in 5 of 6 datasets on both total and matched comparisons. The Inflammation Main exception (p = 0.548 total, p = 0.141 matched) reflects disease-driven cytokine variance that preferentially boosts CytoSig's canonical targets — in inflammatory conditions, the 43 CytoSig cytokines are the most biologically active, giving CytoSig a domain advantage.
 
-### 4.3 Per-Tissue and Per-Cancer Stratified Validation ([full results](stats_section_4.3.html))
+### 4.3 Per-Tissue and Per-Cancer Stratified Validation ([full results](stats_section_4.1.html#per-tissue-stratified))
 
 > **Figure 4a** (`fig4a_gtex_per_tissue.png`): GTEx per-tissue stratified validation (29 tissues).
 > **Figure 4b** (`fig4b_tcga_per_cancer.png`): TCGA per-cancer stratified validation (33 cancer types).
@@ -208,7 +208,7 @@ Four datasets have per-stratum breakdowns:
 - **scAtlas Normal**: 19 organs (10–124 donors each; 7 Tier A ≥30, 12 Tier B <30)
 - **scAtlas Cancer**: 17 cancer types (10–88 tumors each; 9 Tier A ≥30, 8 Tier B <30)
 
-**Statistical tests per stratum:** Mann-Whitney U (CytoSig vs SecAct total targets within each tissue/cancer) and Wilcoxon signed-rank (32 shared targets). BH-FDR correction applied within each dataset (29 tests for GTEx, 33 for TCGA, etc.). Full per-stratum results with FDR q-values are in the [supplement](stats_section_4.3.html).
+**Statistical tests per stratum:** Mann-Whitney U (CytoSig vs SecAct total targets within each tissue/cancer) and Wilcoxon signed-rank (32 shared targets). BH-FDR correction applied within each dataset (29 tests for GTEx, 33 for TCGA, etc.). Full per-stratum results with FDR q-values are in the [supplement](stats_section_4.1.html#per-tissue-stratified).
 
 **Key findings:**
 - SecAct significantly outperforms CytoSig in the majority of individual tissues and cancer types
@@ -226,7 +226,7 @@ Four datasets have per-stratum breakdowns:
 
 **Interpretation:** This is presented as cross-platform concordance rather than a formal hypothesis test, due to: (1) different sample sizes per tissue (GTEx 47–3,234 vs scAtlas 10–124), (2) different gene sets (GTEx 72.9k vs scAtlas 21.8k genes), (3) bulk vs pseudobulk composition differences, (4) different donor demographics (GTEx postmortem vs scAtlas surgical/biopsy), and (5) small paired N limiting statistical power. A high Spearman correlation of the ρ values across tissues indicates platform-independent biological signal.
 
-### 4.4 Best and Worst Correlated Targets ([per-atlas details](stats_section_4.3.html))
+### 4.4 Best and Worst Correlated Targets ([per-atlas details](stats_section_4.1.html#per-tissue-stratified))
 
 > **Figure 5** (`fig5_good_bad_correlations_cytosig.png`): Top 15 and bottom 15 targets per atlas.
 
@@ -234,7 +234,7 @@ Four datasets have per-stratum breakdowns:
 
 **Consistently poorly correlated targets:** CD40L (ρ ≈ −0.5), TRAIL (−0.5), LTA (−0.3), HGF (−0.3) — membrane-bound ligands or post-transcriptionally regulated proteins. The negative correlations are **explainable failures**: ridge regression on transcriptomics cannot capture post-translational regulation, and membrane-bound ligands (CD40L/CD154) signal through cell contact rather than secretion. This validates the method's interpretability — failures have biological explanations.
 
-**SecAct novel discoveries:** Activin A (ρ up to 0.98 in scAtlas), CXCL12 (0.92), and BMP family members — secreted proteins with strong validated activity-expression correlations that would be missed by CytoSig's 43-cytokine panel. Full per-atlas top-15/bottom-15 lists in [supplement](stats_section_4.3.html).
+**SecAct novel discoveries:** Activin A (ρ up to 0.98 in scAtlas), CXCL12 (0.92), and BMP family members — secreted proteins with strong validated activity-expression correlations that would be missed by CytoSig's 43-cytokine panel. Full per-atlas top-15/bottom-15 lists in [supplement](stats_section_4.1.html#per-tissue-stratified).
 
 ### 4.5 Cross-Atlas Consistency
 

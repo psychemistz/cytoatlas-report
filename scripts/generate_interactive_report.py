@@ -1634,7 +1634,7 @@ Ridge regression (L2-regularized linear regression) was chosen deliberately over
 
 <!-- Per-tissue/per-cancer stratified validation -->
 <h3>4.3 Per-Tissue and Per-Cancer Stratified Validation
-    <a href="stats_section_4.3.html" style="font-size:14px;font-weight:400;color:var(--blue);text-decoration:none;">[Statistical Methods]</a></h3>
+    <a href="stats_section_4.1.html#per-tissue-stratified" style="font-size:14px;font-weight:400;color:var(--blue);text-decoration:none;">[Statistical Methods]</a></h3>
 <div class="plotly-container">
   <div class="tab-bar" id="stratified-tabs">
     <button class="tab-btn active" onclick="renderStratified('total')">Total</button>
