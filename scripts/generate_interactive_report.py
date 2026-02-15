@@ -1471,16 +1471,16 @@ def generate_html(summary_table, boxplot_data, consistency_data, heatmap_data,
 <p><strong>Linear interpretability over complex models.</strong>
 Ridge regression (L2-regularized linear regression) was chosen deliberately over methods like autoencoders, graph neural networks, or foundation models. The resulting activity z-scores are <strong>conditional on the specific genes in the signature matrix</strong>, meaning every prediction can be traced to a weighted combination of known gene responses. This is critical for biological interpretation &mdash; a scientist can ask &ldquo;which genes drive the IFNG activity score in this sample?&rdquo; and get a direct answer.</p>
 
-<p><strong>Reproducibility through separation of concerns.</strong></p>
+<p><strong>Reproducibility through separation of concerns.</strong> The system is divided into independent components, each chosen for the constraints of HPC/SLURM infrastructure:</p>
 <table>
-  <tr><th>Component</th><th>Technology</th><th>Purpose</th></tr>
-  <tr><td><strong>Pipeline</strong></td><td>Python + CuPy (GPU)</td><td>Activity inference, 10&ndash;34x speedup</td></tr>
-  <tr><td><strong>Storage</strong></td><td>DuckDB (3 databases, 68 tables)</td><td>Columnar analytics, no server needed</td></tr>
-  <tr><td><strong>API</strong></td><td>FastAPI (262 endpoints)</td><td>RESTful data access, caching, auth</td></tr>
-  <tr><td><strong>Frontend</strong></td><td>React 19 + TypeScript</td><td>Interactive exploration (12 pages)</td></tr>
+  <tr><th>Component</th><th>Technology</th><th>Purpose</th><th>Rationale</th></tr>
+  <tr><td><strong>Pipeline</strong></td><td>Python + CuPy (GPU)</td><td>Activity inference</td><td>10&ndash;34x speedup over NumPy; batch-streams H5AD files (500K&ndash;1M cells/batch) with projection matrix held on GPU; automatic CPU fallback when GPU unavailable</td></tr>
+  <tr><td><strong>Storage</strong></td><td>DuckDB (3 databases, 68 tables)</td><td>Columnar analytics</td><td>Single-file databases require no server &mdash; essential on HPC where database servers are unavailable; each database regenerates independently without affecting others</td></tr>
+  <tr><td><strong>API</strong></td><td>FastAPI (262 endpoints)</td><td>RESTful data access</td><td>Async I/O for concurrent DuckDB queries; automatic OpenAPI documentation; Pydantic request validation; lifespan management for resource initialization</td></tr>
+  <tr><td><strong>Frontend</strong></td><td>React 19 + TypeScript</td><td>Interactive exploration (12 pages)</td><td>Migrated from 25K-line vanilla JS SPA to 11.4K lines (54% reduction) with type safety, component reuse, and lazy-loaded routing</td></tr>
 </table>
 
-<p><strong>Processing scale.</strong></p>
+<p><strong>Processing scale.</strong> Ridge regression (&lambda;=5&times;10<sup>5</sup>) is applied using <code>secactpy.ridge()</code> against each signature matrix. For single-cell data, expression is first aggregated to pseudobulk (donor or donor&times;celltype level), then genes are intersected with the signature matrix (CytoSig: ~4,860 genes; SecAct: ~7,450 genes). The resulting z-scored activity coefficients are compared to target gene expression via Spearman correlation across donors.</p>
 <table>
   <tr><th>Dataset</th><th>Cells/Samples</th><th>Processing Time</th><th>Hardware</th></tr>
   <tr><td>GTEx</td><td>19,788 bulk samples</td><td>~10min</td><td>A100 80GB</td></tr>
@@ -1491,7 +1491,7 @@ Ridge regression (L2-regularized linear regression) was chosen deliberately over
   <tr><td>scAtlas Cancer</td><td>4.1M cells</td><td>~1h</td><td>A100 80GB</td></tr>
   <tr><td>parse_10M</td><td>9.7M cells</td><td>~3h</td><td>A100 80GB</td></tr>
 </table>
-<p style="font-size:0.85em;color:#555;margin-top:4px;"><strong>Total:</strong> ~29M single cells + ~31K bulk RNA-seq samples, processed through ridge regression against 3 signature matrices (CytoSig, LinCytoSig, SecAct). <strong>Processing Time</strong> = wall-clock time for full activity inference on a single NVIDIA A100 GPU. See Section 2.1 for per-dataset details.</p>
+<p style="font-size:0.85em;color:#555;margin-top:4px;"><strong>Total:</strong> ~29M single cells + ~31K bulk RNA-seq samples, processed through ridge regression against 3 signature matrices (CytoSig: 43 cytokines, LinCytoSig: 178 cell-type-specific, SecAct: 1,170 secreted proteins). <strong>Processing Time</strong> = wall-clock time for full activity inference on a single NVIDIA A100 GPU (80 GB VRAM). For bulk datasets (GTEx/TCGA), ridge regression is applied with within-tissue/within-cancer mean centering to remove tissue-level variation. See Section 2.1 for per-dataset details.</p>
 
 <h3>1.2 Validation Strategy</h3>
 
@@ -1506,6 +1506,10 @@ Ridge regression (L2-regularized linear regression) was chosen deliberately over
 </table>
 
 <p>All statistics use <strong>independence-corrected</strong> values &mdash; preventing inflation from repeated measures across tissues, cancer types, or cell types. CytoSig vs SecAct comparisons use Mann-Whitney U (total) and Wilcoxon signed-rank (32 matched targets) with BH-FDR correction. See Section 3.3 for the validation philosophy and Section 4 for full results.</p>
+
+<div class="callout">
+<p><strong>Why independence correction matters:</strong> Pooling across tissues or cancer types inflates correlations through confounding. For example, GTEx pooled CytoSig median &rho; (0.211) is 40% higher than the independence-corrected by-tissue value (0.151); SecAct shows +30% inflation (0.394 vs 0.304). All results in this report use the corrected values. For a detailed comparison of pooled vs independent levels, including inflation magnitude and finer cell-type stratification, see the <a href="stats_section_4.1.html">Section 4.1 statistical supplement</a>.</p>
+</div>
 
 <div class="figure">
   <img src="data:image/png;base64,{fig1_b64}" alt="Figure 1: Dataset Overview" style="max-width:100%;">

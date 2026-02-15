@@ -24,16 +24,16 @@ CytoAtlas is a comprehensive computational resource that maps cytokine and secre
 **Linear interpretability over complex models.**
 Ridge regression (L2-regularized linear regression) was chosen deliberately over methods like autoencoders, graph neural networks, or foundation models. The resulting activity z-scores are **conditional on the specific genes in the signature matrix**, meaning every prediction can be traced to a weighted combination of known gene responses. This is critical for biological interpretation — a scientist can ask "which genes drive the IFNG activity score in this sample?" and get a direct answer.
 
-**Reproducibility through separation of concerns.**
+**Reproducibility through separation of concerns.** The system is divided into independent components, each chosen for the constraints of HPC/SLURM infrastructure:
 
-| Component | Technology | Purpose |
-|-----------|-----------|---------|
-| **Pipeline** | Python + CuPy (GPU) | Activity inference, 10–34x speedup |
-| **Storage** | DuckDB (3 databases, 68 tables) | Columnar analytics, no server needed |
-| **API** | FastAPI (262 endpoints) | RESTful data access, caching, auth |
-| **Frontend** | React 19 + TypeScript | Interactive exploration (12 pages) |
+| Component | Technology | Purpose | Rationale |
+|-----------|-----------|---------|-----------|
+| **Pipeline** | Python + CuPy (GPU) | Activity inference | 10–34x speedup over NumPy; batch-streams H5AD files (500K–1M cells/batch) with projection matrix held on GPU; automatic CPU fallback when GPU unavailable |
+| **Storage** | DuckDB (3 databases, 68 tables) | Columnar analytics | Single-file databases require no server — essential on HPC where database servers are unavailable; each database regenerates independently without affecting others |
+| **API** | FastAPI (262 endpoints) | RESTful data access | Async I/O for concurrent DuckDB queries; automatic OpenAPI documentation; Pydantic request validation |
+| **Frontend** | React 19 + TypeScript | Interactive exploration (12 pages) | Migrated from 25K-line vanilla JS SPA to 11.4K lines (54% reduction) with type safety, component reuse, and lazy-loaded routing |
 
-**Processing scale.**
+**Processing scale.** Ridge regression (λ=5×10⁵) is applied using `secactpy.ridge()` against each signature matrix. For single-cell data, expression is first aggregated to pseudobulk (donor or donor×celltype level), then genes are intersected with the signature matrix (CytoSig: ~4,860 genes; SecAct: ~7,450 genes). The resulting z-scored activity coefficients are compared to target gene expression via Spearman correlation across donors.
 
 | Dataset | Cells/Samples | Processing Time | Hardware |
 |---------|---------------|-----------------|----------|
@@ -45,7 +45,7 @@ Ridge regression (L2-regularized linear regression) was chosen deliberately over
 | scAtlas Cancer | 4.1M cells | ~1h | A100 80GB |
 | parse_10M | 9.7M cells | ~3h | A100 80GB |
 
-**Total:** ~29M single cells + ~31K bulk RNA-seq samples, processed through ridge regression against 3 signature matrices (CytoSig, LinCytoSig, SecAct). **Processing Time** = wall-clock time for full activity inference on a single NVIDIA A100 GPU. See Section 2.1 for per-dataset details.
+**Total:** ~29M single cells + ~31K bulk RNA-seq samples, processed through ridge regression against 3 signature matrices (CytoSig: 43 cytokines, LinCytoSig: 178 cell-type-specific, SecAct: 1,170 secreted proteins). **Processing Time** = wall-clock time for full activity inference on a single NVIDIA A100 GPU (80 GB VRAM). For bulk datasets (GTEx/TCGA), ridge regression is applied with within-tissue/within-cancer mean centering to remove tissue-level variation. See Section 2.1 for per-dataset details.
 
 ### 1.2 Validation Strategy
 
@@ -59,6 +59,8 @@ CytoAtlas validates at **four aggregation levels**, each testing whether predict
 | **Bulk RNA-seq** | Sample-level expression vs predicted activity | GTEx (19.8K), TCGA (11.1K) | §4.7 |
 
 All statistics use **independence-corrected** values — preventing inflation from repeated measures across tissues, cancer types, or cell types. CytoSig vs SecAct comparisons use Mann-Whitney U (total) and Wilcoxon signed-rank (32 matched targets) with BH-FDR correction. See Section 3.3 for the validation philosophy and Section 4 for full results.
+
+> **Why independence correction matters:** Pooling across tissues or cancer types inflates correlations through confounding. For example, GTEx pooled CytoSig median ρ (0.211) is 40% higher than the independence-corrected by-tissue value (0.151); SecAct shows +30% inflation (0.394 vs 0.304). All results in this report use the corrected values. For a detailed comparison of pooled vs independent levels, including inflation magnitude and finer cell-type stratification, see the [Section 4.1 statistical supplement](stats_section_4.1.html).
 
 > **Figure 1** (`fig1_dataset_overview.png`): Data sources, activity inference pipeline, and validation analyses.
 
