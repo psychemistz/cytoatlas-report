@@ -1419,13 +1419,13 @@ def generate_html(summary_table, boxplot_data, consistency_data, heatmap_data,
 <!-- EXECUTIVE SUMMARY -->
 <h2>Executive Summary</h2>
 
-<p>CytoAtlas is a comprehensive computational resource that maps cytokine and secreted protein signaling activity across <strong>29 million human cells</strong> from four independent datasets spanning healthy donors, inflammatory diseases, cancers, and cytokine perturbations. The system uses <strong>linear ridge regression</strong> against experimentally derived signature matrices to infer activity &mdash; producing fully interpretable, conditional z-scores rather than black-box predictions.</p>
+<p>CytoAtlas is a comprehensive computational resource that maps cytokine and secreted protein signaling activity across <strong>~29 million human cells and ~31,000 bulk RNA-seq samples</strong> from six independent datasets: two bulk RNA-seq resources (GTEx, TCGA) and four single-cell compendia (CIMA, Inflammation Atlas, scAtlas, parse_10M) spanning healthy donors, inflammatory diseases, cancers, and cytokine perturbations. The system uses <strong>linear ridge regression</strong> against experimentally derived signature matrices to infer activity &mdash; producing fully interpretable, conditional z-scores rather than black-box predictions.</p>
 
 <div class="stats-row">
   <div class="stat-card"><span class="number">29M</span><span class="label">Total Cells</span></div>
-  <div class="stat-card"><span class="number">4</span><span class="label">Datasets</span></div>
+  <div class="stat-card"><span class="number">31K</span><span class="label">Bulk Samples</span></div>
+  <div class="stat-card"><span class="number">6</span><span class="label">Datasets</span></div>
   <div class="stat-card"><span class="number">1,213</span><span class="label">Signatures</span></div>
-  <div class="stat-card"><span class="number">6</span><span class="label">Validation Datasets</span></div>
   <div class="stat-card"><span class="number">262</span><span class="label">API Endpoints</span></div>
   <div class="stat-card"><span class="number">12</span><span class="label">Web Pages</span></div>
 </div>
@@ -1433,7 +1433,7 @@ def generate_html(summary_table, boxplot_data, consistency_data, heatmap_data,
 <div class="callout green">
 <p><strong>Key results:</strong></p>
 <ul>
-  <li>1,213 signatures (43 CytoSig + 1,170 SecAct), plus 178 cell-type-specific LinCytoSig variants, validated across 6 independent datasets (2 bulk RNA-seq, 4 single-cell)</li>
+  <li>1,213 signatures (43 CytoSig + 1,170 SecAct), plus 178 cell-type-specific LinCytoSig variants, validated across 6 independent datasets</li>
   <li>Spearman correlations reach &rho;=0.6&ndash;0.9 for well-characterized cytokines (IL1B, TNFA, VEGFA, TGFB family)</li>
   <li>Cross-dataset consistency demonstrates signatures generalize across CIMA, Inflammation Atlas Main, scAtlas, GTEx, and TCGA</li>
   <li>SecAct achieves the highest correlations in bulk &amp; organ-level analyses (median &rho;=0.40 in GTEx/TCGA)</li>
@@ -1495,7 +1495,7 @@ CytoAtlas validates at five levels: donor-level pseudobulk, donor &times; cell-t
 
 <div class="figure">
   <img src="../figures/fig1_dataset_overview.png" alt="Figure 1: Dataset Overview">
-  <div class="caption"><strong>Figure 1.</strong> CytoAtlas overview. (A) Cell counts across 4 datasets totaling 29M cells. (B) Three signature matrices. (C) Multi-level validation strategy.</div>
+  <div class="caption"><strong>Figure 1.</strong> CytoAtlas overview. (A) Cell counts across 6 datasets totaling 29M cells + 31K bulk samples. (B) Three signature matrices. (C) Multi-level validation strategy.</div>
 </div>
 
 <hr>
