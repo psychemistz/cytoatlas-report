@@ -409,6 +409,10 @@
 
 <p>Three case studies illustrate when cell-type-specific signatures outperform global CytoSig, and when selection artifacts distort the comparison. All correlation values are Spearman &rho; at donor-only level.</p>
 
+<div class="callout red">
+<p><strong>Dataset composition caveat:</strong> CIMA and Inflammation Atlas Main are <strong>PBMC/blood-derived</strong> datasets &mdash; their cell types are exclusively immune cells (B, T, NK, monocytes, DCs, etc.). They contain <strong>no fibroblasts, epithelial cells, hepatocytes, or other stromal/tissue-resident cell types</strong>. When a non-immune LinCytoSig variant (e.g., Fibroblast__TGFB1, Keratinocyte__IL1B) is evaluated in CIMA or Inflammation Main, the signature trained on that cell type is being scored against <em>immune cell pseudobulk</em> &mdash; a biologically mismatched comparison. Only scAtlas Normal and scAtlas Cancer contain tissue-resident cell types. Values in the CIMA and Inflam Main columns for non-immune variants should be interpreted with this caveat.</p>
+</div>
+
 <!-- Case A: IFNG -->
 <h3>A. IFNG (Interferon Gamma) &mdash; Strongest LinCytoSig Case</h3>
 
@@ -498,6 +502,7 @@
 
 <div class="callout green">
 <p><strong>Insight:</strong> Immune cell variants (Monocyte, Macrophage) genuinely beat CytoSig for IFNG. In CIMA, Monocyte__IFNG (filt) achieves &rho;=0.478 vs CytoSig&rsquo;s 0.413 (+16%). In Inflammation Main, Macrophage__IFNG (filt) achieves &rho;=0.411 vs 0.398 (+3%). However, the &ldquo;best&rdquo; selection (combined) picked Monocyte, which is not the best in Inflammation Main &mdash; Macrophage is.</p>
+<p><strong>Note on cell-type matching:</strong> Monocyte, Macrophage, B_Cell, and PBMC variants are biologically matched in CIMA and Inflammation Main (PBMC/blood datasets). However, Fibroblast, Keratinocyte, Hepatocyte, and Lung_Cancer_Line variants are <em>not</em> present in those datasets &mdash; their CIMA/Inflam values reflect cross-cell-type signal scored on immune cell pseudobulk. IFNG is unusual in that the strongest LinCytoSig performers (Monocyte, Macrophage) happen to be immune cell types, making CIMA/Inflam a valid comparison for those variants.</p>
 </div>
 
 <!-- Case B: TGFB1 -->
@@ -509,8 +514,8 @@
 <table>
   <tr>
     <th>Variant</th>
-    <th>CIMA (n=421)</th>
-    <th>Inflam Main (n=817)</th>
+    <th>CIMA (n=421) <span style="color:#dc2626;font-size:0.75em;">*</span></th>
+    <th>Inflam Main (n=817) <span style="color:#dc2626;font-size:0.75em;">*</span></th>
     <th>scAtlas N (n=317)</th>
     <th>scAtlas C (n=717)</th>
   </tr>
@@ -595,7 +600,8 @@
 </div>
 
 <div class="callout red">
-<p><strong>Insight:</strong> Breast_Cancer_Line__TGFB1 was selected as &ldquo;best&rdquo; by combined bulk &rho;, but in CIMA it achieves only &rho;=0.152 vs Macrophage__TGFB1&rsquo;s 0.461 (filt) or 0.557 (orig). In scAtlas Cancer, Lung_Cancer_Line (orig) achieves 0.478 vs Breast_Cancer_Line&rsquo;s 0.361. The GTEx-selected best (Lung_Cancer_Line) and TCGA-selected best (Airway_Epithelial) are both different from the combined-selected best &mdash; and none of them is the actual best performer across all SC datasets.</p>
+<p><strong>Insight:</strong> Breast_Cancer_Line__TGFB1 was selected as &ldquo;best&rdquo; by combined bulk &rho;, but in scAtlas Cancer it achieves only &rho;=0.361 vs Lung_Cancer_Line&rsquo;s 0.478 (orig). The GTEx-selected best (Lung_Cancer_Line) and TCGA-selected best (Airway_Epithelial) are both different from the combined-selected best &mdash; and none of them is the actual best performer across all SC datasets.</p>
+<p><span style="color:#dc2626;font-weight:600;">*</span> <strong>Cell-type mismatch:</strong> CIMA and Inflammation Main are PBMC/blood datasets. Non-immune variants (Fibroblast, Keratinocyte, Breast_Cancer_Line, Hepatocyte, Airway_Epithelial, Dermal_Fibroblast, Lung_Cancer_Line) are being scored against immune cell pseudobulk in those columns. Only the scAtlas columns represent tissue-level evaluation where these cell types are present. The Macrophage__TGFB1 values in CIMA (&rho;=0.461/0.557) are the only biologically matched non-CytoSig comparisons in that column.</p>
 </div>
 
 <!-- Case C: IL1B -->
@@ -607,8 +613,8 @@
 <table>
   <tr>
     <th>Variant</th>
-    <th>CIMA (n=421)</th>
-    <th>Inflam Main (n=817)</th>
+    <th>CIMA (n=421) <span style="color:#dc2626;font-size:0.75em;">*</span></th>
+    <th>Inflam Main (n=817) <span style="color:#dc2626;font-size:0.75em;">*</span></th>
     <th>scAtlas N (n=317)</th>
     <th>scAtlas C (n=717)</th>
   </tr>
@@ -659,6 +665,7 @@
 
 <div class="callout">
 <p><strong>Insight:</strong> CytoSig dominates for IL1B in 3 of 4 datasets. The only exception is scAtlas Normal where Fibroblast__IL1B (filt) slightly beats CytoSig (0.314 vs 0.243). This illustrates that when CytoSig already captures the dominant signal well, cell-type specificity adds no value. The &ldquo;best&rdquo; selection chose Chondrocyte (combined) but there are no Chondrocyte__IL1B rows available in the SC datasets &mdash; it was selected on bulk data where it presumably performed well but is not evaluable in single-cell.</p>
+<p><span style="color:#dc2626;font-weight:600;">*</span> <strong>Cell-type mismatch:</strong> Fibroblast__IL1B and Keratinocyte__IL1B are scored against immune cell pseudobulk in CIMA and Inflammation Main (PBMC/blood datasets). Their high &rho; values (e.g., Fibroblast__IL1B = 0.501 in CIMA) likely reflect cross-cell-type IL1B signaling rather than fibroblast-specific signal. Only PBMC__IL1B is a biologically matched variant in those columns.</p>
 </div>
 
 <hr>
