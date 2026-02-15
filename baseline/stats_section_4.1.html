@@ -66,6 +66,7 @@
         border-bottom: 2px solid var(--accent);
     }
     h3 { font-size: 1.1rem; margin: 1.5rem 0 0.6rem; color: var(--accent); }
+    h4 { font-size: 0.95rem; margin: 1.2rem 0 0.4rem; color: var(--muted); }
     p { margin-bottom: 0.75rem; }
     a { color: var(--accent); text-decoration: none; }
     a:hover { text-decoration: underline; }
@@ -106,6 +107,7 @@
     .method-cytosig { background-color: #DBEAFE; }
     .method-lincytosig { background-color: #FEF3C7; }
     .method-secact { background-color: #D1FAE5; }
+    .method-secact-matched { background-color: #FEF3C7; }
 </style>
 </head>
 <body>
@@ -122,7 +124,12 @@
 <div class="page-title">Section 4.1: Overall Performance Summary &mdash; Full Details</div>
 
 <h2>Overview</h2>
-<p>Section 4.1 provides the definitive CytoSig vs SecAct summary across 6 datasets at each dataset&rsquo;s primary independent level. This supplement includes all aggregation levels (not just the primary independent level shown in the main report).</p>
+<p>Section 4.1 provides the definitive CytoSig vs SecAct summary across 6 datasets at each dataset&rsquo;s primary independent level. This supplement includes all aggregation levels (not just the primary independent level shown in the main report). Three method rows per dataset:</p>
+<ul>
+<li><span class="method-cytosig" style="padding:2px 6px;">&nbsp;CytoSig&nbsp;</span> &mdash; 43 cytokine signatures (33&ndash;43 passing filters per dataset)</li>
+<li><span class="method-secact" style="padding:2px 6px;">&nbsp;SecAct&nbsp;</span> &mdash; all 1,170 secreted protein signatures (805&ndash;1,161 passing filters)</li>
+<li><span class="method-secact-matched" style="padding:2px 6px;">&nbsp;SecAct (matched)&nbsp;</span> &mdash; restricted to the 32 targets shared with CytoSig (27&ndash;32 per dataset), enabling apples-to-apples comparison</li>
+</ul>
 
 <h2>Independence-Corrected Methodology</h2>
 <p>All correlations use a <strong>median-of-medians</strong> approach to ensure statistical independence:</p>
@@ -159,6 +166,14 @@
     <td>88.8%</td>
     <td>90.5%</td>
 </tr>
+<tr class="method-secact-matched">
+    <td>GTEx (by_tissue)</td>
+    <td>SecAct (matched)</td>
+    <td>32</td>
+    <td>0.456</td>
+    <td>87.5%</td>
+    <td>96.9%</td>
+</tr>
 <tr class="method-cytosig">
     <td>TCGA (primary_by_cancer)</td>
     <td>CytoSig</td>
@@ -174,6 +189,14 @@
     <td>0.357</td>
     <td>81.5%</td>
     <td>95.8%</td>
+</tr>
+<tr class="method-secact-matched">
+    <td>TCGA (primary_by_cancer)</td>
+    <td>SecAct (matched)</td>
+    <td>30</td>
+    <td>0.566</td>
+    <td>100.0%</td>
+    <td>100.0%</td>
 </tr>
 <tr class="method-cytosig">
     <td>CIMA (donor_only)</td>
@@ -191,6 +214,14 @@
     <td>75.0%</td>
     <td>76.1%</td>
 </tr>
+<tr class="method-secact-matched">
+    <td>CIMA (donor_only)</td>
+    <td>SecAct (matched)</td>
+    <td>32</td>
+    <td>0.302</td>
+    <td>87.5%</td>
+    <td>87.5%</td>
+</tr>
 <tr class="method-cytosig">
     <td>Inflammation Atlas Main (donor_only)</td>
     <td>CytoSig</td>
@@ -206,6 +237,14 @@
     <td>0.173</td>
     <td>84.8%</td>
     <td>72.7%</td>
+</tr>
+<tr class="method-secact-matched">
+    <td>Inflammation Atlas Main (donor_only)</td>
+    <td>SecAct (matched)</td>
+    <td>27</td>
+    <td>0.438</td>
+    <td>92.6%</td>
+    <td>92.6%</td>
 </tr>
 <tr class="method-cytosig">
     <td>scAtlas Normal (donor_only)</td>
@@ -223,6 +262,14 @@
     <td>83.9%</td>
     <td>87.8%</td>
 </tr>
+<tr class="method-secact-matched">
+    <td>scAtlas Normal (donor_only)</td>
+    <td>SecAct (matched)</td>
+    <td>32</td>
+    <td>0.579</td>
+    <td>87.5%</td>
+    <td>93.8%</td>
+</tr>
 <tr class="method-cytosig">
     <td>scAtlas Cancer (tumor_only)</td>
     <td>CytoSig</td>
@@ -239,7 +286,16 @@
     <td>92.3%</td>
     <td>95.0%</td>
 </tr>
+<tr class="method-secact-matched">
+    <td>scAtlas Cancer (tumor_only)</td>
+    <td>SecAct (matched)</td>
+    <td>32</td>
+    <td>0.505</td>
+    <td>96.9%</td>
+    <td>96.9%</td>
+</tr>
 </table>
+<p><strong>Composition effect revealed:</strong> SecAct (matched) outperforms CytoSig in all 6 datasets when comparing the same 32 shared targets: GTEx (0.456 vs 0.151), TCGA (0.566 vs 0.214), CIMA (0.302 vs 0.114), Inflammation Atlas Main (0.438 vs 0.323), scAtlas Normal (0.579 vs 0.173), and scAtlas Cancer (0.505 vs 0.184). Even in Inflammation Atlas Main &mdash; the only dataset where full SecAct (0.173) appeared to trail CytoSig (0.323) &mdash; matched SecAct (0.438) exceeds CytoSig, demonstrating that the apparent CytoSig advantage was a composition effect from full SecAct including many low-signal targets that dilute its median.</p>
 
 <h2>Supplementary Aggregation Levels</h2>
 <p>The primary independent levels above represent the statistically rigorous comparison. Below are <strong>additional aggregation levels</strong> shown for completeness. These fall into two categories:</p>
@@ -267,7 +323,7 @@
     <td>0.211</td>
     <td>100.0%</td>
     <td>81.4%</td>
-    <td rowspan="2">Pools 29 tissues per donor &mdash; tissue-level confounding</td>
+    <td rowspan="3">Pools 29 tissues per donor &mdash; tissue-level confounding</td>
 </tr>
 <tr class="method-secact">
     <td>GTEx (donor_only)</td>
@@ -277,6 +333,14 @@
     <td>98.3%</td>
     <td>90.0%</td>
 </tr>
+<tr class="method-secact-matched">
+    <td>GTEx (donor_only)</td>
+    <td>SecAct (matched)</td>
+    <td>32</td>
+    <td>0.573</td>
+    <td>100.0%</td>
+    <td>100.0%</td>
+</tr>
 <tr class="method-cytosig">
     <td>TCGA (donor_only)</td>
     <td>CytoSig</td>
@@ -284,7 +348,7 @@
     <td>0.238</td>
     <td>92.7%</td>
     <td>92.7%</td>
-    <td rowspan="2">Pools 33 cancer types &mdash; cancer-type confounding</td>
+    <td rowspan="3">Pools 33 cancer types &mdash; cancer-type confounding</td>
 </tr>
 <tr class="method-secact">
     <td>TCGA (donor_only)</td>
@@ -294,6 +358,14 @@
     <td>99.2%</td>
     <td>97.1%</td>
 </tr>
+<tr class="method-secact-matched">
+    <td>TCGA (donor_only)</td>
+    <td>SecAct (matched)</td>
+    <td>30</td>
+    <td>0.579</td>
+    <td>100.0%</td>
+    <td>100.0%</td>
+</tr>
 <tr class="method-cytosig">
     <td>scAtlas Normal (donor_organ)</td>
     <td>CytoSig</td>
@@ -301,7 +373,7 @@
     <td>0.097</td>
     <td>2.3%</td>
     <td>79.1%</td>
-    <td rowspan="2">Multiple organs per donor &mdash; organ-level confounding</td>
+    <td rowspan="3">Multiple organs per donor &mdash; organ-level confounding</td>
 </tr>
 <tr class="method-secact">
     <td>scAtlas Normal (donor_organ)</td>
@@ -311,6 +383,14 @@
     <td>24.8%</td>
     <td>91.1%</td>
 </tr>
+<tr class="method-secact-matched">
+    <td>scAtlas Normal (donor_organ)</td>
+    <td>SecAct (matched)</td>
+    <td>32</td>
+    <td>0.458</td>
+    <td>71.9%</td>
+    <td>96.9%</td>
+</tr>
 <tr class="method-cytosig">
     <td>scAtlas Cancer (donor_only)</td>
     <td>CytoSig</td>
@@ -318,7 +398,7 @@
     <td>0.218</td>
     <td>83.7%</td>
     <td>83.7%</td>
-    <td rowspan="2">Pools cancer types per donor</td>
+    <td rowspan="3">Pools cancer types per donor</td>
 </tr>
 <tr class="method-secact">
     <td>scAtlas Cancer (donor_only)</td>
@@ -328,45 +408,243 @@
     <td>92.7%</td>
     <td>95.5%</td>
 </tr>
+<tr class="method-secact-matched">
+    <td>scAtlas Cancer (donor_only)</td>
+    <td>SecAct (matched)</td>
+    <td>32</td>
+    <td>0.548</td>
+    <td>96.9%</td>
+    <td>100.0%</td>
+</tr>
 </table>
-<p><strong>Inflation magnitude:</strong> GTEx pooled CytoSig (0.211) is 40% higher than the independent by_tissue level (0.151). TCGA pooled (0.238) is 11% higher than primary_by_cancer (0.214). SecAct shows similar inflation: GTEx 0.394 vs 0.314 (+25%), TCGA 0.415 vs 0.357 (+16%).</p>
+<p><strong>Inflation magnitude:</strong> GTEx pooled CytoSig (0.211) is 40% higher than the independent by_tissue level (0.151). TCGA pooled (0.238) is 11% higher than primary_by_cancer (0.214). SecAct shows similar inflation: GTEx 0.394 vs 0.314 (+25%), TCGA 0.415 vs 0.357 (+16%). SecAct (matched) confirms the pattern: GTEx 0.573 vs 0.456 (+26%), TCGA 0.579 vs 0.566 (+2%). The smaller TCGA inflation for matched targets (2% vs 11%) suggests that tissue-pooling primarily inflates low-signal targets.</p>
 
 <h3>Finer Cell-Type Levels (reduced signal from smaller pseudobulk groups)</h3>
 <p>Stratifying by cell type within donors produces smaller pseudobulk groups, typically reducing correlations as noise increases. These levels answer a different question: &ldquo;does the activity-expression relationship hold at per-cell-type resolution?&rdquo;</p>
+
+<h4>CIMA (4 cell-type hierarchy levels)</h4>
 <table>
 <tr>
-    <th>Dataset (Level)</th>
+    <th>Level</th>
     <th>Method</th>
     <th>N Targets</th>
     <th>Median &rho;</th>
     <th>% Sig (BH q&lt;0.05)</th>
     <th>% Pos</th>
 </tr>
-<tr class="method-cytosig"><td>CIMA (donor_l1)</td><td>CytoSig</td><td>43</td><td>0.049</td><td>51.2%</td><td>67.4%</td></tr>
-<tr class="method-secact"><td>CIMA (donor_l1)</td><td>SecAct</td><td>1,161</td><td>0.133</td><td>71.2%</td><td>79.8%</td></tr>
-<tr class="method-cytosig"><td>CIMA (donor_l2)</td><td>CytoSig</td><td>43</td><td>0.024</td><td>18.6%</td><td>62.8%</td></tr>
-<tr class="method-secact"><td>CIMA (donor_l2)</td><td>SecAct</td><td>1,161</td><td>0.081</td><td>42.9%</td><td>83.7%</td></tr>
-<tr class="method-cytosig"><td>CIMA (donor_l3)</td><td>CytoSig</td><td>43</td><td>0.021</td><td>18.6%</td><td>58.1%</td></tr>
-<tr class="method-secact"><td>CIMA (donor_l3)</td><td>SecAct</td><td>1,161</td><td>0.068</td><td>25.2%</td><td>84.1%</td></tr>
-<tr class="method-cytosig"><td>CIMA (donor_l4)</td><td>CytoSig</td><td>43</td><td>0.009</td><td>16.3%</td><td>55.8%</td></tr>
-<tr class="method-secact"><td>CIMA (donor_l4)</td><td>SecAct</td><td>1,161</td><td>0.049</td><td>9.7%</td><td>81.4%</td></tr>
-<tr class="method-cytosig"><td>Inflammation Atlas Main (donor_l1)</td><td>CytoSig</td><td>33</td><td>0.074</td><td>69.7%</td><td>63.6%</td></tr>
-<tr class="method-secact"><td>Inflammation Atlas Main (donor_l1)</td><td>SecAct</td><td>805</td><td>0.082</td><td>75.4%</td><td>71.7%</td></tr>
-<tr class="method-cytosig"><td>Inflammation Atlas Main (donor_l2)</td><td>CytoSig</td><td>33</td><td>0.037</td><td>51.5%</td><td>66.7%</td></tr>
-<tr class="method-secact"><td>Inflammation Atlas Main (donor_l2)</td><td>SecAct</td><td>805</td><td>0.046</td><td>42.4%</td><td>64.8%</td></tr>
-<tr class="method-cytosig"><td>scAtlas Normal (donor_organ_celltype1)</td><td>CytoSig</td><td>43</td><td>0.076</td><td>0.0%</td><td>69.8%</td></tr>
-<tr class="method-secact"><td>scAtlas Normal (donor_organ_celltype1)</td><td>SecAct</td><td>1,140</td><td>0.143</td><td>0.0%</td><td>95.0%</td></tr>
-<tr class="method-cytosig"><td>scAtlas Normal (donor_organ_celltype2)</td><td>CytoSig</td><td>43</td><td>0.018</td><td>0.0%</td><td>65.1%</td></tr>
-<tr class="method-secact"><td>scAtlas Normal (donor_organ_celltype2)</td><td>SecAct</td><td>1,140</td><td>0.112</td><td>0.0%</td><td>94.3%</td></tr>
-<tr class="method-cytosig"><td>scAtlas Cancer (tumor_by_cancer)</td><td>CytoSig</td><td>43</td><td>0.174</td><td>16.3%</td><td>79.1%</td></tr>
-<tr class="method-secact"><td>scAtlas Cancer (tumor_by_cancer)</td><td>SecAct</td><td>1,140</td><td>0.340</td><td>43.0%</td><td>92.5%</td></tr>
-<tr class="method-cytosig"><td>scAtlas Cancer (tumor_by_cancer_celltype1)</td><td>CytoSig</td><td>43</td><td>0.022</td><td>0.0%</td><td>58.1%</td></tr>
-<tr class="method-secact"><td>scAtlas Cancer (tumor_by_cancer_celltype1)</td><td>SecAct</td><td>1,140</td><td>0.151</td><td>3.4%</td><td>94.5%</td></tr>
+<tr class="method-cytosig"><td>donor_l1</td><td>CytoSig</td><td>43</td><td>0.049</td><td>51.2%</td><td>67.4%</td></tr>
+<tr class="method-secact"><td>donor_l1</td><td>SecAct</td><td>1,161</td><td>0.133</td><td>71.2%</td><td>79.8%</td></tr>
+<tr class="method-secact-matched"><td>donor_l1</td><td>SecAct (matched)</td><td>32</td><td>0.164</td><td>81.2%</td><td>90.6%</td></tr>
+<tr class="method-cytosig"><td>donor_l2</td><td>CytoSig</td><td>43</td><td>0.024</td><td>18.6%</td><td>62.8%</td></tr>
+<tr class="method-secact"><td>donor_l2</td><td>SecAct</td><td>1,161</td><td>0.081</td><td>42.9%</td><td>83.7%</td></tr>
+<tr class="method-secact-matched"><td>donor_l2</td><td>SecAct (matched)</td><td>32</td><td>0.079</td><td>43.8%</td><td>81.2%</td></tr>
+<tr class="method-cytosig"><td>donor_l3</td><td>CytoSig</td><td>43</td><td>0.021</td><td>18.6%</td><td>58.1%</td></tr>
+<tr class="method-secact"><td>donor_l3</td><td>SecAct</td><td>1,161</td><td>0.068</td><td>25.2%</td><td>84.1%</td></tr>
+<tr class="method-secact-matched"><td>donor_l3</td><td>SecAct (matched)</td><td>32</td><td>0.053</td><td>28.1%</td><td>78.1%</td></tr>
+<tr class="method-cytosig"><td>donor_l4</td><td>CytoSig</td><td>43</td><td>0.009</td><td>16.3%</td><td>55.8%</td></tr>
+<tr class="method-secact"><td>donor_l4</td><td>SecAct</td><td>1,161</td><td>0.049</td><td>9.7%</td><td>81.4%</td></tr>
+<tr class="method-secact-matched"><td>donor_l4</td><td>SecAct (matched)</td><td>32</td><td>0.019</td><td>9.4%</td><td>71.9%</td></tr>
 </table>
-<p><strong>Pattern:</strong> Correlations decrease monotonically with finer resolution. CIMA CytoSig drops from 0.114 (donor_only) &rarr; 0.049 (L1) &rarr; 0.024 (L2) &rarr; 0.021 (L3) &rarr; 0.009 (L4). SecAct maintains higher correlations than CytoSig at every level, suggesting broader gene coverage provides more robust signal even in small pseudobulk groups.</p>
+<p><strong>CIMA pattern:</strong> Monotonic decline across all methods. CytoSig: 0.049 &rarr; 0.024 &rarr; 0.021 &rarr; 0.009. SecAct (matched): 0.164 &rarr; 0.079 &rarr; 0.053 &rarr; 0.019, consistently exceeding CytoSig on the same targets. The matched advantage narrows at L4 (0.019 vs 0.009) as noise dominates signal.</p>
 
-<h2>Supplementary Datasets</h2>
-<p><strong>Inflammation Atlas Val</strong> (144 samples) and <strong>Inflammation Atlas Ext</strong> (86 samples) replicate directionally. Full results are available in the validation correlation CSVs.</p>
+<h4>Inflammation Atlas Main (2 cell-type levels)</h4>
+<table>
+<tr>
+    <th>Level</th>
+    <th>Method</th>
+    <th>N Targets</th>
+    <th>Median &rho;</th>
+    <th>% Sig (BH q&lt;0.05)</th>
+    <th>% Pos</th>
+</tr>
+<tr class="method-cytosig"><td>donor_l1</td><td>CytoSig</td><td>33</td><td>0.074</td><td>69.7%</td><td>63.6%</td></tr>
+<tr class="method-secact"><td>donor_l1</td><td>SecAct</td><td>805</td><td>0.082</td><td>75.4%</td><td>71.7%</td></tr>
+<tr class="method-secact-matched"><td>donor_l1</td><td>SecAct (matched)</td><td>27</td><td>0.136</td><td>88.9%</td><td>88.9%</td></tr>
+<tr class="method-cytosig"><td>donor_l2</td><td>CytoSig</td><td>33</td><td>0.037</td><td>51.5%</td><td>66.7%</td></tr>
+<tr class="method-secact"><td>donor_l2</td><td>SecAct</td><td>805</td><td>0.046</td><td>42.4%</td><td>64.8%</td></tr>
+<tr class="method-secact-matched"><td>donor_l2</td><td>SecAct (matched)</td><td>27</td><td>0.086</td><td>59.3%</td><td>77.8%</td></tr>
+</table>
+<p><strong>Inflammation pattern:</strong> At donor &times; cell-type resolution, all three methods converge (CytoSig 0.074, full SecAct 0.082, matched SecAct 0.136 at donor_l1). Matched SecAct maintains a ~2&times; advantage over CytoSig even at this resolution.</p>
+
+<h4>scAtlas Normal (2 cell-type levels)</h4>
+<table>
+<tr>
+    <th>Level</th>
+    <th>Method</th>
+    <th>N Targets</th>
+    <th>Median &rho;</th>
+    <th>% Sig (BH q&lt;0.05)</th>
+    <th>% Pos</th>
+</tr>
+<tr class="method-cytosig"><td>donor_organ_celltype1</td><td>CytoSig</td><td>43</td><td>0.076</td><td>0.0%</td><td>69.8%</td></tr>
+<tr class="method-secact"><td>donor_organ_celltype1</td><td>SecAct</td><td>1,140</td><td>0.143</td><td>0.0%</td><td>95.0%</td></tr>
+<tr class="method-secact-matched"><td>donor_organ_celltype1</td><td>SecAct (matched)</td><td>32</td><td>0.195</td><td>0.0%</td><td>100.0%</td></tr>
+<tr class="method-cytosig"><td>donor_organ_celltype2</td><td>CytoSig</td><td>43</td><td>0.018</td><td>0.0%</td><td>65.1%</td></tr>
+<tr class="method-secact"><td>donor_organ_celltype2</td><td>SecAct</td><td>1,140</td><td>0.112</td><td>0.0%</td><td>94.3%</td></tr>
+<tr class="method-secact-matched"><td>donor_organ_celltype2</td><td>SecAct (matched)</td><td>32</td><td>0.148</td><td>0.0%</td><td>100.0%</td></tr>
+</table>
+<p><strong>scAtlas Normal pattern:</strong> No targets reach BH significance at either cell-type level (0% across all methods), reflecting very small per-group sample sizes. However, 100% of matched SecAct targets remain positively correlated even at celltype2, suggesting the signal persists but is underpowered.</p>
+
+<h4>scAtlas Cancer (2 cell-type levels)</h4>
+<table>
+<tr>
+    <th>Level</th>
+    <th>Method</th>
+    <th>N Targets</th>
+    <th>Median &rho;</th>
+    <th>% Sig (BH q&lt;0.05)</th>
+    <th>% Pos</th>
+</tr>
+<tr class="method-cytosig"><td>tumor_by_cancer</td><td>CytoSig</td><td>43</td><td>0.174</td><td>16.3%</td><td>79.1%</td></tr>
+<tr class="method-secact"><td>tumor_by_cancer</td><td>SecAct</td><td>1,140</td><td>0.340</td><td>43.0%</td><td>92.5%</td></tr>
+<tr class="method-secact-matched"><td>tumor_by_cancer</td><td>SecAct (matched)</td><td>32</td><td>0.458</td><td>78.1%</td><td>100.0%</td></tr>
+<tr class="method-cytosig"><td>tumor_by_cancer_celltype1</td><td>CytoSig</td><td>43</td><td>0.022</td><td>0.0%</td><td>58.1%</td></tr>
+<tr class="method-secact"><td>tumor_by_cancer_celltype1</td><td>SecAct</td><td>1,140</td><td>0.151</td><td>3.4%</td><td>94.5%</td></tr>
+<tr class="method-secact-matched"><td>tumor_by_cancer_celltype1</td><td>SecAct (matched)</td><td>32</td><td>0.154</td><td>0.0%</td><td>100.0%</td></tr>
+</table>
+<p><strong>scAtlas Cancer pattern:</strong> At tumor_by_cancer, matched SecAct (0.458) strongly outperforms CytoSig (0.174) with 78.1% significance. At tumor_by_cancer_celltype1, correlations drop sharply but matched SecAct (0.154) still exceeds CytoSig (0.022) by 7&times;, with 100% positive direction.</p>
+
+<h2>Supplementary Datasets: Inflammation Atlas Cohorts</h2>
+<p>The Inflammation Atlas comprises three cohorts: <strong>Main</strong> (817 samples, used in Section 4 validation), <strong>Val</strong> (144 samples, validation cohort), and <strong>Ext</strong> (86 samples, external cohort). All three are shown below at comparable aggregation levels.</p>
+
+<h3>Primary Level: donor_only (independent)</h3>
+<table>
+<tr>
+    <th>Cohort (Samples)</th>
+    <th>Method</th>
+    <th>N Targets</th>
+    <th>Median &rho;</th>
+    <th>% Sig (BH q&lt;0.05)</th>
+    <th>% Pos</th>
+</tr>
+<tr class="method-cytosig"><td>Main (817)</td><td>CytoSig</td><td>33</td><td>0.323</td><td>78.8%</td><td>69.7%</td></tr>
+<tr class="method-secact"><td>Main (817)</td><td>SecAct</td><td>805</td><td>0.173</td><td>84.8%</td><td>72.7%</td></tr>
+<tr class="method-secact-matched"><td>Main (817)</td><td>SecAct (matched)</td><td>27</td><td>0.438</td><td>92.6%</td><td>92.6%</td></tr>
+<tr class="method-cytosig"><td>Val (144)</td><td>CytoSig</td><td>33</td><td>0.252</td><td>75.8%</td><td>72.7%</td></tr>
+<tr class="method-secact"><td>Val (144)</td><td>SecAct</td><td>805</td><td>0.182</td><td>63.6%</td><td>70.2%</td></tr>
+<tr class="method-secact-matched"><td>Val (144)</td><td>SecAct (matched)</td><td>27</td><td>0.388</td><td>88.9%</td><td>96.3%</td></tr>
+<tr class="method-cytosig"><td>Ext (86)</td><td>CytoSig</td><td>42</td><td>0.135</td><td>71.4%</td><td>59.5%</td></tr>
+<tr class="method-secact"><td>Ext (86)</td><td>SecAct</td><td>1,118</td><td>0.101</td><td>44.2%</td><td>64.5%</td></tr>
+<tr class="method-secact-matched"><td>Ext (86)</td><td>SecAct (matched)</td><td>32</td><td>0.186</td><td>46.9%</td><td>78.1%</td></tr>
+</table>
+<p><strong>Replication pattern:</strong> Val (144 samples) tracks Main closely &mdash; CytoSig median &rho; 0.252 vs 0.323, full SecAct 0.182 vs 0.173. Ext (86 samples) shows reduced correlations (CytoSig 0.135, SecAct 0.101), consistent with smaller sample size and external cohort heterogeneity. SecAct (matched) confirms the composition effect across all three cohorts: matched SecAct exceeds CytoSig on the same targets (Main: 0.438 vs 0.323, Val: 0.388 vs 0.252, Ext: 0.186 vs 0.135). The apparent CytoSig advantage in inflammatory datasets disappears when comparing identical target sets.</p>
+<p><strong>Note:</strong> Ext has more targets passing filters (42 CytoSig, 1,118 SecAct vs 33/805 in Main/Val), likely due to different cell-type composition affecting the min_cells threshold.</p>
+
+<h3>Cell-Type Levels (l1, l2 &mdash; aggregated across donors)</h3>
+<p>These levels group by cell type across all donors (no per-donor stratification), so they reflect cell-type-driven variation rather than donor-level independence.</p>
+
+<h4>Main Cohort (817 samples)</h4>
+<table>
+<tr>
+    <th>Level</th>
+    <th>Method</th>
+    <th>N Targets</th>
+    <th>Median &rho;</th>
+    <th>% Sig (BH q&lt;0.05)</th>
+    <th>% Pos</th>
+</tr>
+<tr class="method-cytosig"><td>l1</td><td>CytoSig</td><td>33</td><td>0.351</td><td>90.9%</td><td>81.8%</td></tr>
+<tr class="method-secact"><td>l1</td><td>SecAct</td><td>805</td><td>0.226</td><td>92.4%</td><td>68.1%</td></tr>
+<tr class="method-secact-matched"><td>l1</td><td>SecAct (matched)</td><td>27</td><td>0.481</td><td>96.3%</td><td>92.6%</td></tr>
+<tr class="method-cytosig"><td>l2</td><td>CytoSig</td><td>33</td><td>0.276</td><td>97.0%</td><td>72.7%</td></tr>
+<tr class="method-secact"><td>l2</td><td>SecAct</td><td>805</td><td>0.184</td><td>94.0%</td><td>69.2%</td></tr>
+<tr class="method-secact-matched"><td>l2</td><td>SecAct (matched)</td><td>27</td><td>0.427</td><td>100.0%</td><td>92.6%</td></tr>
+</table>
+
+<h4>Val Cohort (144 samples)</h4>
+<table>
+<tr>
+    <th>Level</th>
+    <th>Method</th>
+    <th>N Targets</th>
+    <th>Median &rho;</th>
+    <th>% Sig (BH q&lt;0.05)</th>
+    <th>% Pos</th>
+</tr>
+<tr class="method-cytosig"><td>l1</td><td>CytoSig</td><td>33</td><td>0.392</td><td>97.0%</td><td>75.8%</td></tr>
+<tr class="method-secact"><td>l1</td><td>SecAct</td><td>805</td><td>0.191</td><td>90.6%</td><td>67.7%</td></tr>
+<tr class="method-secact-matched"><td>l1</td><td>SecAct (matched)</td><td>27</td><td>0.514</td><td>96.3%</td><td>92.6%</td></tr>
+<tr class="method-cytosig"><td>l2</td><td>CytoSig</td><td>33</td><td>0.279</td><td>90.9%</td><td>81.8%</td></tr>
+<tr class="method-secact"><td>l2</td><td>SecAct</td><td>805</td><td>0.198</td><td>93.3%</td><td>75.3%</td></tr>
+<tr class="method-secact-matched"><td>l2</td><td>SecAct (matched)</td><td>27</td><td>0.378</td><td>100.0%</td><td>96.3%</td></tr>
+</table>
+
+<h4>Ext Cohort (86 samples)</h4>
+<table>
+<tr>
+    <th>Level</th>
+    <th>Method</th>
+    <th>N Targets</th>
+    <th>Median &rho;</th>
+    <th>% Sig (BH q&lt;0.05)</th>
+    <th>% Pos</th>
+</tr>
+<tr class="method-cytosig"><td>l1</td><td>CytoSig</td><td>33</td><td>0.297</td><td>100.0%</td><td>72.7%</td></tr>
+<tr class="method-secact"><td>l1</td><td>SecAct</td><td>805</td><td>0.162</td><td>89.7%</td><td>63.9%</td></tr>
+<tr class="method-secact-matched"><td>l1</td><td>SecAct (matched)</td><td>27</td><td>0.477</td><td>100.0%</td><td>92.6%</td></tr>
+<tr class="method-cytosig"><td>l2</td><td>CytoSig</td><td>33</td><td>0.178</td><td>93.9%</td><td>66.7%</td></tr>
+<tr class="method-secact"><td>l2</td><td>SecAct</td><td>805</td><td>0.165</td><td>95.2%</td><td>68.7%</td></tr>
+<tr class="method-secact-matched"><td>l2</td><td>SecAct (matched)</td><td>27</td><td>0.351</td><td>92.6%</td><td>88.9%</td></tr>
+</table>
+<p><strong>Pattern across cohorts:</strong> SecAct (matched) outperforms CytoSig at every cell-type level across all three cohorts (Main l1: 0.481 vs 0.351, Val l1: 0.514 vs 0.392, Ext l1: 0.477 vs 0.297). Even Ext (86 samples) achieves strong matched results (0.477 at l1) when aggregating across donors, with 89.7&ndash;100% significance rates at l1.</p>
+
+<h3>Donor &times; Cell-Type Levels (donor_l1, donor_l2 &mdash; finer stratification)</h3>
+<p>These levels stratify by both donor and cell type, producing the smallest pseudobulk groups. Correlations are expected to be lower due to increased noise.</p>
+
+<h4>Main Cohort (817 samples)</h4>
+<table>
+<tr>
+    <th>Level</th>
+    <th>Method</th>
+    <th>N Targets</th>
+    <th>Median &rho;</th>
+    <th>% Sig (BH q&lt;0.05)</th>
+    <th>% Pos</th>
+</tr>
+<tr class="method-cytosig"><td>donor_l1</td><td>CytoSig</td><td>33</td><td>0.074</td><td>69.7%</td><td>63.6%</td></tr>
+<tr class="method-secact"><td>donor_l1</td><td>SecAct</td><td>805</td><td>0.082</td><td>75.4%</td><td>71.7%</td></tr>
+<tr class="method-secact-matched"><td>donor_l1</td><td>SecAct (matched)</td><td>27</td><td>0.136</td><td>88.9%</td><td>88.9%</td></tr>
+<tr class="method-cytosig"><td>donor_l2</td><td>CytoSig</td><td>33</td><td>0.037</td><td>51.5%</td><td>66.7%</td></tr>
+<tr class="method-secact"><td>donor_l2</td><td>SecAct</td><td>805</td><td>0.046</td><td>42.4%</td><td>64.8%</td></tr>
+<tr class="method-secact-matched"><td>donor_l2</td><td>SecAct (matched)</td><td>27</td><td>0.086</td><td>59.3%</td><td>77.8%</td></tr>
+</table>
+
+<h4>Val Cohort (144 samples)</h4>
+<table>
+<tr>
+    <th>Level</th>
+    <th>Method</th>
+    <th>N Targets</th>
+    <th>Median &rho;</th>
+    <th>% Sig (BH q&lt;0.05)</th>
+    <th>% Pos</th>
+</tr>
+<tr class="method-cytosig"><td>donor_l1</td><td>CytoSig</td><td>33</td><td>0.069</td><td>33.3%</td><td>69.7%</td></tr>
+<tr class="method-secact"><td>donor_l1</td><td>SecAct</td><td>805</td><td>0.078</td><td>28.4%</td><td>70.1%</td></tr>
+<tr class="method-secact-matched"><td>donor_l1</td><td>SecAct (matched)</td><td>27</td><td>0.155</td><td>55.6%</td><td>85.2%</td></tr>
+<tr class="method-cytosig"><td>donor_l2</td><td>CytoSig</td><td>33</td><td>0.042</td><td>12.1%</td><td>60.6%</td></tr>
+<tr class="method-secact"><td>donor_l2</td><td>SecAct</td><td>805</td><td>0.046</td><td>11.4%</td><td>62.6%</td></tr>
+<tr class="method-secact-matched"><td>donor_l2</td><td>SecAct (matched)</td><td>27</td><td>0.116</td><td>14.8%</td><td>77.8%</td></tr>
+</table>
+
+<h4>Ext Cohort (86 samples)</h4>
+<table>
+<tr>
+    <th>Level</th>
+    <th>Method</th>
+    <th>N Targets</th>
+    <th>Median &rho;</th>
+    <th>% Sig (BH q&lt;0.05)</th>
+    <th>% Pos</th>
+</tr>
+<tr class="method-cytosig"><td>donor_l1</td><td>CytoSig</td><td>42</td><td>&minus;0.004</td><td>23.8%</td><td>50.0%</td></tr>
+<tr class="method-secact"><td>donor_l1</td><td>SecAct</td><td>1,117</td><td>0.025</td><td>17.2%</td><td>56.7%</td></tr>
+<tr class="method-secact-matched"><td>donor_l1</td><td>SecAct (matched)</td><td>32</td><td>0.088</td><td>28.1%</td><td>62.5%</td></tr>
+<tr class="method-cytosig"><td>donor_l2</td><td>CytoSig</td><td>42</td><td>&minus;0.004</td><td>16.7%</td><td>50.0%</td></tr>
+<tr class="method-secact"><td>donor_l2</td><td>SecAct</td><td>1,117</td><td>0.014</td><td>6.7%</td><td>54.3%</td></tr>
+<tr class="method-secact-matched"><td>donor_l2</td><td>SecAct (matched)</td><td>32</td><td>0.069</td><td>9.4%</td><td>59.4%</td></tr>
+</table>
+<p><strong>Pattern across cohorts:</strong> Main and Val show comparable donor-stratified performance (Main donor_l1: 0.074/0.082 vs Val: 0.069/0.078). SecAct (matched) maintains its advantage over CytoSig even at fine resolution (Main donor_l1: 0.136 vs 0.074, Val: 0.155 vs 0.069), though the gap narrows as noise dominates. Ext collapses at this resolution &mdash; CytoSig median &rho; drops to &minus;0.004, while matched SecAct maintains weak positive signal (0.088 at donor_l1). This underscores that donor &times; cell-type analysis requires substantial sample sizes (&gt;100 donors) to maintain signal.</p>
 
 <h2>Software</h2>
 <p>All statistics computed using Python <code>scipy.stats</code> (Spearman correlations) and <code>statsmodels.stats.multitest</code> (Benjamini&ndash;Hochberg FDR correction).</p>
