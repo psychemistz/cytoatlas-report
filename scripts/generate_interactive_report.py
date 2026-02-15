@@ -1556,6 +1556,41 @@ def generate_html(summary_table, boxplot_data, consistency_data, heatmap_data,
     width: 44px; height: 44px; display: flex; align-items: center; justify-content: center;
   }}
   .lightbox-close:hover {{ background: rgba(255,255,255,0.25); }}
+  /* Floating sidebar TOC */
+  .sidebar-toc {{
+    position: fixed; top: 0; left: 0; z-index: 9998;
+    width: 32px; height: 100vh; overflow: hidden;
+    background: rgba(30,58,95,0.95); color: #fff;
+    transition: width 0.25s ease;
+    font-size: 13px;
+  }}
+  .sidebar-toc:hover {{ width: 260px; }}
+  .sidebar-toc-toggle {{
+    width: 32px; height: 100vh; display: flex; align-items: center; justify-content: center;
+    writing-mode: vertical-rl; text-orientation: mixed;
+    font-size: 11px; letter-spacing: 2px; text-transform: uppercase; opacity: 0.7;
+    cursor: default; user-select: none; position: absolute; top: 0; left: 0;
+  }}
+  .sidebar-toc:hover .sidebar-toc-toggle {{ display: none; }}
+  .sidebar-toc-inner {{
+    width: 260px; padding: 20px 16px; opacity: 0;
+    transition: opacity 0.2s ease 0.05s; overflow-y: auto; max-height: 100vh;
+  }}
+  .sidebar-toc:hover .sidebar-toc-inner {{ opacity: 1; }}
+  .sidebar-toc-inner h4 {{
+    font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px;
+    color: rgba(255,255,255,0.5); margin: 0 0 12px; font-weight: 600;
+  }}
+  .sidebar-toc-inner a {{
+    display: block; color: rgba(255,255,255,0.8); text-decoration: none;
+    padding: 4px 0; border-left: 2px solid transparent; padding-left: 10px;
+    transition: all 0.15s;
+  }}
+  .sidebar-toc-inner a:hover {{ color: #fff; border-left-color: #59a5ff; }}
+  .sidebar-toc-inner a.active {{ color: #fff; border-left-color: #59a5ff; font-weight: 600; }}
+  .sidebar-toc-inner a.sub {{ font-size: 12px; padding-left: 22px; color: rgba(255,255,255,0.6); }}
+  .sidebar-toc-inner a.sub:hover {{ color: rgba(255,255,255,0.9); }}
+
   @media print {{
     body {{ background: white; }}
     .container {{ box-shadow: none; }}
@@ -1564,6 +1599,7 @@ def generate_html(summary_table, boxplot_data, consistency_data, heatmap_data,
     h2 {{ break-after: avoid; }}
     .lightbox-overlay {{ display: none !important; }}
     .plotly-container {{ break-inside: avoid; }}
+    .sidebar-toc {{ display: none !important; }}
   }}
 </style>
 </head>
@@ -3244,6 +3280,42 @@ document.addEventListener('keydown', function(e) {{
   }});
   btn.addEventListener('mouseenter',function(){{btn.style.opacity='1';}});
   btn.addEventListener('mouseleave',function(){{if(window.scrollY>400)btn.style.opacity='0.8';}});
+}})();
+</script>
+
+<!-- Floating sidebar TOC -->
+<nav class="sidebar-toc" id="sidebarToc">
+  <div class="sidebar-toc-toggle">Contents</div>
+  <div class="sidebar-toc-inner">
+    <h4>Contents</h4>
+    <a href="#" onclick="window.scrollTo({{top:0,behavior:'smooth'}});return false;">Executive Summary</a>
+    <a href="#sec1">1. Architecture &amp; Design</a>
+    <a href="#sec2">2. Dataset Catalog</a>
+    <a href="#sec3">3. Scientific Value</a>
+    <a href="#sec4">4. Validation Results</a>
+    <a href="#sec5" class="sub">5. CytoSig vs LinCytoSig vs SecAct</a>
+    <a href="#sec6" class="sub">6. Key Takeaways</a>
+    <a href="#sec7" class="sub">7. Appendix</a>
+  </div>
+</nav>
+<script>
+(function(){{
+  var links = document.querySelectorAll('.sidebar-toc-inner a');
+  var sections = [];
+  links.forEach(function(a){{
+    var id = a.getAttribute('href').replace('#','');
+    var el = id ? document.getElementById(id) : null;
+    sections.push({{el: el, link: a}});
+  }});
+  window.addEventListener('scroll', function(){{
+    var scrollY = window.scrollY + 120;
+    var active = sections[0].link;
+    for(var i=0; i<sections.length; i++){{
+      if(sections[i].el && sections[i].el.offsetTop <= scrollY) active = sections[i].link;
+    }}
+    links.forEach(function(a){{ a.classList.remove('active'); }});
+    active.classList.add('active');
+  }});
 }})();
 </script>
 
