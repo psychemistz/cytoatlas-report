@@ -38,9 +38,10 @@ Files must stay in sync across three locations. After editing any synced file, c
 
 | File | Owner | Since | Notes |
 |------|-------|-------|-------|
-| `scripts/generate_interactive_report.py` | — | — | Inline arch doc extracted to standalone system_architecture.html |
+| `scripts/generate_interactive_report.py` | — | — | Section 5 links to lincytosig_issues.html added |
 | `scripts/generate_report_figures.py` | — | — | fig_system_architecture() redesigned as top-to-bottom system design diagram |
-| `baseline/index.html` | — | — | Regenerated; arch figure moved to system_architecture.html |
+| `baseline/index.html` | — | — | Regenerated with Section 5 links |
+| `baseline/lincytosig_issues.html` | — | — | Standalone LinCytoSig issues document (6 issues) |
 | `baseline/REPORT.md` | — | — | §4.7 rewritten with data-driven CytoSig+SecAct comparison |
 | `baseline/stats_section_4.*.html` | — | — | §4.4 matched-target control tables added |
 | `CLAUDE.md` | — | — | Report Sections table updated |
@@ -50,6 +51,7 @@ Files must stay in sync across three locations. After editing any synced file, c
 ## Messages
 
 <!-- Newest first. Format: [A->B] or [B->A] -->
+- [C 2026-02-15] Created baseline/lincytosig_issues.html (standalone issues document with 6 issues: selection circularity, case studies, celltype-level evaluation, gene space effect, PBMC paradox, cross-validation design). Added 3 links from Section 5 of interactive report. Regenerated HTML, synced all 3 locations.
 - [C 2026-02-15] Rewrote §4.7 in REPORT.md: removed misplaced GTEx/TCGA rows (already in §4.1-4.2), added SecAct alongside CytoSig, added signal retention table, fixed stale values against raw data, added per-target degradation insight. Added key-insight callout to interactive HTML §4.7. Fixed prepare_levels_data() docstring (4.6→4.7). Regenerated HTML and synced all 3 locations.
 - [2026-02-15] New session reviewed repo state. Both prior sessions completed. All files synced, no TBDs remaining in REPORT.md, working tree clean. Updated COORDINATION.md and SESSION_HANDOFF.md to reflect current state.
 

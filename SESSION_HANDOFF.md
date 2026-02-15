@@ -2,7 +2,26 @@
 
 ## Current State Summary
 
-Repository is **clean** on `main`, all three sync locations are in sync, no TBDs or TODOs remaining in REPORT.md. Two parallel sessions (A and B) completed a major document overhaul on Feb 14 (88 commits total, 20+ on Feb 14 alone). Both sessions are now finished and all file locks are released.
+Repository has uncommitted changes on `main`. All three sync locations are in sync, no TBDs or TODOs remaining in REPORT.md. Two parallel sessions (A and B) completed a major document overhaul on Feb 14 (88 commits total, 20+ on Feb 14 alone). Session C (Feb 15) added LinCytoSig issues document and Section 5 links.
+
+---
+
+## What Was Done (Feb 15 Session C)
+
+### LinCytoSig Issues Document
+- **Created** `baseline/lincytosig_issues.html` — standalone document covering 6 open methodological issues
+- **Issue 1: Best-Selection Circularity** — 44-cytokine agreement table showing only 55% agreement across 4 selection strategies
+- **Issue 2: Case Studies** — IFNG (strongest LinCytoSig case), TGFB1 (demonstrates selection problem), IL1B (control)
+- **Issue 3: Celltype-Level Evaluation** — preliminary findings from scAtlas Normal at donor_organ_celltype1 level
+- **Issue 4: Gene Space Effect** — median rho comparison showing +102% to -15% filter effect
+- **Issue 5: Sample Size and PBMC Paradox** — documented structural bias toward CytoSig at donor level
+- **Issue 6: Cross-Validation Design Gap** — proposed leave-one-atlas-out and stability-based selection
+
+### Section 5 Links
+- Added 3 cross-links from interactive report Section 5 to the issues document
+- Link 1: Section 5 header → issues document
+- Link 2: After §5.1 callout → full issues document
+- Link 3: After §5.2 callout → Issue 3 (celltype-level)
 
 ---
 
@@ -49,9 +68,10 @@ Repository is **clean** on `main`, all three sync locations are in sync, no TBDs
 
 | File | Size | Status |
 |------|------|--------|
-| `scripts/generate_interactive_report.py` | 3,414 lines | All §4.1–4.10 functional, 21 `prepare_*` and utility functions |
+| `scripts/generate_interactive_report.py` | ~3,420 lines | All §4.1–4.10 functional, §5 links to issues doc, 21 `prepare_*` functions |
 | `scripts/generate_report_figures.py` | — | System architecture diagram redesigned as top-to-bottom layered diagram |
-| `baseline/index.html` | ~15 MB (1,905 lines) | Regenerated, all interactive figures working, synced |
+| `baseline/index.html` | ~15 MB | Regenerated with §5 links, all interactive figures working, synced |
+| `baseline/lincytosig_issues.html` | ~36 KB | NEW: Standalone LinCytoSig issues document (6 issues) |
 | `baseline/REPORT.md` | 519 lines | Sections 1–7 + Appendix, no TBDs remaining |
 | `baseline/stats_section_4.1.html` | ~1.1 MB | Comprehensive stats supplement (all Section 4 methods) |
 | `baseline/system_architecture.html` | ~611 KB | Standalone detailed architecture document |

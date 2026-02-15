@@ -1,0 +1,1018 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LinCytoSig Open Issues &mdash; CytoAtlas Reports</title>
+<style>
+    :root {
+        --bg: #ffffff;
+        --fg: #1a1a2e;
+        --accent: #2563eb;
+        --accent-hover: #1d4ed8;
+        --card-bg: #f8fafc;
+        --card-border: #e2e8f0;
+        --muted: #64748b;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        color: var(--fg);
+        background: var(--bg);
+        line-height: 1.6;
+    }
+    header {
+        border-bottom: 1px solid var(--card-border);
+        padding: 2rem 1.5rem 1.5rem;
+        max-width: 960px;
+        margin: 0 auto;
+    }
+    header h1 { font-size: 1.8rem; font-weight: 700; }
+    header p { color: var(--muted); margin-top: 0.25rem; }
+    main {
+        max-width: 960px;
+        margin: 0 auto;
+        padding: 2rem 1.5rem 4rem;
+    }
+    footer {
+        max-width: 960px;
+        margin: 0 auto;
+        padding: 1rem 1.5rem;
+        border-top: 1px solid var(--card-border);
+        font-size: 0.8rem;
+        color: var(--muted);
+    }
+
+    /* Navigation */
+    .back-link {
+        display: inline-block;
+        margin-bottom: 1.5rem;
+        padding: 0.35em 0.75em;
+        background: var(--card-bg);
+        border: 1px solid var(--card-border);
+        border-radius: 6px;
+        font-size: 0.85rem;
+        color: var(--accent);
+        text-decoration: none;
+        transition: border-color 0.15s;
+    }
+    .back-link:hover { border-color: var(--accent); }
+
+    /* Headings */
+    h2 {
+        font-size: 1.4rem;
+        margin: 2.5rem 0 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid var(--accent);
+    }
+    h3 { font-size: 1.1rem; margin: 1.5rem 0 0.6rem; }
+    h4 { font-size: 0.95rem; margin: 1.2rem 0 0.4rem; color: var(--fg); }
+    p { margin-bottom: 0.75rem; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* Stat cards */
+    .stat-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 1rem;
+        margin: 1.25rem 0;
+    }
+    .stat-card {
+        background: var(--card-bg);
+        border: 1px solid var(--card-border);
+        border-radius: 8px;
+        padding: 1rem;
+        text-align: center;
+    }
+    .stat-card .number {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--accent);
+        display: block;
+        background: none;
+        padding: 0;
+    }
+    .stat-card .label { font-size: 0.85rem; color: var(--muted); }
+
+    /* Table of Contents */
+    .toc {
+        background: var(--card-bg);
+        border: 1px solid var(--card-border);
+        border-radius: 8px;
+        padding: 1.25rem 1.5rem;
+        margin: 1.25rem 0;
+    }
+    .toc ul { list-style: none; margin: 0.5rem 0 0; padding: 0; }
+    .toc li { margin: 0.35rem 0; }
+    .toc a { font-size: 0.9rem; }
+
+    /* Tables */
+    table { width: 100%; border-collapse: collapse; margin: 1rem 0 1.25rem; font-size: 0.875rem; }
+    th, td { padding: 0.5rem 0.65rem; text-align: left; border: 1px solid var(--card-border); }
+    th { background: var(--card-bg); font-weight: 600; }
+    tr:hover { background: var(--card-bg); }
+    .num { text-align: right; font-family: 'JetBrains Mono', 'Fira Code', ui-monospace, monospace; font-size: 0.8rem; }
+    .pos { color: #059669; }
+    .neg { color: #dc2626; }
+    .best { background: #ecfdf5; font-weight: 600; }
+    .worst { background: #fef2f2; }
+
+    /* Scrollable table wrapper */
+    .table-scroll { overflow-x: auto; margin: 1rem 0; }
+    .table-scroll table { min-width: 700px; }
+
+    /* Code */
+    code {
+        background: var(--card-bg);
+        border: 1px solid var(--card-border);
+        padding: 0.15em 0.4em;
+        border-radius: 4px;
+        font-size: 0.85rem;
+        font-family: 'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
+    }
+
+    /* Callouts */
+    .callout {
+        background: #eff6ff;
+        border-left: 4px solid var(--accent);
+        padding: 1rem 1.25rem;
+        border-radius: 0 8px 8px 0;
+        margin: 1.25rem 0;
+        font-size: 0.9rem;
+    }
+    .callout.green { background: #ecfdf5; border-left-color: #059669; }
+    .callout.red { background: #fef2f2; border-left-color: #dc2626; }
+    .callout.amber { background: #fffbeb; border-left-color: #f59e0b; }
+
+    /* Badges */
+    .badge {
+        display: inline-block;
+        font-size: 0.7rem;
+        font-weight: 600;
+        padding: 0.15em 0.5em;
+        border-radius: 4px;
+        background: var(--accent);
+        color: #fff;
+        text-transform: uppercase;
+    }
+    .badge.amber { background: #f59e0b; color: #fff; }
+    .badge.green { background: #059669; color: #fff; }
+    .badge.red { background: #dc2626; color: #fff; }
+
+    /* Lists */
+    ul, ol { margin: 0.5rem 0 1rem 1.5rem; }
+    li { margin-bottom: 0.4rem; }
+
+    hr { border: none; border-top: 1px solid var(--card-border); margin: 2rem 0; }
+
+    .subtitle { color: var(--muted); font-size: 0.95rem; margin-bottom: 1.5rem; }
+
+    /* Collapsible sections */
+    details { margin: 0.75rem 0; }
+    details summary {
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 0.9rem;
+        color: var(--accent);
+        padding: 0.5rem 0;
+    }
+    details summary:hover { text-decoration: underline; }
+    details[open] summary { margin-bottom: 0.5rem; }
+</style>
+</head>
+<body>
+
+<header>
+    <h1>CytoAtlas Reports</h1>
+    <p>Pan-Disease Single-Cell Cytokine Activity Atlas &mdash; reporting hub</p>
+</header>
+
+<main>
+
+<a href="index.html" class="back-link">&larr; Back to Interactive Report</a>
+
+<h2 style="margin-top: 0; border-bottom: none; padding-bottom: 0; font-size: 1.6rem;">LinCytoSig Open Issues &amp; Analysis</h2>
+<p class="subtitle">Methodological issues in cell-type-specific signature evaluation &mdash; February 2026</p>
+
+<!-- Summary Statistics -->
+<div class="stat-grid">
+  <div class="stat-card">
+    <span class="number">6</span>
+    <span class="label">Issues Identified</span>
+  </div>
+  <div class="stat-card">
+    <span class="number">10</span>
+    <span class="label">Methods Compared</span>
+  </div>
+  <div class="stat-card">
+    <span class="number">0 / 4</span>
+    <span class="label">Datasets Where LinCytoSig Wins Overall</span>
+  </div>
+  <div class="stat-card">
+    <span class="number">5 / 43</span>
+    <span class="label">Cell Types With LinCytoSig Advantage</span>
+  </div>
+</div>
+
+<div class="callout">
+<p><strong>Core question:</strong> Can cell-type-specific signatures (LinCytoSig) outperform global signatures (CytoSig) for cytokine activity inference?</p>
+<p><strong>Current answer:</strong> No, at the donor level. CytoSig&rsquo;s global signature outperforms all LinCytoSig variants in 4 of 4 single-cell datasets (median &rho; advantage +0.03 to +0.14). Gene filtering helps (+12% to +102% improvement), but does not close the gap. The &ldquo;best&rdquo; cell-type selection introduces circularity that inflates apparent performance. See issues below for details.</p>
+</div>
+
+<!-- Table of Contents -->
+<div class="toc">
+  <strong>Contents</strong>
+  <ul>
+    <li><a href="#issue1">Issue 1: Best-Selection Circularity</a> <span class="badge red">OPEN</span></li>
+    <li><a href="#issue2">Issue 2: Case Studies &mdash; Where LinCytoSig Wins</a> <span class="badge amber">PARTIAL</span></li>
+    <li><a href="#issue3">Issue 3: Does the &ldquo;Right&rdquo; Cell Type Beat Global at Celltype Level?</a> <span class="badge red">OPEN</span></li>
+    <li><a href="#issue4">Issue 4: Gene Space Effect</a> <span class="badge amber">PARTIAL</span></li>
+    <li><a href="#issue5">Issue 5: Sample Size and PBMC Paradox</a> <span class="badge green">DOCUMENTED</span></li>
+    <li><a href="#issue6">Issue 6: Cross-Validation Design Gap</a> <span class="badge red">OPEN</span></li>
+    <li><a href="#restructure">Proposed Section 5 Restructuring</a></li>
+  </ul>
+</div>
+
+<hr>
+
+<!-- ======================================================================== -->
+<!-- ISSUE 1 -->
+<!-- ======================================================================== -->
+<h2 id="issue1">Issue 1: Best-Selection Circularity <span class="badge red">OPEN</span></h2>
+
+<h3>Problem</h3>
+<p>The &ldquo;best LinCytoSig&rdquo; variants select the top-performing cell type for each cytokine using bulk RNA-seq correlation (GTEx, TCGA, or combined), then validate on single-cell data. While bulk&rarr;SC is not the same metric, the selection criterion (Spearman &rho; vs. target gene expression) is identical in both settings. This creates a semi-circular design: selection optimizes for the <em>same measurement</em> being used for validation.</p>
+
+<h3>Four Selection Strategies</h3>
+<p>We evaluated 4 selection strategies for choosing the best cell type per cytokine:</p>
+<ol>
+  <li><strong>Combined (GTEx+TCGA)</strong> &mdash; maximize average bulk &rho; across both bulk datasets</li>
+  <li><strong>Combined + gene filter</strong> &mdash; same, but restricted to CytoSig&rsquo;s 4,881 genes</li>
+  <li><strong>GTEx-only</strong> &mdash; maximize GTEx bulk &rho;</li>
+  <li><strong>TCGA-only</strong> &mdash; maximize TCGA bulk &rho;</li>
+</ol>
+
+<h3>Agreement Analysis</h3>
+<p>Of 44 cytokines, only <strong>24 (55%)</strong> have the same best cell type across all 4 selection strategies. The remaining 17 cytokines (3 have limited data) select different cell types depending on the selection dataset.</p>
+
+<div class="callout red">
+<p><strong>Key finding:</strong> Nearly half (45%) of cytokines receive different &ldquo;best&rdquo; cell-type assignments depending on which bulk dataset is used for selection. This means the selection is not identifying a stable biological property but rather dataset-specific noise.</p>
+</div>
+
+<h3>Notable Disagreements</h3>
+
+<div class="table-scroll">
+<table>
+  <tr>
+    <th>Cytokine</th>
+    <th>Combined</th>
+    <th>Comb+Filt</th>
+    <th>GTEx</th>
+    <th>TCGA</th>
+    <th>Notes</th>
+  </tr>
+  <tr class="worst">
+    <td><strong>IFNG</strong></td>
+    <td>Monocyte</td>
+    <td>Hepatocyte</td>
+    <td>PBMC</td>
+    <td>Fibroblast</td>
+    <td>4 different cell types across 4 strategies</td>
+  </tr>
+  <tr class="worst">
+    <td><strong>TGFB1</strong></td>
+    <td>Breast_Cancer_Line</td>
+    <td>Breast_Cancer_Line</td>
+    <td>Lung_Cancer_Line</td>
+    <td>Airway_Epithelial</td>
+    <td>3 different cell types; none is Macrophage (actual best in CIMA)</td>
+  </tr>
+  <tr class="worst">
+    <td><strong>IL1B</strong></td>
+    <td>Chondrocyte</td>
+    <td>Chondrocyte</td>
+    <td>Smooth_Muscle</td>
+    <td>Fibroblast</td>
+    <td>3 different cell types</td>
+  </tr>
+  <tr>
+    <td><strong>BMP4</strong></td>
+    <td>ESC</td>
+    <td>ESC</td>
+    <td>ESC</td>
+    <td>Lung_Fibroblast</td>
+    <td>TCGA disagrees</td>
+  </tr>
+  <tr>
+    <td><strong>IL6</strong></td>
+    <td>Macrophage</td>
+    <td>Macrophage</td>
+    <td>Macrophage</td>
+    <td>Breast_Cancer_Line</td>
+    <td>TCGA disagrees</td>
+  </tr>
+  <tr>
+    <td><strong>VEGFA</strong></td>
+    <td>HUVEC</td>
+    <td>HUVEC</td>
+    <td>Lymphatic_Endothelial</td>
+    <td>Lymphatic_Endothelial</td>
+    <td>GTEx/TCGA agree but differ from combined</td>
+  </tr>
+  <tr>
+    <td><strong>IL15</strong></td>
+    <td>NK_Cell</td>
+    <td>NK_Cell</td>
+    <td>NK_Cell</td>
+    <td>T_CD4</td>
+    <td>TCGA disagrees</td>
+  </tr>
+  <tr>
+    <td><strong>IL4</strong></td>
+    <td>Keratinocyte</td>
+    <td>Fibroblast</td>
+    <td>Fibroblast</td>
+    <td>Keratinocyte</td>
+    <td>Gene filter flips selection</td>
+  </tr>
+</table>
+</div>
+
+<details>
+<summary>Full 44-cytokine agreement table</summary>
+<div class="table-scroll">
+<table>
+  <tr>
+    <th>Cytokine</th>
+    <th>Combined</th>
+    <th>Comb+Filt</th>
+    <th>GTEx</th>
+    <th>TCGA</th>
+    <th>Agree?</th>
+  </tr>
+  <tr><td>ADM</td><td>Lymphatic_Endothelial</td><td>Lymphatic_Endothelial</td><td>Lymphatic_Endothelial</td><td>Lymphatic_Endothelial</td><td class="pos">Yes</td></tr>
+  <tr><td>BDNF</td><td>ESC</td><td>ESC</td><td>Neuron</td><td>ESC</td><td class="neg">No</td></tr>
+  <tr><td>BMP2</td><td>MSC</td><td>MSC</td><td>Osteoblast</td><td>MSC</td><td class="neg">No</td></tr>
+  <tr><td>BMP4</td><td>ESC</td><td>ESC</td><td>ESC</td><td>Lung_Fibroblast</td><td class="neg">No</td></tr>
+  <tr><td>BMP6</td><td>Hepatocyte</td><td>Hepatocyte</td><td>Hepatocyte</td><td>MSC</td><td class="neg">No</td></tr>
+  <tr><td>CXCL12</td><td>B_Cell</td><td>B_Cell</td><td>B_Cell</td><td>B_Cell</td><td class="pos">Yes</td></tr>
+  <tr><td>EGF</td><td>Lung_Fibroblast</td><td>Lung_Fibroblast</td><td>Breast_Cancer_Line</td><td>Cervical_Cancer_Line</td><td class="neg">No</td></tr>
+  <tr><td>FGF10</td><td>Breast_Cancer_Line</td><td>Breast_Cancer_Line</td><td>Breast_Cancer_Line</td><td>Breast_Cancer_Line</td><td class="pos">Yes</td></tr>
+  <tr><td>FGF2</td><td>Pancreatic_Cancer_Line</td><td>Pancreatic_Cancer_Line</td><td>Dermal_Fibroblast</td><td>Pancreatic_Cancer_Line</td><td class="neg">No</td></tr>
+  <tr><td>GDF11</td><td>Skeletal_Muscle</td><td>Skeletal_Muscle</td><td>Skeletal_Muscle</td><td>Skeletal_Muscle</td><td class="pos">Yes</td></tr>
+  <tr><td>GDNF</td><td>Breast_Cancer_Line</td><td>Breast_Cancer_Line</td><td>Breast_Cancer_Line</td><td>Breast_Cancer_Line</td><td class="pos">Yes</td></tr>
+  <tr><td>HGF</td><td>Breast_Cancer_Line</td><td>Breast_Cancer_Line</td><td>Breast_Cancer_Line</td><td>Breast_Cancer_Line</td><td class="pos">Yes</td></tr>
+  <tr><td>HMGB1</td><td>HUVEC</td><td>HUVEC</td><td>HUVEC</td><td>HUVEC</td><td class="pos">Yes</td></tr>
+  <tr class="worst"><td>IFNG</td><td>Monocyte</td><td>Hepatocyte</td><td>PBMC</td><td>Fibroblast</td><td class="neg">No</td></tr>
+  <tr><td>IGF1</td><td>Cervical_Cancer_Line</td><td>Cervical_Cancer_Line</td><td>Breast_Cancer_Line</td><td>Breast_Cancer_Line</td><td class="neg">No</td></tr>
+  <tr><td>IL10</td><td>PBMC</td><td>PBMC</td><td>PBMC</td><td>PBMC</td><td class="pos">Yes</td></tr>
+  <tr><td>IL13</td><td>B_Cell</td><td>B_Cell</td><td>Monocyte</td><td>B_Cell</td><td class="neg">No</td></tr>
+  <tr><td>IL15</td><td>NK_Cell</td><td>NK_Cell</td><td>NK_Cell</td><td>T_CD4</td><td class="neg">No</td></tr>
+  <tr><td>IL17A</td><td>Keratinocyte</td><td>Keratinocyte</td><td>Keratinocyte</td><td>Keratinocyte</td><td class="pos">Yes</td></tr>
+  <tr><td>IL1A</td><td>Lung_Cancer_Line</td><td>Lung_Cancer_Line</td><td>Lung_Cancer_Line</td><td>Lung_Cancer_Line</td><td class="pos">Yes</td></tr>
+  <tr class="worst"><td>IL1B</td><td>Chondrocyte</td><td>Chondrocyte</td><td>Smooth_Muscle</td><td>Fibroblast</td><td class="neg">No</td></tr>
+  <tr><td>IL2</td><td>T_Cell</td><td>T_Cell</td><td>T_Cell</td><td>T_Cell</td><td class="pos">Yes</td></tr>
+  <tr><td>IL22</td><td>Keratinocyte</td><td>Keratinocyte</td><td>Keratinocyte</td><td>Keratinocyte</td><td class="pos">Yes</td></tr>
+  <tr><td>IL27</td><td>Hepatocyte</td><td>Hepatocyte</td><td>Hepatocyte</td><td>Hepatocyte</td><td class="pos">Yes</td></tr>
+  <tr><td>IL3</td><td>Basophil</td><td>Basophil</td><td>Basophil</td><td>Basophil</td><td class="pos">Yes</td></tr>
+  <tr><td>IL36A</td><td>Keratinocyte</td><td>Keratinocyte</td><td>Keratinocyte</td><td>&mdash;</td><td class="pos">Yes*</td></tr>
+  <tr><td>IL36B</td><td>Keratinocyte</td><td>Keratinocyte</td><td>Keratinocyte</td><td>&mdash;</td><td class="pos">Yes*</td></tr>
+  <tr><td>IL36G</td><td>Keratinocyte</td><td>Keratinocyte</td><td>Keratinocyte</td><td>&mdash;</td><td class="pos">Yes*</td></tr>
+  <tr><td>IL4</td><td>Keratinocyte</td><td>Fibroblast</td><td>Fibroblast</td><td>Keratinocyte</td><td class="neg">No</td></tr>
+  <tr><td>IL6</td><td>Macrophage</td><td>Macrophage</td><td>Macrophage</td><td>Breast_Cancer_Line</td><td class="neg">No</td></tr>
+  <tr><td>INS</td><td>Keratinocyte</td><td>Keratinocyte</td><td>Keratinocyte</td><td>Keratinocyte</td><td class="pos">Yes</td></tr>
+  <tr><td>LTA</td><td>PBMC</td><td>PBMC</td><td>PBMC</td><td>PBMC</td><td class="pos">Yes</td></tr>
+  <tr><td>MSTN</td><td>Skeletal_Muscle</td><td>Skeletal_Muscle</td><td>Skeletal_Muscle</td><td>Skeletal_Muscle</td><td class="pos">Yes</td></tr>
+  <tr><td>NRG1</td><td>Hepatocyte</td><td>Hepatocyte</td><td>Hepatocyte</td><td>Hepatocyte</td><td class="pos">Yes</td></tr>
+  <tr><td>NTF4</td><td>ESC</td><td>ESC</td><td>ESC</td><td>ESC</td><td class="pos">Yes</td></tr>
+  <tr><td>OSM</td><td>Hepatocyte</td><td>Hepatocyte</td><td>Hepatocyte</td><td>Hepatocyte</td><td class="pos">Yes</td></tr>
+  <tr><td>PDGFB</td><td>Neuron</td><td>Neuron</td><td>Dermal_Fibroblast</td><td>Dermal_Fibroblast</td><td class="neg">No</td></tr>
+  <tr><td>PDGFD</td><td>Fibroblast</td><td>Fibroblast</td><td>Fibroblast</td><td>Fibroblast</td><td class="pos">Yes</td></tr>
+  <tr><td>TGFA</td><td>Keratinocyte</td><td>Keratinocyte</td><td>Keratinocyte</td><td>Keratinocyte</td><td class="pos">Yes</td></tr>
+  <tr class="worst"><td>TGFB1</td><td>Breast_Cancer_Line</td><td>Breast_Cancer_Line</td><td>Lung_Cancer_Line</td><td>Airway_Epithelial</td><td class="neg">No</td></tr>
+  <tr><td>TGFB3</td><td>Lung_Cancer_Line</td><td>Lung_Cancer_Line</td><td>Lung_Cancer_Line</td><td>Lung_Cancer_Line</td><td class="pos">Yes</td></tr>
+  <tr><td>VEGFA</td><td>HUVEC</td><td>HUVEC</td><td>Lymphatic_Endothelial</td><td>Lymphatic_Endothelial</td><td class="neg">No</td></tr>
+  <tr><td>VEGFC</td><td>Lymphatic_Endothelial</td><td>Lymphatic_Endothelial</td><td>Lymphatic_Endothelial</td><td>Lymphatic_Endothelial</td><td class="pos">Yes</td></tr>
+  <tr><td>WNT3A</td><td>Fibroblast</td><td>Fibroblast</td><td>Fibroblast</td><td>Breast_Cancer_Line</td><td class="neg">No</td></tr>
+</table>
+</div>
+<p style="font-size:0.8rem;color:var(--muted);">* IL36A/B/G not available in TCGA; agreement is across 3 strategies only. Source: <code>best_lincytosig_selection.json</code></p>
+</details>
+
+<hr>
+
+<!-- ======================================================================== -->
+<!-- ISSUE 2 -->
+<!-- ======================================================================== -->
+<h2 id="issue2">Issue 2: Case Studies &mdash; Where LinCytoSig Wins <span class="badge amber">PARTIAL</span></h2>
+
+<p>Three case studies illustrate when cell-type-specific signatures outperform global CytoSig, and when selection artifacts distort the comparison. All correlation values are Spearman &rho; at donor-only level.</p>
+
+<!-- Case A: IFNG -->
+<h3>A. IFNG (Interferon Gamma) &mdash; Strongest LinCytoSig Case</h3>
+
+<p>IFNG is the clearest example of LinCytoSig outperforming CytoSig. Immune cell variants (Monocyte, Macrophage) genuinely beat the global signature in CIMA and scAtlas.</p>
+
+<div class="table-scroll">
+<table>
+  <tr>
+    <th>Variant</th>
+    <th>CIMA (n=421)</th>
+    <th>Inflam Main (n=817)</th>
+    <th>scAtlas N (n=317)</th>
+    <th>scAtlas C (n=717)</th>
+  </tr>
+  <tr style="background:#eff6ff;">
+    <td><strong>CytoSig</strong></td>
+    <td class="num">0.413</td>
+    <td class="num">0.398</td>
+    <td class="num">0.306</td>
+    <td class="num">0.498</td>
+  </tr>
+  <tr class="best">
+    <td>Monocyte__IFNG (filt)</td>
+    <td class="num"><strong>0.478</strong></td>
+    <td class="num">0.354</td>
+    <td class="num">0.448</td>
+    <td class="num">0.458</td>
+  </tr>
+  <tr class="best">
+    <td>Macrophage__IFNG (filt)</td>
+    <td class="num">0.463</td>
+    <td class="num"><strong>0.411</strong></td>
+    <td class="num">0.460</td>
+    <td class="num">0.484</td>
+  </tr>
+  <tr>
+    <td>Macrophage__IFNG (orig)</td>
+    <td class="num">0.292</td>
+    <td class="num">0.148</td>
+    <td class="num"><strong>0.529</strong></td>
+    <td class="num"><strong>0.531</strong></td>
+  </tr>
+  <tr>
+    <td>Fibroblast__IFNG (filt)</td>
+    <td class="num">0.401</td>
+    <td class="num">0.306</td>
+    <td class="num">0.409</td>
+    <td class="num">0.439</td>
+  </tr>
+  <tr>
+    <td>Keratinocyte__IFNG (filt)</td>
+    <td class="num">0.410</td>
+    <td class="num">0.333</td>
+    <td class="num">0.324</td>
+    <td class="num">0.427</td>
+  </tr>
+  <tr>
+    <td>PBMC__IFNG (filt)</td>
+    <td class="num">0.379</td>
+    <td class="num">0.112</td>
+    <td class="num">0.227</td>
+    <td class="num">0.280</td>
+  </tr>
+  <tr>
+    <td>Hepatocyte__IFNG (filt)</td>
+    <td class="num">0.313</td>
+    <td class="num">0.154</td>
+    <td class="num">0.491</td>
+    <td class="num">0.446</td>
+  </tr>
+  <tr>
+    <td>B_Cell__IFNG (filt)</td>
+    <td class="num">0.211</td>
+    <td class="num neg">&minus;0.077</td>
+    <td class="num">0.353</td>
+    <td class="num">0.267</td>
+  </tr>
+  <tr>
+    <td>Lung_Cancer_Line__IFNG (filt)</td>
+    <td class="num">0.218</td>
+    <td class="num">0.263</td>
+    <td class="num">0.356</td>
+    <td class="num">0.424</td>
+  </tr>
+</table>
+</div>
+
+<div class="callout green">
+<p><strong>Insight:</strong> Immune cell variants (Monocyte, Macrophage) genuinely beat CytoSig for IFNG. In CIMA, Monocyte__IFNG (filt) achieves &rho;=0.478 vs CytoSig&rsquo;s 0.413 (+16%). In Inflammation Main, Macrophage__IFNG (filt) achieves &rho;=0.411 vs 0.398 (+3%). However, the &ldquo;best&rdquo; selection (combined) picked Monocyte, which is not the best in Inflammation Main &mdash; Macrophage is.</p>
+</div>
+
+<!-- Case B: TGFB1 -->
+<h3>B. TGFB1 (Transforming Growth Factor Beta 1) &mdash; Demonstrates Selection Problem</h3>
+
+<p>TGFB1 is the canonical example of selection circularity. The bulk-selected &ldquo;best&rdquo; (Breast_Cancer_Line) is not the actual best performer in single-cell validation.</p>
+
+<div class="table-scroll">
+<table>
+  <tr>
+    <th>Variant</th>
+    <th>CIMA (n=421)</th>
+    <th>Inflam Main (n=817)</th>
+    <th>scAtlas N (n=317)</th>
+    <th>scAtlas C (n=717)</th>
+  </tr>
+  <tr style="background:#eff6ff;">
+    <td><strong>CytoSig</strong></td>
+    <td class="num">0.350</td>
+    <td class="num neg">&minus;0.446</td>
+    <td class="num">0.137</td>
+    <td class="num">0.336</td>
+  </tr>
+  <tr class="best">
+    <td>Macrophage__TGFB1 (orig)</td>
+    <td class="num"><strong>0.557</strong></td>
+    <td class="num neg">&minus;0.098</td>
+    <td class="num neg">&minus;0.015</td>
+    <td class="num neg">&minus;0.152</td>
+  </tr>
+  <tr>
+    <td>Macrophage__TGFB1 (filt)</td>
+    <td class="num">0.461</td>
+    <td class="num neg">&minus;0.189</td>
+    <td class="num neg">&minus;0.026</td>
+    <td class="num neg">&minus;0.133</td>
+  </tr>
+  <tr>
+    <td>Lung_Cancer_Line__TGFB1 (orig)</td>
+    <td class="num">0.532</td>
+    <td class="num">0.256</td>
+    <td class="num">0.219</td>
+    <td class="num"><strong>0.478</strong></td>
+  </tr>
+  <tr>
+    <td>Lung_Cancer_Line__TGFB1 (filt)</td>
+    <td class="num">0.323</td>
+    <td class="num">0.029</td>
+    <td class="num">0.207</td>
+    <td class="num">0.438</td>
+  </tr>
+  <tr>
+    <td>Hepatocyte__TGFB1 (orig)</td>
+    <td class="num">0.356</td>
+    <td class="num">0.067</td>
+    <td class="num">0.070</td>
+    <td class="num">0.298</td>
+  </tr>
+  <tr>
+    <td>Keratinocyte__TGFB1 (filt)</td>
+    <td class="num">0.298</td>
+    <td class="num neg">&minus;0.004</td>
+    <td class="num">0.099</td>
+    <td class="num">0.342</td>
+  </tr>
+  <tr class="worst">
+    <td>Breast_Cancer_Line__TGFB1 (filt) <em>(selected best)</em></td>
+    <td class="num">0.152</td>
+    <td class="num neg">&minus;0.110</td>
+    <td class="num">0.160</td>
+    <td class="num">0.361</td>
+  </tr>
+  <tr>
+    <td>Fibroblast__TGFB1 (filt)</td>
+    <td class="num">0.027</td>
+    <td class="num neg">&minus;0.260</td>
+    <td class="num neg">&minus;0.026</td>
+    <td class="num">0.089</td>
+  </tr>
+  <tr>
+    <td>Airway_Epithelial__TGFB1 (filt)</td>
+    <td class="num">0.003</td>
+    <td class="num neg">&minus;0.167</td>
+    <td class="num">0.131</td>
+    <td class="num">0.312</td>
+  </tr>
+  <tr>
+    <td>Dermal_Fibroblast__TGFB1 (filt)</td>
+    <td class="num neg">&minus;0.477</td>
+    <td class="num neg">&minus;0.007</td>
+    <td class="num">0.069</td>
+    <td class="num">0.053</td>
+  </tr>
+</table>
+</div>
+
+<div class="callout red">
+<p><strong>Insight:</strong> Breast_Cancer_Line__TGFB1 was selected as &ldquo;best&rdquo; by combined bulk &rho;, but in CIMA it achieves only &rho;=0.152 vs Macrophage__TGFB1&rsquo;s 0.461 (filt) or 0.557 (orig). In scAtlas Cancer, Lung_Cancer_Line (orig) achieves 0.478 vs Breast_Cancer_Line&rsquo;s 0.361. The GTEx-selected best (Lung_Cancer_Line) and TCGA-selected best (Airway_Epithelial) are both different from the combined-selected best &mdash; and none of them is the actual best performer across all SC datasets.</p>
+</div>
+
+<!-- Case C: IL1B -->
+<h3>C. IL1B (Interleukin 1 Beta) &mdash; Control Case, High Performer</h3>
+
+<p>IL1B has the highest CytoSig &rho; in CIMA (0.673), making it a control case: can LinCytoSig match this strong signal?</p>
+
+<div class="table-scroll">
+<table>
+  <tr>
+    <th>Variant</th>
+    <th>CIMA (n=421)</th>
+    <th>Inflam Main (n=817)</th>
+    <th>scAtlas N (n=317)</th>
+    <th>scAtlas C (n=717)</th>
+  </tr>
+  <tr style="background:#eff6ff;">
+    <td><strong>CytoSig</strong></td>
+    <td class="num"><strong>0.673</strong></td>
+    <td class="num"><strong>0.791</strong></td>
+    <td class="num">0.243</td>
+    <td class="num"><strong>0.691</strong></td>
+  </tr>
+  <tr>
+    <td>Fibroblast__IL1B (filt)</td>
+    <td class="num">0.501</td>
+    <td class="num">0.501</td>
+    <td class="num"><strong>0.314</strong></td>
+    <td class="num">0.602</td>
+  </tr>
+  <tr>
+    <td>Fibroblast__IL1B (orig)</td>
+    <td class="num">0.535</td>
+    <td class="num">0.386</td>
+    <td class="num">0.277</td>
+    <td class="num">0.547</td>
+  </tr>
+  <tr>
+    <td>Keratinocyte__IL1B (filt)</td>
+    <td class="num">0.327</td>
+    <td class="num">0.578</td>
+    <td class="num">0.286</td>
+    <td class="num">0.509</td>
+  </tr>
+  <tr>
+    <td>Keratinocyte__IL1B (orig)</td>
+    <td class="num">0.355</td>
+    <td class="num">0.412</td>
+    <td class="num">0.210</td>
+    <td class="num">0.448</td>
+  </tr>
+  <tr>
+    <td>PBMC__IL1B (filt)</td>
+    <td class="num">0.015</td>
+    <td class="num">0.085</td>
+    <td class="num">0.101</td>
+    <td class="num">0.214</td>
+  </tr>
+</table>
+</div>
+
+<div class="callout">
+<p><strong>Insight:</strong> CytoSig dominates for IL1B in 3 of 4 datasets. The only exception is scAtlas Normal where Fibroblast__IL1B (filt) slightly beats CytoSig (0.314 vs 0.243). This illustrates that when CytoSig already captures the dominant signal well, cell-type specificity adds no value. The &ldquo;best&rdquo; selection chose Chondrocyte (combined) but there are no Chondrocyte__IL1B rows available in the SC datasets &mdash; it was selected on bulk data where it presumably performed well but is not evaluable in single-cell.</p>
+</div>
+
+<hr>
+
+<!-- ======================================================================== -->
+<!-- ISSUE 3 -->
+<!-- ======================================================================== -->
+<h2 id="issue3">Issue 3: Does the &ldquo;Right&rdquo; Cell Type Beat Global at Celltype Level? <span class="badge red">OPEN</span></h2>
+
+<h3>The Problem with Donor-Level Comparison</h3>
+
+<p>Current comparisons (Section 5) evaluate all methods at <strong>donor-only level</strong>: pseudobulk across all cells per donor, regardless of cell type. This is inherently unfair to LinCytoSig because:</p>
+
+<ol>
+  <li><strong>PBMC paradox:</strong> Donor-level pseudobulk is a mixture of all cell types. CytoSig, trained on diverse cell types, is effectively a &ldquo;mixture-level&rdquo; signature. LinCytoSig, restricted to one cell type, is mismatched.</li>
+  <li><strong>Dilution:</strong> A Macrophage-specific signal gets diluted when averaged with fibroblasts, epithelial cells, etc. at the donor level.</li>
+</ol>
+
+<h3>The Right Test</h3>
+
+<p>The fair comparison for LinCytoSig is at the <strong>donor &times; celltype level</strong>: does Fibroblast__TGFB1 beat CytoSig TGFB1 specifically on fibroblast pseudobulk? The scatlas_normal_correlations.csv contains 47,586 LinCytoSig rows at celltype level with &ldquo;matched&rdquo; cell types.</p>
+
+<h3>Preliminary Findings (scAtlas Normal)</h3>
+
+<p>Celltype-level data from <code>scatlas_normal_correlations.csv</code> at <code>donor_organ_celltype1</code> level:</p>
+
+<table>
+  <tr>
+    <th>Cytokine</th>
+    <th>Cell Type</th>
+    <th>CytoSig &rho;</th>
+    <th>LinCytoSig &rho;</th>
+    <th>n</th>
+    <th>Winner</th>
+  </tr>
+  <tr>
+    <td>TGFB1</td>
+    <td>Fibroblast</td>
+    <td class="num">0.701</td>
+    <td class="num">0.358</td>
+    <td class="num">21</td>
+    <td class="pos">CytoSig</td>
+  </tr>
+  <tr>
+    <td>IL1B</td>
+    <td>Fibroblast</td>
+    <td class="num neg">&minus;0.055</td>
+    <td class="num">0.048</td>
+    <td class="num">21</td>
+    <td>Tie (both weak)</td>
+  </tr>
+  <tr>
+    <td>TGFB1</td>
+    <td>Fibroblast (broad)</td>
+    <td class="num neg">&minus;0.301</td>
+    <td class="num neg">&minus;0.421</td>
+    <td class="num">38</td>
+    <td>Neither (both negative)</td>
+  </tr>
+</table>
+
+<p style="font-size:0.85rem;color:var(--muted);">Note: Small sample sizes (n=21&ndash;38) limit statistical power. Broader fibroblast populations (n=38) include all fibroblast subtypes.</p>
+
+<h3>Tissue-Specific Variant Effects</h3>
+
+<p>Different fibroblast subtypes show dramatically different TGFB1 correlations at celltype level in scAtlas Normal:</p>
+
+<table>
+  <tr>
+    <th>LinCytoSig Variant</th>
+    <th>&rho; on Fibroblast Pseudobulk</th>
+    <th>n</th>
+  </tr>
+  <tr class="best">
+    <td>Synovial_Fibroblast__TGFB1</td>
+    <td class="num">0.539</td>
+    <td class="num">21</td>
+  </tr>
+  <tr>
+    <td>Cardiac_Fibroblast__TGFB1</td>
+    <td class="num">0.338</td>
+    <td class="num">21</td>
+  </tr>
+  <tr>
+    <td>Lung_Fibroblast__TGFB1</td>
+    <td class="num">0.322</td>
+    <td class="num">21</td>
+  </tr>
+  <tr>
+    <td>Fibroblast__TGFB1</td>
+    <td class="num">0.358</td>
+    <td class="num">21</td>
+  </tr>
+  <tr class="worst">
+    <td>Dermal_Fibroblast__TGFB1</td>
+    <td class="num neg">&minus;0.431</td>
+    <td class="num">21</td>
+  </tr>
+</table>
+
+<div class="callout amber">
+<p><strong>Open question:</strong> Even at the celltype level with matched cell types, CytoSig often still wins (TGFB1 on Fibroblast: 0.701 vs 0.358). However, the Synovial_Fibroblast variant (0.539) gets closer, and tissue-specific variants show high variance (&minus;0.431 to 0.539). This suggests that the <em>specific cell type</em> matters enormously, but the current selection strategy does not identify the right one.</p>
+<p><strong>A systematic celltype-matched evaluation across all 178 LinCytoSig signatures is needed to determine whether the right match can outperform CytoSig.</strong></p>
+</div>
+
+<hr>
+
+<!-- ======================================================================== -->
+<!-- ISSUE 4 -->
+<!-- ======================================================================== -->
+<h2 id="issue4">Issue 4: Gene Space Effect <span class="badge amber">PARTIAL</span></h2>
+
+<h3>Problem</h3>
+<p>LinCytoSig uses all ~20,000 genes, while CytoSig uses a curated set of 4,881 genes. Restricting LinCytoSig to CytoSig&rsquo;s gene space (the &ldquo;gene-filtered&rdquo; variant) dramatically changes performance, suggesting many of the extra genes introduce noise rather than signal.</p>
+
+<h3>Gene Filter Effect on Median &rho;</h3>
+
+<p>Median Spearman &rho; across 20 matched cytokines, LinCytoSig matched cell-type signatures at donor level:</p>
+
+<table>
+  <tr>
+    <th>Dataset</th>
+    <th>LinCytoSig (orig)</th>
+    <th>LinCytoSig (filt)</th>
+    <th>CytoSig</th>
+    <th>SecAct</th>
+    <th>Filter Effect</th>
+  </tr>
+  <tr>
+    <td>CIMA</td>
+    <td class="num">0.082</td>
+    <td class="num">0.166</td>
+    <td class="num">0.225</td>
+    <td class="num">0.334</td>
+    <td class="num pos">+102%</td>
+  </tr>
+  <tr>
+    <td>Inflammation Main</td>
+    <td class="num">0.133</td>
+    <td class="num">0.201</td>
+    <td class="num">0.285</td>
+    <td class="num">0.330</td>
+    <td class="num pos">+51%</td>
+  </tr>
+  <tr>
+    <td>scAtlas Normal</td>
+    <td class="num">0.173</td>
+    <td class="num">0.193</td>
+    <td class="num">0.216</td>
+    <td class="num">0.390</td>
+    <td class="num pos">+12%</td>
+  </tr>
+  <tr>
+    <td>scAtlas Cancer</td>
+    <td class="num">0.172</td>
+    <td class="num">0.147</td>
+    <td class="num">0.323</td>
+    <td class="num">0.479</td>
+    <td class="num neg">&minus;15%</td>
+  </tr>
+</table>
+
+<p style="font-size:0.85rem;color:var(--muted);">Source: <code>method_comparison_8way_all.json</code>, 20 matched cytokines per dataset. Filter effect = (filt &minus; orig) / |orig| &times; 100%.</p>
+
+<div class="callout">
+<p><strong>Key findings:</strong></p>
+<ul>
+  <li><strong>Gene filtering helps in 3 of 4 datasets</strong>, with dramatic improvement in CIMA (+102%) and Inflammation Main (+51%).</li>
+  <li><strong>Even after filtering, LinCytoSig still underperforms CytoSig</strong> in all 4 datasets (gap of 0.023 to 0.176 in median &rho;).</li>
+  <li><strong>scAtlas Cancer is the exception</strong>: gene filtering slightly hurts performance (&minus;15%), suggesting some of the extra genes carry useful cancer-specific signal.</li>
+  <li><strong>SecAct dominates</strong> with the highest median &rho; in all 4 datasets (0.330&ndash;0.479), despite using an entirely different signal source (spatial correlation).</li>
+</ul>
+</div>
+
+<h3>Gene Filter Effect on Best Variants</h3>
+
+<p>For the &ldquo;best&rdquo; selection variants, gene filtering shows mixed results across datasets. From the 44-cytokine comparison (<code>lincytosig_variants_44cytokines.csv</code>), the Mean column shows the cross-dataset average &rho; per cytokine:</p>
+
+<table>
+  <tr>
+    <th>Method</th>
+    <th>CIMA</th>
+    <th>Inflam Main</th>
+    <th>scAtlas N</th>
+    <th>scAtlas C</th>
+    <th>Mean</th>
+  </tr>
+  <tr>
+    <td>Best (combined, orig)</td>
+    <td class="num">0.063</td>
+    <td class="num">0.164</td>
+    <td class="num">0.225</td>
+    <td class="num">0.210</td>
+    <td class="num">0.165</td>
+  </tr>
+  <tr>
+    <td>Best (combined, filt)</td>
+    <td class="num">0.141</td>
+    <td class="num">0.204</td>
+    <td class="num">0.148</td>
+    <td class="num">0.191</td>
+    <td class="num">0.171</td>
+  </tr>
+  <tr>
+    <td>Best (GTEx, orig)</td>
+    <td class="num">0.063</td>
+    <td class="num">0.164</td>
+    <td class="num">0.225</td>
+    <td class="num">0.210</td>
+    <td class="num">0.165</td>
+  </tr>
+  <tr>
+    <td>Best (TCGA, orig)</td>
+    <td class="num">0.063</td>
+    <td class="num">0.152</td>
+    <td class="num">0.127</td>
+    <td class="num">0.167</td>
+    <td class="num">0.127</td>
+  </tr>
+</table>
+
+<p style="font-size:0.85rem;color:var(--muted);">Median values computed from <code>method_comparison_8way_all.json</code> across 20 matched cytokines. TCGA-selected best consistently underperforms other strategies.</p>
+
+<h3>Open Question</h3>
+<p>Which specific genes drive the noise? A gene-by-gene analysis of weights in the LinCytoSig signature matrix could identify &ldquo;noise genes&rdquo; &mdash; those with large absolute weights that do not contribute to the target-gene correlation. This would inform a more principled gene filtering approach than simply intersecting with CytoSig&rsquo;s gene set.</p>
+
+<hr>
+
+<!-- ======================================================================== -->
+<!-- ISSUE 5 -->
+<!-- ======================================================================== -->
+<h2 id="issue5">Issue 5: Sample Size and PBMC Paradox <span class="badge green">DOCUMENTED</span></h2>
+
+<h3>Small Sample Sizes</h3>
+
+<p>Many LinCytoSig cell types are derived from very few CytoSig experiments. The signature matrix is built from median log2FC of stimulation experiments, and cell types with fewer than 5 experiments produce noisy, unreliable signatures.</p>
+
+<p>Examples of cell types with limited data:</p>
+<ul>
+  <li><strong>Basophil:</strong> Featured in IL3 selection, but likely has very few experiments across all cytokines</li>
+  <li><strong>ESC (Embryonic Stem Cell):</strong> Selected for BDNF, BMP4, NTF4 &mdash; limited relevance to adult tissue validation</li>
+  <li><strong>Chondrocyte:</strong> Selected as &ldquo;best&rdquo; for IL1B (combined) &mdash; not present in any single-cell validation dataset</li>
+</ul>
+
+<h3>PBMC Paradox</h3>
+
+<p>CytoSig&rsquo;s global signature is trained on median log2FC across <em>all</em> cell types in the database, including many PBMC experiments. At the donor level, pseudobulk is effectively a mixture of all cell types &mdash; structurally similar to PBMC. This means:</p>
+
+<ol>
+  <li><strong>CytoSig is already optimized for mixture-level</strong> signals because its training data spans diverse cell types, naturally averaging across cell-type-specific effects.</li>
+  <li><strong>LinCytoSig&rsquo;s cell-type restriction hurts at donor level</strong> because it captures a narrower response that gets diluted in the mixture.</li>
+  <li><strong>PBMC__IFNG consistently underperforms</strong> despite PBMC being the &ldquo;mixture-level&rdquo; cell type: the PBMC-specific signature captures PBMC-specific effects (lymphocyte-dominated), not the broader tissue response.</li>
+</ol>
+
+<div class="callout green">
+<p><strong>Resolution:</strong> The comparison is structurally biased toward CytoSig at the donor level. LinCytoSig should be evaluated at the celltype level (Issue 3) for its intended use case. At the donor level, CytoSig is the correct choice.</p>
+</div>
+
+<hr>
+
+<!-- ======================================================================== -->
+<!-- ISSUE 6 -->
+<!-- ======================================================================== -->
+<h2 id="issue6">Issue 6: Cross-Validation Design Gap <span class="badge red">OPEN</span></h2>
+
+<h3>Current Design</h3>
+
+<p>The current validation pipeline uses:</p>
+<ul>
+  <li><strong>Selection:</strong> Best cell type selected by bulk RNA-seq correlation (GTEx, TCGA, or combined)</li>
+  <li><strong>Validation:</strong> Performance measured by Spearman &rho; on single-cell pseudobulk (CIMA, Inflammation Main, scAtlas)</li>
+</ul>
+
+<p>While bulk&rarr;SC validation is not fully circular (different data modality, different samples), both stages use the <em>same metric</em> (Spearman &rho; between predicted activity and target gene expression). This means:</p>
+
+<ol>
+  <li>The selection criterion rewards the same statistical pattern being measured in validation</li>
+  <li>Overfitting to bulk-specific artifacts could still inflate validation performance</li>
+  <li>No held-out test set exists for unbiased performance estimation</li>
+</ol>
+
+<h3>Proposed Solutions</h3>
+
+<table>
+  <tr>
+    <th>Approach</th>
+    <th>Description</th>
+    <th>Pros</th>
+    <th>Cons</th>
+  </tr>
+  <tr>
+    <td><strong>Leave-one-atlas-out</strong></td>
+    <td>Select best on 3 SC datasets, validate on held-out 4th</td>
+    <td>Unbiased; uses existing data</td>
+    <td>Reduces training data; 4 is already small</td>
+  </tr>
+  <tr>
+    <td><strong>GTEx-train / TCGA-test</strong></td>
+    <td>Select using GTEx only, validate on TCGA (or vice versa)</td>
+    <td>Bulk-only; no SC needed for selection</td>
+    <td>Still bulk&rarr;bulk; different confounders but same modality</td>
+  </tr>
+  <tr>
+    <td><strong>Stability-based selection</strong></td>
+    <td>Require agreement across 2+ selection strategies</td>
+    <td>Filters unstable selections; reduces circularity</td>
+    <td>Eliminates 45% of cytokines with disagreement (Issue 1)</td>
+  </tr>
+  <tr>
+    <td><strong>External validation</strong></td>
+    <td>Use parse_10M perturbation data as ground truth</td>
+    <td>True independent validation</td>
+    <td>Different experimental design; limited to 90 cytokines &times; 12 donors</td>
+  </tr>
+</table>
+
+<div class="callout amber">
+<p><strong>Recommendation:</strong> Implement <strong>stability-based selection</strong> as a first step: only use &ldquo;best&rdquo; cell type assignments where all 4 selection strategies agree (24/44 = 55% of cytokines). For the remaining 20 cytokines, use the matched cell-type (LinCytoSig) or fall back to CytoSig (global). This eliminates the most circular cases without requiring new pipeline runs.</p>
+</div>
+
+<hr>
+
+<!-- ======================================================================== -->
+<!-- PROPOSED RESTRUCTURING -->
+<!-- ======================================================================== -->
+<h2 id="restructure">Proposed Section 5 Restructuring</h2>
+
+<h3>Current Structure</h3>
+<table>
+  <tr><th>Section</th><th>Title</th><th>Content</th></tr>
+  <tr><td>5.1</td><td>Method Overview</td><td>10-method comparison table + boxplot</td></tr>
+  <tr><td>5.2</td><td>Effect of Aggregation Level</td><td>Level-by-level boxplots + celltype/cytokine tables</td></tr>
+  <tr><td>5.3</td><td>SecAct: Breadth Over Depth</td><td>SecAct strengths + delta-rho chart</td></tr>
+</table>
+
+<h3>Proposed Structure</h3>
+<table>
+  <tr><th>Section</th><th>Title</th><th>Content</th></tr>
+  <tr><td>5.1</td><td>Method Overview</td><td>Keep as-is (10-method table + boxplot)</td></tr>
+  <tr><td>5.2</td><td>Effect of Aggregation Level</td><td>Keep as-is (level boxplots + tables)</td></tr>
+  <tr><td>5.3</td><td>SecAct: Breadth Over Depth</td><td>Keep as-is</td></tr>
+  <tr><td>&mdash;</td><td><em>Issues &amp; Deep Analysis</em></td><td>Link to this document for detailed methodology discussion</td></tr>
+</table>
+
+<p>The interactive report&rsquo;s Section 5 is already well-structured for presenting results. This issues document serves as a companion for the deeper methodological questions that inform how to interpret those results. Rather than restructuring Section 5, we add cross-links to this document at relevant points.</p>
+
+<hr>
+
+<footer>
+  <p>CytoAtlas Reports &mdash; LinCytoSig Issues &amp; Analysis &mdash; Generated February 15, 2026</p>
+  <p>Data sources: <code>best_lincytosig_selection.json</code>, <code>method_comparison_8way_all.json</code>, <code>lincytosig_variants_44cytokines.csv</code>, <code>*_lincyto_{filt,orig}_correlations.csv</code>, <code>scatlas_normal_correlations.csv</code></p>
+</footer>
+
+</main>
+
+</body>
+</html>

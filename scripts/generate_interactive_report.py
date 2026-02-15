@@ -1967,6 +1967,7 @@ Ridge regression (L2-regularized linear regression) was chosen deliberately over
 
 <div class="callout">
 <p><strong>Aggregation levels explained:</strong> Pseudobulk profiles are aggregated at increasingly fine cell-type resolution. At coarser levels, each pseudobulk profile averages more cells, yielding smoother expression estimates but masking cell-type-specific signals. At finer levels, each profile is more cell-type-specific but based on fewer cells.</p>
+<p><strong>Key insight:</strong> SecAct is consistently more robust to fine-grained aggregation than CytoSig, retaining 27&ndash;44% of coarse-level signal vs CytoSig&rsquo;s 4&ndash;39% across all 4 datasets. At the finest levels both methods converge toward the noise floor (e.g., Inflammation Main L2: CytoSig 0.044 vs SecAct 0.048). Pro-inflammatory cytokines (IL1A, IL1B, TNFA, IL27) degrade most (&minus;0.3&ndash;0.55 &rho;), while targets with negative coarse-level &rho; (CD40L, LTA, HGF) improve at finer resolution&mdash;suggesting confounding resolution at the cell-type level.</p>
 </div>
 
 <table>
@@ -1990,10 +1991,6 @@ Ridge regression (L2-regularized linear regression) was chosen deliberately over
   <tr><td>Tumor &times; Cancer</td><td>Per-cancer type pseudobulk (HCC, PAAD, CRC, etc.)</td><td>29 types</td></tr>
   <tr><td>Tumor &times; Cancer &times; CT1</td><td>Broad cell types within each cancer type</td><td>~120</td></tr>
 </table>
-
-<div class="callout">
-<p><strong>Key insight:</strong> SecAct is consistently more robust to fine-grained aggregation than CytoSig, retaining 27&ndash;44% of coarse-level signal vs CytoSig&rsquo;s 4&ndash;39% across all 4 datasets. At the finest levels both methods converge toward the noise floor (e.g., Inflammation Main L2: CytoSig 0.044 vs SecAct 0.048). Pro-inflammatory cytokines (IL1A, IL1B, TNFA, IL27) degrade most (&minus;0.3&ndash;0.55 &rho;), while targets with negative coarse-level &rho; (CD40L, LTA, HGF) improve at finer resolution&mdash;suggesting confounding resolution at the cell-type level.</p>
-</div>
 
 <h3>4.8 Representative Scatter Plots</h3>
 <div class="plotly-container">
@@ -2062,6 +2059,7 @@ Ridge regression (L2-regularized linear regression) was chosen deliberately over
 
 <!-- SECTION 5 -->
 <h2 id="sec5">5. CytoSig vs LinCytoSig vs SecAct Comparison</h2>
+<p style="margin-top:-0.5em;margin-bottom:1em;"><a href="lincytosig_issues.html" style="font-size:0.85em;color:#2563EB;">[Open Issues &amp; Analysis &rarr;]</a></p>
 
 <h3>5.1 Method Overview</h3>
 
@@ -2153,6 +2151,8 @@ Ridge regression (L2-regularized linear regression) was chosen deliberately over
 </ul>
 </div>
 
+<p style="font-size:0.9em;color:#6B7280;">For detailed issue analysis including selection circularity, case studies (IFNG, TGFB1, IL1B), and cross-validation design, see the <a href="lincytosig_issues.html">LinCytoSig Open Issues &amp; Analysis</a> companion document.</p>
+
 <h3>5.2 Effect of Aggregation Level</h3>
 
 <div class="callout amber">
@@ -2192,6 +2192,7 @@ Ridge regression (L2-regularized linear regression) was chosen deliberately over
   <li><strong>Per cell type:</strong> Only 5 of 43 cell types show consistent LinCytoSig advantage vs CytoSig (NK Cell, Basophil, DC, Trophoblast, Arterial Endothelial). No cell type beats SecAct.</li>
   <li><strong>Interpretation:</strong> CytoSig&rsquo;s global signature, derived from median log2FC across all cell types, already captures the dominant transcriptional response. Restricting to a single cell type&rsquo;s response introduces noise from small sample sizes without gaining meaningful lineage specificity. The hypothesis that finer resolution should favor LinCytoSig is not supported by the data.</li>
 </ul>
+<p style="font-size:0.9em;color:#6B7280;">See <a href="lincytosig_issues.html#issue3">Issue 3: Celltype-Level Evaluation</a> for a matched celltype-level analysis where LinCytoSig is tested on its intended target (e.g., Fibroblast__TGFB1 on fibroblast pseudobulk).</p>
 </div>
 
 <h3>5.3 SecAct: Breadth Over Depth</h3>
