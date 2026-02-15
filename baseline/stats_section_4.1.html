@@ -346,15 +346,101 @@
 <h3>Multiple Testing per Stratum</h3>
 <p>BH&ndash;FDR correction is applied separately within each dataset: 29 tests for GTEx, 33 for TCGA, up to 19 for scAtlas Normal, up to 17 for scAtlas Cancer. Total and Matched tests are corrected independently.</p>
 
-<h3>Cross-Platform Concordance (Section 4.3.1)</h3>
-<p>Per-tissue/per-cancer &rho; values are compared across platforms to test whether expression&ndash;activity correlations reflect platform-independent biology:</p>
-<ul>
-<li><strong>GTEx vs scAtlas Normal</strong>: Spearman correlation of per-tissue median &rho; values across matched tissues.</li>
-<li><strong>TCGA vs scAtlas Cancer</strong>: Same comparison for overlapping cancer types.</li>
-</ul>
-<p><strong>Caveats:</strong> Different sample sizes (GTEx 47&ndash;3,234 vs scAtlas 10&ndash;124), gene sets (bulk ~20K&ndash;56K vs single-cell ~15K&ndash;25K), normalization (TPM vs RSEM vs pseudobulk), and donor demographics (post-mortem vs clinical). Results are presented as concordance rather than formal hypothesis tests.</p>
+<h2 id="cross-platform-comparison">8. Cross-Platform Comparison: Statistical Methods</h2>
+<p>Section 4.4 of the interactive report compares per-target Spearman &rho; values between bulk RNA-seq (GTEx/TCGA) and single-cell pseudobulk (scAtlas) for matching tissues/cancer types. The question is whether per-target &rho; values differ systematically between measurement platforms.</p>
 
-<h2 id="aggregation-level">8. Effect of Aggregation Level: Statistical Methods</h2>
+<h3>Test Design</h3>
+<p>The <strong>Wilcoxon signed-rank test</strong> is used because the comparison is <strong>paired by target</strong>: each target has one &rho; from the bulk platform and one from pseudobulk, computed on the same tissue/cancer type. This yields a paired difference for each target, testing whether the median difference is zero. A minimum of 6 paired targets is required.</p>
+<p><strong>Procedure per stratum (tissue or cancer type):</strong></p>
+<ol>
+<li>Merge bulk and single-cell DataFrames on target name to obtain paired &rho; values.</li>
+<li>Apply two-sided Wilcoxon signed-rank test (<code>scipy.stats.wilcoxon</code>, <code>alternative='two-sided'</code>).</li>
+<li>Apply <strong>BH&ndash;FDR correction</strong> across all strata within each comparison, separately per signature (CytoSig and SecAct corrected independently).</li>
+</ol>
+
+<h3>Comparisons and Sample Sizes</h3>
+<table>
+<tr><th>Comparison</th><th>Strata</th><th>CytoSig n<sub>paired</sub></th><th>SecAct n<sub>paired</sub></th><th>FDR tests</th></tr>
+<tr><td>GTEx vs scAtlas Normal</td><td>13 tissues</td><td>35&ndash;43</td><td>996&ndash;1,128</td><td>13 per signature</td></tr>
+<tr><td>TCGA vs scAtlas Cancer</td><td>11 cancer types</td><td>24&ndash;41</td><td>515&ndash;1,085</td><td>11 per signature</td></tr>
+</table>
+
+<h3>GTEx vs scAtlas Normal: CytoSig</h3>
+<table>
+<tr><th>Tissue</th><th>n<sub>paired</sub></th><th>p<sub>raw</sub></th><th>q<sub>BH</sub></th><th>Sig.</th></tr>
+<tr><td>Esophagus</td><td>39</td><td>2.13 &times; 10<sup>&minus;3</sup></td><td>2.77 &times; 10<sup>&minus;2</sup></td><td class="sig sig-yes">*</td></tr>
+<tr><td>Liver</td><td>41</td><td>9.26 &times; 10<sup>&minus;3</sup></td><td>5.25 &times; 10<sup>&minus;2</sup></td><td class="sig sig-no">ns</td></tr>
+<tr><td>Kidney</td><td>38</td><td>1.25 &times; 10<sup>&minus;2</sup></td><td>5.25 &times; 10<sup>&minus;2</sup></td><td class="sig sig-no">ns</td></tr>
+<tr><td>Heart</td><td>39</td><td>1.61 &times; 10<sup>&minus;2</sup></td><td>5.25 &times; 10<sup>&minus;2</sup></td><td class="sig sig-no">ns</td></tr>
+<tr><td>Colon</td><td>40</td><td>4.51 &times; 10<sup>&minus;2</sup></td><td>1.17 &times; 10<sup>&minus;1</sup></td><td class="sig sig-no">ns</td></tr>
+<tr><td>Spleen</td><td>42</td><td>2.43 &times; 10<sup>&minus;1</sup></td><td>4.60 &times; 10<sup>&minus;1</sup></td><td class="sig sig-no">ns</td></tr>
+<tr><td>Small Intestine</td><td>42</td><td>2.48 &times; 10<sup>&minus;1</sup></td><td>4.60 &times; 10<sup>&minus;1</sup></td><td class="sig sig-no">ns</td></tr>
+<tr><td>Ovary</td><td>35</td><td>3.42 &times; 10<sup>&minus;1</sup></td><td>5.56 &times; 10<sup>&minus;1</sup></td><td class="sig sig-no">ns</td></tr>
+<tr><td>Skin</td><td>41</td><td>5.13 &times; 10<sup>&minus;1</sup></td><td>6.66 &times; 10<sup>&minus;1</sup></td><td class="sig sig-no">ns</td></tr>
+<tr><td>Uterus</td><td>42</td><td>5.60 &times; 10<sup>&minus;1</sup></td><td>6.66 &times; 10<sup>&minus;1</sup></td><td class="sig sig-no">ns</td></tr>
+<tr><td>Blood</td><td>41</td><td>5.64 &times; 10<sup>&minus;1</sup></td><td>6.66 &times; 10<sup>&minus;1</sup></td><td class="sig sig-no">ns</td></tr>
+<tr><td>Lung</td><td>43</td><td>7.24 &times; 10<sup>&minus;1</sup></td><td>7.85 &times; 10<sup>&minus;1</sup></td><td class="sig sig-no">ns</td></tr>
+<tr><td>Breast</td><td>43</td><td>7.88 &times; 10<sup>&minus;1</sup></td><td>7.88 &times; 10<sup>&minus;1</sup></td><td class="sig sig-no">ns</td></tr>
+</table>
+<p><strong>Summary:</strong> 1 of 13 tissues significant after FDR correction (Esophagus). CytoSig targets show generally consistent &rho; across bulk and pseudobulk platforms.</p>
+
+<h3>GTEx vs scAtlas Normal: SecAct</h3>
+<table>
+<tr><th>Tissue</th><th>n<sub>paired</sub></th><th>p<sub>raw</sub></th><th>q<sub>BH</sub></th><th>Sig.</th></tr>
+<tr><td>Breast</td><td>1,128</td><td>&lt; 10<sup>&minus;6</sup></td><td>&lt; 10<sup>&minus;6</sup></td><td class="sig sig-yes">***</td></tr>
+<tr><td>Colon</td><td>1,095</td><td>&lt; 10<sup>&minus;6</sup></td><td>&lt; 10<sup>&minus;6</sup></td><td class="sig sig-yes">***</td></tr>
+<tr><td>Esophagus</td><td>1,074</td><td>&lt; 10<sup>&minus;6</sup></td><td>&lt; 10<sup>&minus;6</sup></td><td class="sig sig-yes">***</td></tr>
+<tr><td>Kidney</td><td>1,036</td><td>&lt; 10<sup>&minus;6</sup></td><td>&lt; 10<sup>&minus;6</sup></td><td class="sig sig-yes">***</td></tr>
+<tr><td>Skin</td><td>1,097</td><td>&lt; 10<sup>&minus;6</sup></td><td>&lt; 10<sup>&minus;6</sup></td><td class="sig sig-yes">***</td></tr>
+<tr><td>Spleen</td><td>1,078</td><td>&lt; 10<sup>&minus;6</sup></td><td>&lt; 10<sup>&minus;6</sup></td><td class="sig sig-yes">***</td></tr>
+<tr><td>Small Intestine</td><td>1,100</td><td>&lt; 10<sup>&minus;6</sup></td><td>&lt; 10<sup>&minus;6</sup></td><td class="sig sig-yes">***</td></tr>
+<tr><td>Uterus</td><td>1,110</td><td>&lt; 10<sup>&minus;6</sup></td><td>&lt; 10<sup>&minus;6</sup></td><td class="sig sig-yes">***</td></tr>
+<tr><td>Ovary</td><td>996</td><td>1.42 &times; 10<sup>&minus;4</sup></td><td>2.05 &times; 10<sup>&minus;4</sup></td><td class="sig sig-yes">***</td></tr>
+<tr><td>Lung</td><td>1,116</td><td>1.71 &times; 10<sup>&minus;3</sup></td><td>2.23 &times; 10<sup>&minus;3</sup></td><td class="sig sig-yes">**</td></tr>
+<tr><td>Blood</td><td>1,024</td><td>7.48 &times; 10<sup>&minus;3</sup></td><td>8.84 &times; 10<sup>&minus;3</sup></td><td class="sig sig-yes">**</td></tr>
+<tr><td>Liver</td><td>1,080</td><td>9.82 &times; 10<sup>&minus;2</sup></td><td>1.06 &times; 10<sup>&minus;1</sup></td><td class="sig sig-no">ns</td></tr>
+<tr><td>Heart</td><td>1,103</td><td>6.13 &times; 10<sup>&minus;1</sup></td><td>6.13 &times; 10<sup>&minus;1</sup></td><td class="sig sig-no">ns</td></tr>
+</table>
+<p><strong>Summary:</strong> 11 of 13 tissues significant after FDR correction. SecAct&rsquo;s larger target set (~1,000+ paired targets per tissue) provides high statistical power, revealing systematic &rho; differences between bulk and pseudobulk platforms in most tissues.</p>
+
+<h3>TCGA vs scAtlas Cancer: CytoSig</h3>
+<table>
+<tr><th>Cancer</th><th>n<sub>paired</sub></th><th>p<sub>raw</sub></th><th>q<sub>BH</sub></th><th>Sig.</th></tr>
+<tr><td>STAD</td><td>39</td><td>1.49 &times; 10<sup>&minus;2</sup></td><td>9.47 &times; 10<sup>&minus;2</sup></td><td class="sig sig-no">ns</td></tr>
+<tr><td>PAAD</td><td>41</td><td>1.72 &times; 10<sup>&minus;2</sup></td><td>9.47 &times; 10<sup>&minus;2</sup></td><td class="sig sig-no">ns</td></tr>
+<tr><td>CRC</td><td>41</td><td>7.57 &times; 10<sup>&minus;2</sup></td><td>2.78 &times; 10<sup>&minus;1</sup></td><td class="sig sig-no">ns</td></tr>
+<tr><td>ESCA</td><td>24</td><td>2.41 &times; 10<sup>&minus;1</sup></td><td>5.42 &times; 10<sup>&minus;1</sup></td><td class="sig sig-no">ns</td></tr>
+<tr><td>LUAD</td><td>41</td><td>2.46 &times; 10<sup>&minus;1</sup></td><td>5.42 &times; 10<sup>&minus;1</sup></td><td class="sig sig-no">ns</td></tr>
+<tr><td>HNSC</td><td>41</td><td>4.88 &times; 10<sup>&minus;1</sup></td><td>6.39 &times; 10<sup>&minus;1</sup></td><td class="sig sig-no">ns</td></tr>
+<tr><td>KIRC</td><td>41</td><td>5.21 &times; 10<sup>&minus;1</sup></td><td>6.39 &times; 10<sup>&minus;1</sup></td><td class="sig sig-no">ns</td></tr>
+<tr><td>BRCA</td><td>39</td><td>5.48 &times; 10<sup>&minus;1</sup></td><td>6.39 &times; 10<sup>&minus;1</sup></td><td class="sig sig-no">ns</td></tr>
+<tr><td>OV</td><td>39</td><td>5.67 &times; 10<sup>&minus;1</sup></td><td>6.39 &times; 10<sup>&minus;1</sup></td><td class="sig sig-no">ns</td></tr>
+<tr><td>HCC</td><td>41</td><td>5.81 &times; 10<sup>&minus;1</sup></td><td>6.39 &times; 10<sup>&minus;1</sup></td><td class="sig sig-no">ns</td></tr>
+<tr><td>PRAD</td><td>37</td><td>6.76 &times; 10<sup>&minus;1</sup></td><td>6.76 &times; 10<sup>&minus;1</sup></td><td class="sig sig-no">ns</td></tr>
+</table>
+<p><strong>Summary:</strong> 0 of 11 cancer types significant after FDR correction. CytoSig targets show consistent cross-platform &rho; across all cancer types.</p>
+
+<h3>TCGA vs scAtlas Cancer: SecAct</h3>
+<table>
+<tr><th>Cancer</th><th>n<sub>paired</sub></th><th>p<sub>raw</sub></th><th>q<sub>BH</sub></th><th>Sig.</th></tr>
+<tr><td>CRC</td><td>1,079</td><td>&lt; 10<sup>&minus;6</sup></td><td>&lt; 10<sup>&minus;6</sup></td><td class="sig sig-yes">***</td></tr>
+<tr><td>HNSC</td><td>1,058</td><td>&lt; 10<sup>&minus;6</sup></td><td>&lt; 10<sup>&minus;6</sup></td><td class="sig sig-yes">***</td></tr>
+<tr><td>HCC</td><td>1,084</td><td>&lt; 10<sup>&minus;6</sup></td><td>&lt; 10<sup>&minus;6</sup></td><td class="sig sig-yes">***</td></tr>
+<tr><td>PAAD</td><td>1,085</td><td>&lt; 10<sup>&minus;6</sup></td><td>&lt; 10<sup>&minus;6</sup></td><td class="sig sig-yes">***</td></tr>
+<tr><td>STAD</td><td>1,038</td><td>&lt; 10<sup>&minus;6</sup></td><td>&lt; 10<sup>&minus;6</sup></td><td class="sig sig-yes">***</td></tr>
+<tr><td>LUAD</td><td>1,071</td><td>7.03 &times; 10<sup>&minus;2</sup></td><td>1.29 &times; 10<sup>&minus;1</sup></td><td class="sig sig-no">ns</td></tr>
+<tr><td>PRAD</td><td>1,031</td><td>3.35 &times; 10<sup>&minus;1</sup></td><td>5.27 &times; 10<sup>&minus;1</sup></td><td class="sig sig-no">ns</td></tr>
+<tr><td>KIRC</td><td>1,070</td><td>5.23 &times; 10<sup>&minus;1</sup></td><td>7.19 &times; 10<sup>&minus;1</sup></td><td class="sig sig-no">ns</td></tr>
+<tr><td>OV</td><td>1,038</td><td>7.36 &times; 10<sup>&minus;1</sup></td><td>9.00 &times; 10<sup>&minus;1</sup></td><td class="sig sig-no">ns</td></tr>
+<tr><td>ESCA</td><td>515</td><td>9.22 &times; 10<sup>&minus;1</sup></td><td>9.94 &times; 10<sup>&minus;1</sup></td><td class="sig sig-no">ns</td></tr>
+<tr><td>BRCA</td><td>1,061</td><td>9.94 &times; 10<sup>&minus;1</sup></td><td>9.94 &times; 10<sup>&minus;1</sup></td><td class="sig sig-no">ns</td></tr>
+</table>
+<p><strong>Summary:</strong> 5 of 11 cancer types significant after FDR correction (CRC, HNSC, HCC, PAAD, STAD). These cancers show systematic differences in per-target &rho; between TCGA bulk and scAtlas pseudobulk.</p>
+
+<h3>Caveats</h3>
+<p>Several factors may contribute to platform differences: (1) different sample sizes per tissue (GTEx 47&ndash;3,234 vs scAtlas 10&ndash;124), (2) different gene sets (GTEx ~56K vs scAtlas ~22K genes), (3) bulk vs pseudobulk composition (true bulk includes all cell types vs pseudobulk summed from annotated cells), (4) different donor demographics (GTEx post-mortem vs scAtlas surgical/biopsy), and (5) normalization differences (TPM vs pseudobulk counts). CytoSig&rsquo;s smaller target set (~40 targets) has limited power per stratum, while SecAct&rsquo;s ~1,000+ paired targets provide high power, explaining why SecAct detects more significant cross-platform differences.</p>
+
+<h2 id="aggregation-level">9. Effect of Aggregation Level: Statistical Methods</h2>
 <p>Section 4.6 of the interactive report examines how the CytoSig vs SecAct comparison changes across aggregation levels. The same Mann&ndash;Whitney U (total) and Wilcoxon signed-rank (matched) tests are applied at <strong>each aggregation level within each atlas</strong>. BH&ndash;FDR correction is applied across levels within each atlas.</p>
 
 <h3>How &rho; values are generated at each level</h3>

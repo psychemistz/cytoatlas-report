@@ -188,8 +188,8 @@ Validation uses a simple, conservative principle: if a method predicts high acti
 
 | Dataset | Mann-Whitney U p | Wilcoxon p | N pairs | Direction |
 |---------|-----------------|-----------|---------|-----------|
-| GTEx | 4.75 × 10⁻⁴ | 3.54 × 10⁻⁵ | 32 | SecAct > CytoSig |
-| TCGA | 2.80 × 10⁻³ | 3.24 × 10⁻⁶ | 30 | SecAct > CytoSig |
+| GTEx | 4.76 × 10⁻⁴ | 3.54 × 10⁻⁵ | 32 | SecAct > CytoSig |
+| TCGA | 2.85 × 10⁻³ | 3.24 × 10⁻⁶ | 30 | SecAct > CytoSig |
 | CIMA | 3.18 × 10⁻² | 2.28 × 10⁻² | 32 | SecAct > CytoSig |
 | Inflammation Main | 0.548 (ns) | 0.141 (ns) | 27 | CytoSig > SecAct |
 | scAtlas Normal | 1.04 × 10⁻⁴ | 3.54 × 10⁻⁵ | 32 | SecAct > CytoSig |
