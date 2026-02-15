@@ -41,7 +41,7 @@ Files must stay in sync across three locations. After editing any synced file, c
 | `scripts/generate_interactive_report.py` | — | — | Section 5 links to lincytosig_issues.html added |
 | `scripts/generate_report_figures.py` | — | — | fig_system_architecture() redesigned as top-to-bottom system design diagram |
 | `baseline/index.html` | — | — | Regenerated with Section 5 links |
-| `baseline/lincytosig_issues.html` | D | 2026-02-15 | Adding representative celltype-cytokine pairs to Issue 3 |
+| `baseline/lincytosig_issues.html` | — | — | Issue 3 updated with 8 representative pairs + IFNG paradox |
 | `baseline/REPORT.md` | — | — | §4.5 tables fixed: +Activin A, +MCSF, remaining 5 noted |
 | `baseline/stats_section_4.*.html` | — | — | §4.4 matched-target control tables added |
 | `CLAUDE.md` | — | — | Report Sections table updated |
@@ -51,6 +51,7 @@ Files must stay in sync across three locations. After editing any synced file, c
 ## Messages
 
 <!-- Newest first. Format: [A->B] or [B->A] -->
+- [D 2026-02-15] Updated Issue 3 in lincytosig_issues.html: replaced preliminary TGFB1-only table with 8 representative celltype-cytokine pairs (IL6×macrophage, VEGFA×Endothelial, IL2×CD8T, IFNG×macrophage, IFNG×Monocyte, IL10×macrophage, TNFA×macrophage, TGFB1×Fibroblast). Added IFNG paradox section showing donor-level advantage does not transfer to celltype level. Winners first: LinCytoSig 3/8, Tie 3/8, CytoSig 2/8. Changed Issue 3 badge OPEN→PARTIAL. Updated stat card 5/43→3/8.
 - [C 2026-02-15] Created baseline/lincytosig_issues.html (standalone issues document with 6 issues: selection circularity, case studies, celltype-level evaluation, gene space effect, PBMC paradox, cross-validation design). Added 3 links from Section 5 of interactive report. Regenerated HTML, synced all 3 locations.
 - [C 2026-02-15] Rewrote §4.7 in REPORT.md: removed misplaced GTEx/TCGA rows (already in §4.1-4.2), added SecAct alongside CytoSig, added signal retention table, fixed stale values against raw data, added per-target degradation insight. Added key-insight callout to interactive HTML §4.7. Fixed prepare_levels_data() docstring (4.6→4.7). Regenerated HTML and synced all 3 locations.
 - [2026-02-15] New session reviewed repo state. Both prior sessions completed. All files synced, no TBDs remaining in REPORT.md, working tree clean. Updated COORDINATION.md and SESSION_HANDOFF.md to reflect current state.

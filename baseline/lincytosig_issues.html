@@ -210,8 +210,8 @@
     <span class="label">Datasets Where LinCytoSig Wins Overall</span>
   </div>
   <div class="stat-card">
-    <span class="number">5 / 43</span>
-    <span class="label">Cell Types With LinCytoSig Advantage</span>
+    <span class="number">3 / 8</span>
+    <span class="label">Representative Pairs Where LinCytoSig Wins</span>
   </div>
 </div>
 
@@ -226,7 +226,7 @@
   <ul>
     <li><a href="#issue1">Issue 1: Best-Selection Circularity</a> <span class="badge red">OPEN</span></li>
     <li><a href="#issue2">Issue 2: Case Studies &mdash; Where LinCytoSig Wins</a> <span class="badge amber">PARTIAL</span></li>
-    <li><a href="#issue3">Issue 3: Does the &ldquo;Right&rdquo; Cell Type Beat Global at Celltype Level?</a> <span class="badge red">OPEN</span></li>
+    <li><a href="#issue3">Issue 3: Does the &ldquo;Right&rdquo; Cell Type Beat Global at Celltype Level?</a> <span class="badge amber">PARTIAL</span></li>
     <li><a href="#issue4">Issue 4: Gene Space Effect</a> <span class="badge amber">PARTIAL</span></li>
     <li><a href="#issue5">Issue 5: Sample Size and PBMC Paradox</a> <span class="badge green">DOCUMENTED</span></li>
     <li><a href="#issue6">Issue 6: Cross-Validation Design Gap</a> <span class="badge red">OPEN</span></li>
@@ -673,7 +673,7 @@
 <!-- ======================================================================== -->
 <!-- ISSUE 3 -->
 <!-- ======================================================================== -->
-<h2 id="issue3">Issue 3: Does the &ldquo;Right&rdquo; Cell Type Beat Global at Celltype Level? <span class="badge red">OPEN</span></h2>
+<h2 id="issue3">Issue 3: Does the &ldquo;Right&rdquo; Cell Type Beat Global at Celltype Level? <span class="badge amber">PARTIAL</span></h2>
 
 <h3>The Problem with Donor-Level Comparison</h3>
 
@@ -686,50 +686,194 @@
 
 <h3>The Right Test</h3>
 
-<p>The fair comparison for LinCytoSig is at the <strong>donor &times; celltype level</strong>: does Fibroblast__TGFB1 beat CytoSig TGFB1 specifically on fibroblast pseudobulk? The scatlas_normal_correlations.csv contains 47,586 LinCytoSig rows at celltype level with &ldquo;matched&rdquo; cell types.</p>
+<p>The fair comparison for LinCytoSig is at the <strong>donor &times; celltype level</strong>: does Macrophage__IL6 beat CytoSig IL6 specifically on macrophage pseudobulk? The scatlas_normal_correlations.csv contains 47,586 LinCytoSig rows at celltype level with matched cell types.</p>
 
-<h3>Preliminary Findings (scAtlas Normal)</h3>
+<h3>Representative Celltype-Cytokine Pairs (scAtlas Normal)</h3>
 
-<p>Celltype-level data from <code>scatlas_normal_correlations.csv</code> at <code>donor_organ_celltype1</code> level:</p>
+<p>Eight biologically motivated cytokine &times; cell-type combinations evaluated at <code>donor_organ_celltype1</code> level. Both CytoSig and LinCytoSig are scored on the <strong>same cell type pseudobulk</strong>, using the largest-n annotation for each pair. Sorted by &Delta;&rho; (LinCytoSig advantage first).</p>
 
+<div class="table-scroll">
 <table>
   <tr>
     <th>Cytokine</th>
-    <th>Cell Type</th>
+    <th>LinCytoSig Variant</th>
+    <th>Cell Type Tested</th>
+    <th>n</th>
     <th>CytoSig &rho;</th>
     <th>LinCytoSig &rho;</th>
-    <th>n</th>
+    <th>&Delta;&rho;</th>
     <th>Winner</th>
   </tr>
-  <tr>
-    <td>TGFB1</td>
-    <td>Fibroblast</td>
-    <td class="num">0.701</td>
-    <td class="num">0.358</td>
-    <td class="num">21</td>
-    <td class="pos">CytoSig</td>
+  <tr class="best">
+    <td><strong>IL6</strong></td>
+    <td>Macrophage__IL6</td>
+    <td>macrophage</td>
+    <td class="num">34</td>
+    <td class="num">0.479</td>
+    <td class="num"><strong>0.655</strong></td>
+    <td class="num pos">+0.176</td>
+    <td class="pos"><strong>LinCytoSig</strong></td>
   </tr>
-  <tr>
-    <td>IL1B</td>
-    <td>Fibroblast</td>
-    <td class="num neg">&minus;0.055</td>
-    <td class="num">0.048</td>
-    <td class="num">21</td>
+  <tr class="best">
+    <td><strong>VEGFA</strong></td>
+    <td>HUVEC__VEGFA</td>
+    <td>Endothelial</td>
+    <td class="num">105</td>
+    <td class="num">0.354</td>
+    <td class="num"><strong>0.484</strong></td>
+    <td class="num pos">+0.130</td>
+    <td class="pos"><strong>LinCytoSig</strong></td>
+  </tr>
+  <tr class="best">
+    <td><strong>IL2</strong></td>
+    <td>T_Cell__IL2</td>
+    <td>CD8 T</td>
+    <td class="num">17</td>
+    <td class="num">0.507</td>
+    <td class="num"><strong>0.554</strong></td>
+    <td class="num pos">+0.047</td>
+    <td class="pos"><strong>LinCytoSig</strong></td>
+  </tr>
+  <tr style="background:#fffbeb;">
+    <td>IFNG</td>
+    <td>Macrophage__IFNG</td>
+    <td>macrophage</td>
+    <td class="num">34</td>
+    <td class="num">0.071</td>
+    <td class="num">0.139</td>
+    <td class="num">+0.068</td>
     <td>Tie (both weak)</td>
   </tr>
-  <tr>
+  <tr style="background:#fffbeb;">
+    <td>IFNG</td>
+    <td>Monocyte__IFNG</td>
+    <td>Monocyte</td>
+    <td class="num">43</td>
+    <td class="num">0.255</td>
+    <td class="num">0.238</td>
+    <td class="num neg">&minus;0.017</td>
+    <td>Tie</td>
+  </tr>
+  <tr style="background:#fffbeb;">
+    <td>IL10</td>
+    <td>Macrophage__IL10</td>
+    <td>macrophage</td>
+    <td class="num">34</td>
+    <td class="num">0.517</td>
+    <td class="num">0.513</td>
+    <td class="num neg">&minus;0.004</td>
+    <td>Tie</td>
+  </tr>
+  <tr class="worst">
+    <td>TNFA</td>
+    <td>Macrophage__TNFA</td>
+    <td>macrophage</td>
+    <td class="num">34</td>
+    <td class="num"><strong>0.628</strong></td>
+    <td class="num">0.581</td>
+    <td class="num neg">&minus;0.047</td>
+    <td class="neg">CytoSig</td>
+  </tr>
+  <tr class="worst">
     <td>TGFB1</td>
-    <td>Fibroblast (broad)</td>
-    <td class="num neg">&minus;0.301</td>
-    <td class="num neg">&minus;0.421</td>
-    <td class="num">38</td>
-    <td>Neither (both negative)</td>
+    <td>Fibroblast__TGFB1</td>
+    <td>Fibroblast</td>
+    <td class="num">21</td>
+    <td class="num"><strong>0.701</strong></td>
+    <td class="num">0.358</td>
+    <td class="num neg">&minus;0.343</td>
+    <td class="neg">CytoSig</td>
+  </tr>
+</table>
+</div>
+
+<p style="font-size:0.85rem;color:var(--muted);">All values are Spearman &rho; at <code>donor_organ_celltype1</code> level in scAtlas Normal. &ldquo;macrophage&rdquo; (lowercase) and &ldquo;Macrophage&rdquo; (uppercase) reflect different cell type annotations from different studies within scAtlas. Source: <code>scatlas_normal_correlations.csv</code></p>
+
+<div class="callout green">
+<p><strong>Key findings (winning cases):</strong></p>
+<ul>
+  <li><strong>IL6 &times; Macrophage</strong> is the strongest LinCytoSig case: Macrophage__IL6 achieves &rho;=0.655 vs CytoSig&rsquo;s 0.479 on macrophage pseudobulk (+37%, p&lt;0.001, n=34). The macrophage-trained signature captures IL6 activity better than the global signature when evaluated on macrophage cells.</li>
+  <li><strong>VEGFA &times; Endothelial</strong> is the most robust case: HUVEC__VEGFA achieves &rho;=0.484 vs CytoSig&rsquo;s 0.354 on endothelial pseudobulk (+37%, n=105). The large sample size makes this the most statistically reliable LinCytoSig advantage.</li>
+  <li><strong>IL2 &times; CD8 T</strong>: T_Cell__IL2 achieves &rho;=0.554 vs CytoSig&rsquo;s 0.507 (p=0.021 vs 0.038, n=17).</li>
+</ul>
+</div>
+
+<h3>IFNG &times; Macrophage / Monocyte &mdash; The Paradox</h3>
+
+<p>IFNG was identified as the strongest LinCytoSig case at <strong>donor level</strong> (Issue 2A): Monocyte__IFNG (filt) &rho;=0.478 vs CytoSig 0.413 in CIMA. However, at the <strong>celltype level</strong> in scAtlas Normal, the advantage largely disappears:</p>
+
+<table>
+  <tr>
+    <th>LinCytoSig Variant</th>
+    <th>Cell Type Tested</th>
+    <th>n</th>
+    <th>CytoSig &rho;</th>
+    <th>LinCytoSig &rho;</th>
+    <th>p-value</th>
+  </tr>
+  <tr>
+    <td>Macrophage__IFNG</td>
+    <td>macrophage (n=34)</td>
+    <td class="num">34</td>
+    <td class="num">0.071</td>
+    <td class="num">0.139</td>
+    <td class="num">0.435</td>
+  </tr>
+  <tr>
+    <td>Macrophage__IFNG</td>
+    <td>Macrophage (n=10)</td>
+    <td class="num">10</td>
+    <td class="num">0.336</td>
+    <td class="num neg">&minus;0.231</td>
+    <td class="num">0.521</td>
+  </tr>
+  <tr>
+    <td>Macrophage__IFNG</td>
+    <td>Macrophages (n=26)</td>
+    <td class="num">26</td>
+    <td class="num neg">&minus;0.076</td>
+    <td class="num">0.108</td>
+    <td class="num">0.601</td>
+  </tr>
+  <tr>
+    <td>Monocyte__IFNG</td>
+    <td>Monocyte (n=43)</td>
+    <td class="num">43</td>
+    <td class="num">0.255</td>
+    <td class="num">0.238</td>
+    <td class="num">0.125</td>
+  </tr>
+  <tr>
+    <td>Monocyte__IFNG</td>
+    <td>monocyte (n=13)</td>
+    <td class="num">13</td>
+    <td class="num">0.134</td>
+    <td class="num neg">&minus;0.067</td>
+    <td class="num">0.828</td>
+  </tr>
+  <tr>
+    <td>Macrophage__IFNG</td>
+    <td>matched (aggregate)</td>
+    <td class="num">88</td>
+    <td class="num">&mdash;</td>
+    <td class="num">0.130</td>
+    <td class="num">0.229</td>
+  </tr>
+  <tr>
+    <td>Monocyte__IFNG</td>
+    <td>matched (aggregate)</td>
+    <td class="num">82</td>
+    <td class="num">&mdash;</td>
+    <td class="num">0.176</td>
+    <td class="num">0.114</td>
   </tr>
 </table>
 
-<p style="font-size:0.85rem;color:var(--muted);">Note: Small sample sizes (n=21&ndash;38) limit statistical power. Broader fibroblast populations (n=38) include all fibroblast subtypes.</p>
+<div class="callout amber">
+<p><strong>IFNG paradox:</strong> LinCytoSig&rsquo;s IFNG advantage at donor level (Issue 2A) does <em>not</em> transfer to the celltype level. Neither Macrophage__IFNG nor Monocyte__IFNG significantly outperforms CytoSig on their matched cell type pseudobulk. The donor-level advantage likely reflects that <strong>immune-cell-trained signatures weight IFNG-responsive genes differently than the global signature</strong>, which helps when IFNG signal is diluted across mixed cell types at the donor level &mdash; but this benefit disappears when evaluating on pure macrophage or monocyte pseudobulk where CytoSig&rsquo;s broader gene set is equally effective.</p>
+</div>
 
-<h3>Tissue-Specific Variant Effects</h3>
+<h3>Tissue-Specific Variant Effects (TGFB1)</h3>
 
 <p>Different fibroblast subtypes show dramatically different TGFB1 correlations at celltype level in scAtlas Normal:</p>
 
@@ -745,6 +889,11 @@
     <td class="num">21</td>
   </tr>
   <tr>
+    <td>Fibroblast__TGFB1</td>
+    <td class="num">0.358</td>
+    <td class="num">21</td>
+  </tr>
+  <tr>
     <td>Cardiac_Fibroblast__TGFB1</td>
     <td class="num">0.338</td>
     <td class="num">21</td>
@@ -754,11 +903,6 @@
     <td class="num">0.322</td>
     <td class="num">21</td>
   </tr>
-  <tr>
-    <td>Fibroblast__TGFB1</td>
-    <td class="num">0.358</td>
-    <td class="num">21</td>
-  </tr>
   <tr class="worst">
     <td>Dermal_Fibroblast__TGFB1</td>
     <td class="num neg">&minus;0.431</td>
@@ -766,9 +910,10 @@
   </tr>
 </table>
 
-<div class="callout amber">
-<p><strong>Open question:</strong> Even at the celltype level with matched cell types, CytoSig often still wins (TGFB1 on Fibroblast: 0.701 vs 0.358). However, the Synovial_Fibroblast variant (0.539) gets closer, and tissue-specific variants show high variance (&minus;0.431 to 0.539). This suggests that the <em>specific cell type</em> matters enormously, but the current selection strategy does not identify the right one.</p>
-<p><strong>A systematic celltype-matched evaluation across all 178 LinCytoSig signatures is needed to determine whether the right match can outperform CytoSig.</strong></p>
+<p style="font-size:0.85rem;color:var(--muted);">CytoSig TGFB1 on the same Fibroblast pseudobulk: &rho;=0.701 (n=21). Even the best subtype (Synovial_Fibroblast, &rho;=0.539) does not match CytoSig.</p>
+
+<div class="callout">
+<p><strong>Summary:</strong> At the celltype level with matched cell types, LinCytoSig wins for <strong>3 of 8 representative pairs</strong> (IL6, VEGFA, IL2), ties for 3 (IFNG&times;Macrophage, IFNG&times;Monocyte, IL10), and loses for 2 (TNFA, TGFB1). The strongest cases for LinCytoSig are cytokines with <strong>clear biological specificity</strong> to the tested cell type (IL6 in macrophages, VEGFA in endothelial cells), while CytoSig&rsquo;s global signature excels for broadly expressed cytokines like TGFB1. The IFNG paradox &mdash; winning at donor level but not at celltype level &mdash; suggests that LinCytoSig&rsquo;s value may lie more in re-weighting mixture-level signals than in providing truly cell-type-specific predictions.</p>
 </div>
 
 <hr>
