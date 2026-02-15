@@ -22,6 +22,7 @@ Changes from previous version:
  14) Interactive cell-type scatter with dropdown
 """
 
+import base64
 import json
 import warnings
 from pathlib import Path
@@ -1239,6 +1240,12 @@ def generate_html(summary_table, boxplot_data, consistency_data, heatmap_data,
         'levelComp': level_comparison_data,
     }, separators=(',', ':'))
 
+    # Embed Figure 1 as base64 so HTML is self-contained
+    fig1_path = Path('/data/parks34/projects/2cytoatlas/report/figures/fig1_dataset_overview.png')
+    fig1_b64 = ''
+    if fig1_path.exists():
+        fig1_b64 = base64.b64encode(fig1_path.read_bytes()).decode('ascii')
+
     html = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1494,7 +1501,7 @@ CytoAtlas validates at five levels: donor-level pseudobulk, donor &times; cell-t
 <p style="font-size:0.85em;color:#555;margin-top:4px;"><strong>Total:</strong> ~29M single cells + ~31K bulk RNA-seq samples, processed through ridge regression against 3 signature matrices (CytoSig, LinCytoSig, SecAct). <strong>Processing Time</strong> = wall-clock time for full activity inference on a single NVIDIA A100 GPU. See Section 2.1 for per-dataset details and cleaning considerations.</p>
 
 <div class="figure">
-  <img src="../figures/fig1_dataset_overview.png" alt="Figure 1: Dataset Overview">
+  <img src="data:image/png;base64,{fig1_b64}" alt="Figure 1: Dataset Overview" style="max-width:100%;">
   <div class="caption"><strong>Figure 1.</strong> CytoAtlas overview. (A) Cell counts across 6 datasets totaling 29M cells + 31K bulk samples. (B) Three signature matrices. (C) Multi-level validation strategy.</div>
 </div>
 

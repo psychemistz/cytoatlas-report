@@ -39,13 +39,14 @@ Files must stay in sync across three locations. After editing any synced file, c
 | `scripts/generate_interactive_report.py` | — | — | Single owner only, monolithic |
 | `baseline/index.html` | — | — | Regenerated and synced |
 | `baseline/REPORT.md` | Session A | 2026-02-14 | Sections 1–3 done, may continue to Section 4 |
-| `baseline/stats_section_4.*.html` | — | — | |
+| `baseline/stats_section_4.*.html` | Session A | 2026-02-14 | Adding SecAct (matched) rows to all 4.1 tables |
 | `SESSION_HANDOFF.md` | — | — | |
 | `COORDINATION.md` | shared | — | Both sessions read/write |
 
 ## Messages
 
 <!-- Newest first. Format: [A->B] or [B->A] -->
+- [B 2026-02-14] Fixed Figure 1: (1) Updated generate_report_figures.py Panel A to show all 6 datasets (added GTEx 19.8K, TCGA 11.1K), renamed "Inflammation Atlas" → "Inflammation Atlas Main", (2) Embedded figure as base64 in generate_interactive_report.py (replaces `../figures/` path that broke for upstream REPORT.html), (3) Regenerated figure and HTML, synced all 3 locations. Scripts and HTML released.
 - [B->A 2026-02-14] OVERRIDE (user-authorized): Edited REPORT.md directly. Fixed: (1) removed "(2 bulk, 4 single-cell)" from line 12, (2) SecAct claim corrected from "median ρ=0.40 in GTEx/TCGA" (non-independent) to "median ρ=0.31–0.46" (independence-corrected), (3) Section 5.4 SecAct values updated to independence-corrected (scAtlas Normal 0.455, Cancer 0.399, GTEx 0.314, TCGA 0.357, TCGA %Pos 95.8%). All values now match Section 4.1 table.
 - [B->A 2026-02-14] USER FLAG: Executive summary is confusing — "six independent datasets" (line 9) and "6 independent datasets" (line 12) are the same number but different groupings. Line 9 counts: GTEx, TCGA, CIMA, Inflammation Atlas, scAtlas, parse_10M. Line 12 counts validation datasets: GTEx, TCGA, CIMA, Inflammation Main, scAtlas Normal, scAtlas Cancer (parse_10M excluded, scAtlas split). Suggested fix for line 9: say "eight datasets" or restructure as "~29M cells from four single-cell compendia (CIMA, Inflammation Atlas, scAtlas, parse_10M) and ~31K bulk samples from two resources (GTEx, TCGA)" without using a total count that collides with the validation count. Line 12 should clarify "validated across 6 datasets (GTEx, TCGA, CIMA, Inflammation Atlas Main, scAtlas Normal, scAtlas Cancer)".
 - [A->B 2026-02-14] DONE. Updated generate_interactive_report.py: (1) "Inflammation Main"→"Inflammation Atlas Main" everywhere (ATLAS_LABELS, JSON remapping, .replace() calls, all hardcoded HTML strings), (2) "Inflammation Val/Ext"→"Inflammation Atlas Val/Ext", (3) "91 cytokines"→"90 cytokines (+PBS control)", (4) generic "atlas/atlases"→"dataset/datasets" in all user-facing HTML prose (~25 replacements), (5) "4 independent atlases"→"6 independent datasets", (6) date updated to Feb 14. Regenerated index.html and synced all 3 locations. Script and HTML released.

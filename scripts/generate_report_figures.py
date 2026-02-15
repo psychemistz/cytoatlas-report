@@ -215,17 +215,18 @@ def fig1_dataset_overview():
     """
     fig, axes = plt.subplots(1, 3, figsize=(16, 5))
 
-    # Panel A: Dataset cell counts
+    # Panel A: Dataset scale (cells/samples)
     ax = axes[0]
-    datasets = ['CIMA', 'Inflammation\nAtlas', 'scAtlas', 'parse_10M']
-    cells_millions = [6.5, 6.3, 6.4, 9.7]
-    colors = ['#3B82F6', '#EF4444', '#10B981', '#F59E0B']
-    bars = ax.barh(datasets, cells_millions, color=colors, edgecolor='white', linewidth=0.5)
-    ax.set_xlabel('Cells (millions)')
-    ax.set_title('A. Dataset Scale (29M total)')
-    for bar, v in zip(bars, cells_millions):
-        ax.text(bar.get_width() + 0.3, bar.get_y() + bar.get_height()/2,
-                f'{v:.1f}M', va='center', fontsize=9, fontweight='bold')
+    datasets = ['GTEx', 'TCGA', 'CIMA', 'Inflammation\nAtlas Main', 'scAtlas', 'parse_10M']
+    values = [0.020, 0.011, 6.5, 6.3, 6.4, 9.7]  # millions (bulk shown as fraction)
+    colors = ['#8B5CF6', '#8B5CF6', '#3B82F6', '#EF4444', '#10B981', '#F59E0B']
+    bars = ax.barh(datasets, values, color=colors, edgecolor='white', linewidth=0.5)
+    ax.set_xlabel('Cells / Samples (millions)')
+    ax.set_title('A. Dataset Scale (29M cells + 31K bulk)')
+    labels = ['19.8K', '11.1K', '6.5M', '6.3M', '6.4M', '9.7M']
+    for bar, lbl in zip(bars, labels):
+        ax.text(max(bar.get_width(), 0.5) + 0.3, bar.get_y() + bar.get_height()/2,
+                lbl, va='center', fontsize=9, fontweight='bold')
     ax.set_xlim(0, 14)
 
     # Panel B: Signature coverage
