@@ -36,11 +36,11 @@ Files must stay in sync across three locations. After editing any synced file, c
 
 | File | Owner | Since | Notes |
 |------|-------|-------|-------|
-| `scripts/generate_interactive_report.py` | Session B | 2026-02-15 | Adding matched tabs to §4.4 |
+| `scripts/generate_interactive_report.py` | — | — | §4.4 matched tabs added, synced |
 | `scripts/generate_report_figures.py` | — | — | Figure 1 updated, synced |
-| `baseline/index.html` | Session B | 2026-02-15 | Will regenerate after matched tabs |
-| `baseline/REPORT.md` | — | — | §4.4 stats description added |
-| `baseline/stats_section_4.*.html` | — | — | §4.4 cross-platform stats added |
+| `baseline/index.html` | — | — | Regenerated and synced |
+| `baseline/REPORT.md` | — | — | §4.4 matched-target key finding added |
+| `baseline/stats_section_4.*.html` | — | — | §4.4 matched-target control tables added |
 | `CLAUDE.md` | — | — | Report Sections table updated |
 | `SESSION_HANDOFF.md` | — | — | |
 | `COORDINATION.md` | shared | — | Both sessions read/write |
