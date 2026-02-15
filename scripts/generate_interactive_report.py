@@ -1934,7 +1934,18 @@ Ridge regression (L2-regularized linear regression) was chosen deliberately over
 <h3>4.6 Cross-Atlas Consistency</h3>
 <div class="plotly-container">
   <div id="consistency-chart" style="height:550px;"></div>
-  <div class="caption"><strong>Figure 6.</strong> Key cytokine target correlations tracked across 6 independent datasets (donor-level). Solid lines = CytoSig; dashed lines = SecAct. Lines colored by cytokine family. Click legend entries to show/hide targets.</div>
+  <div class="caption"><strong>Figure 6.</strong> Key cytokine target correlations tracked across 6 independent datasets (independence-corrected levels). Solid lines = CytoSig; dashed lines = SecAct. Lines colored by cytokine family. Click legend entries to show/hide targets.</div>
+</div>
+
+<table>
+<tr><th>Tier</th><th>Targets</th><th>Pattern</th></tr>
+<tr><td><strong>Universal</strong> (&rho;&gt;0.1 in all 6)</td><td>IL1B, TNFA, IFNG, IL6, BMP2, VEGFA</td><td>Robust across all cohorts and platforms (mean &rho; 0.31&ndash;0.58)</td></tr>
+<tr><td><strong>Mostly consistent</strong> (4&ndash;5 of 6)</td><td>IL10, TGFB1, CXCL12, GMCSF, HGF</td><td>Occasional near-zero outliers; TGFB1 slightly negative only in scAtlas Normal (&minus;0.05)</td></tr>
+<tr><td><strong>Context-dependent</strong> (&le;3 of 6)</td><td>IL4, IL17A, EGF</td><td>Sign changes across cohorts; Th2/Th17 cytokines absent from Inflammation Main</td></tr>
+</table>
+
+<div class="callout">
+<p><strong>Key insight:</strong> No systematic bulk vs single-cell advantage exists&mdash;mean |&rho;| across 14 targets: GTEx 0.26, TCGA 0.33, CIMA 0.26, Inflammation Main 0.44, scAtlas Normal 0.36, scAtlas Cancer 0.37. Variation is target-specific and cohort-specific rather than platform-driven. The universal tier (IL1B, TNFA, IFNG, IL6) represents cytokine axes fundamental to inflammation biology, while context-dependent targets (IL4, IL17A) reflect Th2/Th17 pathways active only in specific disease cohorts.</p>
 </div>
 
 <!-- Item 11: Aggregation levels with Total / Matched tabs -->

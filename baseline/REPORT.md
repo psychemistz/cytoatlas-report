@@ -277,13 +277,15 @@ Of the 29 matched CytoSig targets with data in ≥4 datasets, two categories eme
 
 > **Figure 6** (`fig6_cross_atlas_consistency.png`): Key targets tracked across 6 atlases at independent levels.
 
-Most cytokines show **consistent positive correlations** across all 6 atlases:
-- **IL1B, TNFA** — consistently strong across all cohorts (universal inflammatory markers)
-- **TGFB1** — variable: positive in most atlases, negative in scAtlas (context-dependent biology in the tumor/organ microenvironment)
-- **IL4, IL17A** — atlas-dependent patterns reflecting disease-specific biology (Th2/Th17 prevalence varies by cohort)
-- **Bulk datasets** (GTEx, TCGA) generally show higher absolute ρ than single-cell atlases at comparable aggregation
+14 key CytoSig targets tracked across 6 datasets at independence-corrected levels reveal three consistency tiers:
 
-The distinction between **universal targets** (IL1B, TNFA, VEGFA — consistent across contexts) and **context-dependent targets** (IL4, IL17A, TGFB1 — driven by specific cell populations or disease states) provides biological insight into which cytokine axes are fundamental vs. specialized.
+| Tier | Targets | Pattern |
+|------|---------|---------|
+| **Universal** (ρ > 0.1 in all 6 datasets) | IL1B, TNFA, IFNG, IL6, BMP2, VEGFA | Robust across all cohorts and platforms (mean ρ 0.31–0.58) |
+| **Mostly consistent** (4–5 of 6 positive) | IL10, TGFB1, CXCL12, GMCSF, HGF | Occasional near-zero outliers; TGFB1 slightly negative only in scAtlas Normal (−0.05) |
+| **Context-dependent** (≤3 of 6 positive) | IL4, IL17A, EGF | Sign changes across cohorts; Th2/Th17 cytokines show limited expression in most datasets (IL4 and IL17A absent from Inflammation Main) |
+
+**Key insight:** No systematic bulk vs single-cell advantage exists — mean |ρ| across 14 targets: GTEx 0.26, TCGA 0.33, CIMA 0.26, Inflammation Main 0.44, scAtlas Normal 0.36, scAtlas Cancer 0.37. Variation is target-specific and cohort-specific rather than platform-driven. The universal tier (IL1B, TNFA, IFNG, IL6) represents cytokine axes fundamental to inflammation biology, while context-dependent targets (IL4, IL17A) reflect Th2/Th17 pathways active only in specific disease cohorts.
 
 ### 4.7 Effect of Aggregation Level ([statistical methods](stats_section_4.1.html#aggregation-level))
 
