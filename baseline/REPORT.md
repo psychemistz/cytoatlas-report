@@ -19,56 +19,48 @@ CytoAtlas is a comprehensive computational resource that maps cytokine and secre
 
 ## 1. System Architecture and Design Rationale
 
-### 1.1 Why This Architecture?
+### 1.1 Architecture and Processing
 
-CytoAtlas was designed around three principles that distinguish it from typical bioinformatics databases:
-
-**Principle 1: Linear interpretability over complex models.**
+**Linear interpretability over complex models.**
 Ridge regression (L2-regularized linear regression) was chosen deliberately over methods like autoencoders, graph neural networks, or foundation models. The resulting activity z-scores are **conditional on the specific genes in the signature matrix**, meaning every prediction can be traced to a weighted combination of known gene responses. This is critical for biological interpretation — a scientist can ask "which genes drive the IFNG activity score in this sample?" and get a direct answer.
 
-**Principle 2: Multi-level validation at every aggregation.**
-Rather than a single validation metric, CytoAtlas validates at five levels:
-- Donor-level pseudobulk (expression vs activity per donor)
-- Donor × cell-type pseudobulk (finer stratification)
-- Single-cell (per-cell expression vs activity)
-- Bulk RNA-seq (GTEx 19,788 samples; TCGA 11,000+ samples)
-- Bootstrap resampled (confidence intervals via 100+ resampling iterations)
-
-This multi-level approach ensures that correlations are not artifacts of aggregation.
-
-**Principle 3: Reproducibility through separation of concerns.**
-The system is divided into independent bounded contexts:
+**Reproducibility through separation of concerns.**
 
 | Component | Technology | Purpose |
 |-----------|-----------|---------|
-| **Pipeline** | Python + CuPy (GPU) | Activity inference, 10-34x speedup |
+| **Pipeline** | Python + CuPy (GPU) | Activity inference, 10–34x speedup |
 | **Storage** | DuckDB (3 databases, 68 tables) | Columnar analytics, no server needed |
 | **API** | FastAPI (262 endpoints) | RESTful data access, caching, auth |
 | **Frontend** | React 19 + TypeScript | Interactive exploration (12 pages) |
 
-**Why DuckDB over PostgreSQL?** Single-file databases that can be copied, versioned, and shared without server setup — essential on HPC/SLURM infrastructure where database servers are not always available.
-
-**Why FastAPI over Flask/Django?** Async I/O for concurrent DuckDB queries with automatic OpenAPI documentation for every endpoint.
-
-**Why React over vanilla JS?** The original 25K-line vanilla JS SPA was migrated to 11.4K lines of React+TypeScript (54% reduction) with type safety, component reuse, and lazy-loaded routing.
-
-### 1.2 Processing Scale
+**Processing scale.**
 
 | Dataset | Cells/Samples | Processing Time | Hardware |
 |---------|---------------|-----------------|----------|
 | GTEx | 19,788 bulk samples | ~10min | A100 80GB |
 | TCGA | 11,069 bulk samples | ~10min | A100 80GB |
 | CIMA | 6.5M cells | ~2h | A100 80GB |
-| Inflammation Atlas | 6.3M cells | ~2h | A100 80GB |
+| Inflammation Atlas (main/val/ext) | 6.3M cells | ~2h | A100 80GB |
 | scAtlas Normal | 2.3M cells | ~1h | A100 80GB |
 | scAtlas Cancer | 4.1M cells | ~1h | A100 80GB |
 | parse_10M | 9.7M cells | ~3h | A100 80GB |
 
-**Total: ~29M single cells + ~31K bulk RNA-seq samples, processed through ridge regression against 3 signature matrices (CytoSig, LinCytoSig, SecAct).**
+**Total:** ~29M single cells + ~31K bulk RNA-seq samples, processed through ridge regression against 3 signature matrices (CytoSig, LinCytoSig, SecAct). **Processing Time** = wall-clock time for full activity inference on a single NVIDIA A100 GPU. See Section 2.1 for per-dataset details.
 
-**Processing Time** = wall-clock time for full activity inference on a single NVIDIA A100 GPU (80 GB VRAM). See Section 2.1 for per-dataset details and cleaning considerations.
+### 1.2 Validation Strategy
 
-> **Figure 1** (`fig1_dataset_overview.png`): Dataset scale, signature matrices, and validation layers.
+CytoAtlas validates at **four aggregation levels**, each testing whether predicted activity correlates with target gene expression (Spearman ρ) across independent samples:
+
+| Level | Description | Datasets | Report Section |
+|-------|-------------|----------|----------------|
+| **Donor pseudobulk** | One value per donor, averaging across cell types | CIMA, Inflammation Atlas Main, scAtlas Normal/Cancer | §4.1, §4.3 |
+| **Donor × cell-type** | Stratified by cell type within each donor | CIMA, Inflammation Atlas Main, scAtlas Normal/Cancer | §4.6 |
+| **Per-tissue / per-cancer** | Median-of-medians across tissues or cancer types | GTEx (29 tissues), TCGA (33 cancer types) | §4.2 |
+| **Bulk RNA-seq** | Sample-level expression vs predicted activity | GTEx (19.8K), TCGA (11.1K) | §4.7 |
+
+All statistics use **independence-corrected** values — preventing inflation from repeated measures across tissues, cancer types, or cell types. CytoSig vs SecAct comparisons use Mann-Whitney U (total) and Wilcoxon signed-rank (32 matched targets) with BH-FDR correction. See Section 3.3 for the validation philosophy and Section 4 for full results.
+
+> **Figure 1** (`fig1_dataset_overview.png`): Data sources, activity inference pipeline, and validation analyses.
 
 ---
 

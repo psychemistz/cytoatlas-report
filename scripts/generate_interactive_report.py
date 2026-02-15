@@ -1466,18 +1466,12 @@ def generate_html(summary_table, boxplot_data, consistency_data, heatmap_data,
 <!-- SECTION 1 -->
 <h2 id="sec1">1. System Architecture and Design Rationale</h2>
 
-<h3>1.1 Why This Architecture?</h3>
+<h3>1.1 Architecture and Processing</h3>
 
-<p>CytoAtlas was designed around three principles that distinguish it from typical bioinformatics databases:</p>
+<p><strong>Linear interpretability over complex models.</strong>
+Ridge regression (L2-regularized linear regression) was chosen deliberately over methods like autoencoders, graph neural networks, or foundation models. The resulting activity z-scores are <strong>conditional on the specific genes in the signature matrix</strong>, meaning every prediction can be traced to a weighted combination of known gene responses. This is critical for biological interpretation &mdash; a scientist can ask &ldquo;which genes drive the IFNG activity score in this sample?&rdquo; and get a direct answer.</p>
 
-<p><strong>Principle 1: Linear interpretability over complex models.</strong><br>
-Ridge regression (L2-regularized linear regression) was chosen deliberately over methods like autoencoders, graph neural networks, or foundation models. The resulting activity z-scores are <strong>conditional on the specific genes in the signature matrix</strong>, meaning every prediction can be traced to a weighted combination of known gene responses.</p>
-
-<p><strong>Principle 2: Multi-level validation at every aggregation.</strong><br>
-CytoAtlas validates at five levels: donor-level pseudobulk, donor &times; cell-type pseudobulk, single-cell, bulk RNA-seq (GTEx/TCGA), and bootstrap resampled with confidence intervals.</p>
-
-<p><strong>Principle 3: Reproducibility through separation of concerns.</strong></p>
-
+<p><strong>Reproducibility through separation of concerns.</strong></p>
 <table>
   <tr><th>Component</th><th>Technology</th><th>Purpose</th></tr>
   <tr><td><strong>Pipeline</strong></td><td>Python + CuPy (GPU)</td><td>Activity inference, 10&ndash;34x speedup</td></tr>
@@ -1486,23 +1480,36 @@ CytoAtlas validates at five levels: donor-level pseudobulk, donor &times; cell-t
   <tr><td><strong>Frontend</strong></td><td>React 19 + TypeScript</td><td>Interactive exploration (12 pages)</td></tr>
 </table>
 
-<h3>1.2 Processing Scale</h3>
-
+<p><strong>Processing scale.</strong></p>
 <table>
   <tr><th>Dataset</th><th>Cells/Samples</th><th>Processing Time</th><th>Hardware</th></tr>
   <tr><td>GTEx</td><td>19,788 bulk samples</td><td>~10min</td><td>A100 80GB</td></tr>
   <tr><td>TCGA</td><td>11,069 bulk samples</td><td>~10min</td><td>A100 80GB</td></tr>
   <tr><td>CIMA</td><td>6.5M cells</td><td>~2h</td><td>A100 80GB</td></tr>
-  <tr><td>Inflammation Atlas</td><td>6.3M cells</td><td>~2h</td><td>A100 80GB</td></tr>
+  <tr><td>Inflammation Atlas (main/val/ext)</td><td>6.3M cells</td><td>~2h</td><td>A100 80GB</td></tr>
   <tr><td>scAtlas Normal</td><td>2.3M cells</td><td>~1h</td><td>A100 80GB</td></tr>
   <tr><td>scAtlas Cancer</td><td>4.1M cells</td><td>~1h</td><td>A100 80GB</td></tr>
   <tr><td>parse_10M</td><td>9.7M cells</td><td>~3h</td><td>A100 80GB</td></tr>
 </table>
-<p style="font-size:0.85em;color:#555;margin-top:4px;"><strong>Total:</strong> ~29M single cells + ~31K bulk RNA-seq samples, processed through ridge regression against 3 signature matrices (CytoSig, LinCytoSig, SecAct). <strong>Processing Time</strong> = wall-clock time for full activity inference on a single NVIDIA A100 GPU. See Section 2.1 for per-dataset details and cleaning considerations.</p>
+<p style="font-size:0.85em;color:#555;margin-top:4px;"><strong>Total:</strong> ~29M single cells + ~31K bulk RNA-seq samples, processed through ridge regression against 3 signature matrices (CytoSig, LinCytoSig, SecAct). <strong>Processing Time</strong> = wall-clock time for full activity inference on a single NVIDIA A100 GPU. See Section 2.1 for per-dataset details.</p>
+
+<h3>1.2 Validation Strategy</h3>
+
+<p>CytoAtlas validates at <strong>four aggregation levels</strong>, each testing whether predicted activity correlates with target gene expression (Spearman &rho;) across independent samples:</p>
+
+<table>
+  <tr><th>Level</th><th>Description</th><th>Datasets</th><th>Report Section</th></tr>
+  <tr><td><strong>Donor pseudobulk</strong></td><td>One value per donor, averaging across cell types</td><td>CIMA, Inflammation Atlas Main, scAtlas Normal/Cancer</td><td>&sect;4.1, &sect;4.3</td></tr>
+  <tr><td><strong>Donor &times; cell-type</strong></td><td>Stratified by cell type within each donor</td><td>CIMA, Inflammation Atlas Main, scAtlas Normal/Cancer</td><td>&sect;4.6</td></tr>
+  <tr><td><strong>Per-tissue / per-cancer</strong></td><td>Median-of-medians across tissues or cancer types</td><td>GTEx (29 tissues), TCGA (33 cancer types)</td><td>&sect;4.2</td></tr>
+  <tr><td><strong>Bulk RNA-seq</strong></td><td>Sample-level expression vs predicted activity</td><td>GTEx (19.8K), TCGA (11.1K)</td><td>&sect;4.7</td></tr>
+</table>
+
+<p>All statistics use <strong>independence-corrected</strong> values &mdash; preventing inflation from repeated measures across tissues, cancer types, or cell types. CytoSig vs SecAct comparisons use Mann-Whitney U (total) and Wilcoxon signed-rank (32 matched targets) with BH-FDR correction. See Section 3.3 for the validation philosophy and Section 4 for full results.</p>
 
 <div class="figure">
   <img src="data:image/png;base64,{fig1_b64}" alt="Figure 1: Dataset Overview" style="max-width:100%;">
-  <div class="caption"><strong>Figure 1.</strong> CytoAtlas overview. (A) Cell counts across 6 datasets totaling 29M cells + 31K bulk samples. (B) Three signature matrices. (C) Multi-level validation strategy.</div>
+  <div class="caption"><strong>Figure 1.</strong> CytoAtlas overview. Data sources (4 single-cell compendia, 2 bulk RNA-seq resources) are processed through ridge regression against 3 signature matrices, then validated across 7 complementary analyses (&sect;4.1&ndash;&sect;4.7).</div>
 </div>
 
 <hr>
