@@ -3293,9 +3293,9 @@ document.addEventListener('keydown', function(e) {{
     <a href="#sec2">2. Dataset Catalog</a>
     <a href="#sec3">3. Scientific Value</a>
     <a href="#sec4">4. Validation Results</a>
-    <a href="#sec5" class="sub">5. CytoSig vs LinCytoSig vs SecAct</a>
-    <a href="#sec6" class="sub">6. Key Takeaways</a>
-    <a href="#sec7" class="sub">7. Appendix</a>
+    <a href="#sec5">5. CytoSig vs LinCytoSig vs SecAct</a>
+    <a href="#sec6">6. Key Takeaways</a>
+    <a href="#sec7">7. Appendix</a>
   </div>
 </nav>
 <script>
