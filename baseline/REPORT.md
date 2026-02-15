@@ -298,7 +298,7 @@ Of the 29 matched CytoSig targets with data in ≥4 datasets, two categories eme
 | CIMA | Donor Only | 0.114 | 0.191 | Donor × L4 (73 types) | 0.005 | 0.052 |
 | Inflammation Main | Donor Only | 0.323 | 0.173 | Donor × L2 (65 types) | 0.044 | 0.048 |
 | scAtlas Normal | Donor × Organ | 0.150 | 0.295 | Donor × Organ × CT2 (356 types) | 0.059 | 0.129 |
-| scAtlas Cancer | Tumor Only | 0.184 | 0.399 | Tumor × Cancer × CT1 (~120 types) | 0.033 | 0.171 |
+| scAtlas Cancer | All Tumor Cells | 0.184 | 0.399 | Per Cancer Type × CT1 (~120 types) | 0.033 | 0.171 |
 
 **Signal retention (finest / coarsest median ρ):**
 
@@ -312,7 +312,7 @@ Of the 29 matched CytoSig targets with data in ≥4 datasets, two categories eme
 **Key insights:**
 - **Beyond ~L2 annotation depth, correlations become noise-dominated.** Cell-type stratification fragments the donor pool below the sample size needed for reliable correlation — at L2+ the signal/null ratio drops below 2× on average and % positive targets approaches 50% (chance level). The practical limit is driven by samples-per-group: Inflammation Main retains signal at L2 (553 samples/group, signal/null = 3.3×) while scAtlas Normal is already marginal at its shallowest stratification (22 samples/group)
 - **In aggregate, SecAct's larger target pool shows higher retention** (27–44% vs CytoSig's 4–39%), but this reflects unequal target counts (~1,170 vs 43). On the 32 matched targets, CytoSig actually retains more signal in 2 of 4 datasets — the apparent SecAct advantage disappears when comparing like-for-like
-- **All datasets show monotonic decline** except scAtlas Cancer CytoSig, which *increases* from Tumor Only (0.184) to Tumor × Cancer (0.223) before dropping to CT1 (0.033) — cancer-type stratification can improve signal before cell-type dilution dominates
+- **All datasets show monotonic decline** except scAtlas Cancer CytoSig, which *increases* from All Tumor Cells (0.184) to Per Cancer Type (0.223) before dropping to CT1 (0.033) — cancer-type stratification removes cross-cancer confounding before cell-type dilution dominates
 - **CytoSig and SecAct converge in some datasets** — Inflammation Main L2: 0.044 vs 0.048 — but not universally (scAtlas Cancer CT1: 0.033 vs 0.171). Convergence occurs where both methods approach the noise floor
 
 Per-level Mann-Whitney/Wilcoxon tests with BH-FDR correction for all datasets are in the [supplement](stats_section_4.1.html#aggregation-level).

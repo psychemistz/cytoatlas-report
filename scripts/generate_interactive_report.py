@@ -698,8 +698,8 @@ def prepare_levels_data(df):
         'donor_l3': 'Donor x L3', 'donor_l4': 'Donor x L4',
         'donor_organ': 'Donor x Organ', 'donor_organ_celltype1': 'Donor x Organ x CT1',
         'donor_organ_celltype2': 'Donor x Organ x CT2',
-        'tumor_only': 'Tumor Only', 'tumor_by_cancer': 'Tumor x Cancer',
-        'tumor_by_cancer_celltype1': 'Tumor x Cancer x CT1',
+        'tumor_only': 'All Tumor Cells', 'tumor_by_cancer': 'Per Cancer Type',
+        'tumor_by_cancer_celltype1': 'Per Cancer Type x CT1',
     }
     result = {}
     for atlas, levels, title in configs:
@@ -1987,9 +1987,9 @@ Ridge regression (L2-regularized linear regression) was chosen deliberately over
   <tr><td>Donor &times; Organ &times; CT1</td><td>Broad cell types within each organ</td><td>191</td></tr>
   <tr><td>Donor &times; Organ &times; CT2</td><td>Fine cell types within each organ</td><td>356</td></tr>
   <tr><td rowspan="3"><strong>scAtlas Cancer</strong></td>
-    <td>Tumor Only</td><td>Whole-sample pseudobulk per tumor donor</td><td>1 (all)</td></tr>
-  <tr><td>Tumor &times; Cancer</td><td>Per-cancer type pseudobulk (HCC, PAAD, CRC, etc.)</td><td>29 types</td></tr>
-  <tr><td>Tumor &times; Cancer &times; CT1</td><td>Broad cell types within each cancer type</td><td>~120</td></tr>
+    <td>All Tumor Cells</td><td>Whole-sample pseudobulk per tumor donor</td><td>1 (all)</td></tr>
+  <tr><td>Per Cancer Type</td><td>Pseudobulk stratified by cancer type (HCC, PAAD, CRC, etc.)</td><td>29 types</td></tr>
+  <tr><td>Per Cancer Type &times; CT1</td><td>Broad cell types within each cancer type</td><td>~120</td></tr>
 </table>
 
 <h3>4.8 Representative Scatter Plots</h3>
