@@ -3229,6 +3229,24 @@ document.addEventListener('keydown', function(e) {{
 
 </script>
 
+<button id="toTopBtn" onclick="window.scrollTo({{top:0,behavior:'smooth'}})" style="
+  position:fixed; bottom:30px; right:30px; z-index:9999;
+  width:44px; height:44px; border-radius:50%; border:none; cursor:pointer;
+  background:#2c3e50; color:#fff; font-size:20px; line-height:44px; text-align:center;
+  box-shadow:0 2px 8px rgba(0,0,0,0.3); opacity:0; transition:opacity 0.3s;
+  pointer-events:none;" title="Back to top">&uarr;</button>
+<script>
+(function(){{
+  var btn=document.getElementById('toTopBtn');
+  window.addEventListener('scroll',function(){{
+    if(window.scrollY>400){{btn.style.opacity='0.8';btn.style.pointerEvents='auto';}}
+    else{{btn.style.opacity='0';btn.style.pointerEvents='none';}}
+  }});
+  btn.addEventListener('mouseenter',function(){{btn.style.opacity='1';}});
+  btn.addEventListener('mouseleave',function(){{if(window.scrollY>400)btn.style.opacity='0.8';}});
+}})();
+</script>
+
 </body>
 </html>"""
 
