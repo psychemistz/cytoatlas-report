@@ -2,13 +2,30 @@
 
 ## Current State Summary
 
-Repository has uncommitted changes on `main`. All three sync locations are in sync, no TBDs or TODOs remaining in REPORT.md. Two parallel sessions (A and B) completed a major document overhaul on Feb 14 (88 commits total, 20+ on Feb 14 alone). Session C (Feb 15) added LinCytoSig issues document and Section 5 links.
+Repository is clean on `main`, pushed to remote. All three sync locations are in sync, no TBDs or TODOs remaining in REPORT.md. REPORT.md Section 5 is now aligned with the interactive HTML (§5.1–5.3). Two parallel sessions (A and B) completed a major document overhaul on Feb 14 (88 commits total, 20+ on Feb 14 alone). Sessions C–G (Feb 15) added LinCytoSig issues document, restructured Section 5, and aligned REPORT.md.
 
 ---
 
-## What Was Done (Feb 15 Session C)
+## What Was Done (Feb 15 Session G — Latest)
 
-### LinCytoSig Issues Document
+### REPORT.md Section 5 Alignment
+- **Replaced** old §5.1–5.5 (Method Overview with 10-way table, When LinCytoSig Outperforms, Why LinCytoSig Underperforms, SecAct Breadth, Biologically Important Targets Deep Dive) with §5.1–5.3 matching interactive HTML
+- **§5.1** Donor-Level: 7 Representative Targets (Figure 11)
+- **§5.2** Celltype-Level Evaluation (Figure 12)
+- **§5.3** Limitations: Experimental Bias in the CytoSig Database
+- **Fixed** stale Figure 13 reference in §3.2 (removed — figure no longer exists)
+- **Updated** §3.2 LinCytoSig description to match new §5 content (IL6×Macrophage, VEGFA×Endothelial, IL2×CD8T instead of Basophil/NK/DC)
+- REPORT.md reduced from 519 → 443 lines
+
+### lincytosig_issues.html Updates
+- **Added** Plotly CDN and interactive 10-way method comparison boxplot with dataset dropdown (CIMA, Inflammation Atlas Main, scAtlas Normal, scAtlas Cancer) — embedded data from `method_comparison_8way_all.json`
+- **Updated** "Proposed Restructuring" section → "Restructuring (Completed)" with current §5.1–5.3 structure
+
+---
+
+## What Was Done (Feb 15 Sessions C–F)
+
+### LinCytoSig Issues Document (Session C)
 - **Created** `baseline/lincytosig_issues.html` — standalone document covering 6 open methodological issues
 - **Issue 1: Best-Selection Circularity** — 44-cytokine agreement table showing only 55% agreement across 4 selection strategies
 - **Issue 2: Case Studies** — IFNG (strongest LinCytoSig case), TGFB1 (demonstrates selection problem), IL1B (control)
@@ -17,11 +34,10 @@ Repository has uncommitted changes on `main`. All three sync locations are in sy
 - **Issue 5: Sample Size and PBMC Paradox** — documented structural bias toward CytoSig at donor level
 - **Issue 6: Cross-Validation Design Gap** — proposed leave-one-atlas-out and stability-based selection
 
-### Section 5 Links
-- Added 3 cross-links from interactive report Section 5 to the issues document
-- Link 1: Section 5 header → issues document
-- Link 2: After §5.1 callout → full issues document
-- Link 3: After §5.2 callout → Issue 3 (celltype-level)
+### Section 5 Restructuring (Sessions E–F)
+- Replaced disproportionate 10-way comparison with focused 7-target analysis in interactive HTML
+- Old §5.1–5.3 content archived to lincytosig_issues.html
+- Script reduced from 3,439 → 3,063 lines
 
 ---
 
@@ -68,14 +84,14 @@ Repository has uncommitted changes on `main`. All three sync locations are in sy
 
 | File | Size | Status |
 |------|------|--------|
-| `scripts/generate_interactive_report.py` | ~3,420 lines | All §4.1–4.10 functional, §5 links to issues doc, 21 `prepare_*` functions |
+| `scripts/generate_interactive_report.py` | ~3,063 lines | All §4.1–4.10 + §5.1–5.3 functional, `prepare_7target_data()` for §5 |
 | `scripts/generate_report_figures.py` | — | System architecture diagram redesigned as top-to-bottom layered diagram |
-| `baseline/index.html` | ~15 MB | Regenerated with §5 links, all interactive figures working, synced |
-| `baseline/lincytosig_issues.html` | ~36 KB | NEW: Standalone LinCytoSig issues document (6 issues) |
-| `baseline/REPORT.md` | 519 lines | Sections 1–7 + Appendix, no TBDs remaining |
+| `baseline/index.html` | ~15 MB | Regenerated with §5 (Figures 11–12), all interactive figures working, synced |
+| `baseline/lincytosig_issues.html` | ~2,120 lines | Standalone issues doc (6 issues) + interactive 10-way boxplot + archived §5 content |
+| `baseline/REPORT.md` | 443 lines | Sections 1–7 + Appendix, §5 aligned with interactive HTML, no TBDs |
 | `baseline/stats_section_4.1.html` | ~1.1 MB | Comprehensive stats supplement (all Section 4 methods) |
 | `baseline/system_architecture.html` | ~611 KB | Standalone detailed architecture document |
-| Upstream sync copies | — | All synced (no diffs) |
+| Upstream sync copies | — | Script + HTML synced (REPORT.md is repo-only) |
 
 ---
 
@@ -103,33 +119,31 @@ cp scripts/generate_interactive_report.py /vf/users/parks34/projects/2cytoatlas/
   - `method_comparison.json` — method comparison
   - Last updated: Feb 10–12, 2026
 
-### Script Structure (generate_interactive_report.py, 3,414 lines)
+### Script Structure (generate_interactive_report.py, 3,063 lines)
 
 | Lines (approx) | Section |
 |----------------|---------|
 | 1–105 | Constants, atlas configs, imports |
-| 106–172 | `load_*()` data loaders, `merge_inflammation_atlases()` |
-| 173–266 | `prepare_summary_table()`, MATCHED_TARGETS, ALIAS_MAP |
-| 267–386 | `prepare_boxplot_data()` (Section 4.2) |
-| 387–506 | `prepare_stratified_data()` (Section 4.3) |
-| 507–562 | `prepare_method_comparison_boxplot()` |
-| 563–667 | `prepare_consistency_data()`, `prepare_heatmap_data()` |
-| 668–812 | `prepare_levels_data()` (Section 4.7) — with BH-FDR stats |
-| 813–880 | `prepare_bulk_validation_data()` |
-| 881–1032 | `prepare_cross_platform_data()` (Section 4.4) |
-| 1033–1092 | `prepare_scatter_data()` |
-| 1093–1322 | `prepare_celltype_comparison()`, `prepare_level_comparison_data()` |
-| 1323–1370 | `prepare_good_bad_data()` (Section 4.5) |
-| 1371–1615 | `generate_html()` function signature + CSS/head |
-| 1616–1792 | HTML template: Executive Summary, Sections 1–3 |
-| 1793–2059 | HTML template: Section 4 (§4.1–4.10) |
-| 2060–2237 | HTML template: Section 5 (CytoSig vs LinCytoSig vs SecAct) |
-| 2238–2310 | HTML template: Sections 6–7, Appendix, closing HTML |
-| 2311–2435 | JavaScript: `sigStars()`, `formatPval()`, `formatQval()`, `renderBoxplot()` |
-| 2436–2600 | JavaScript: `renderStratified()`, cross-platform rendering |
-| 2601–2880 | JavaScript: good/bad, consistency, levels, scatter, heatmap |
-| 2881–3315 | JavaScript: method comparison, celltype, level comparison, rankings |
-| 3316–3414 | `main()` — orchestrates data loading + HTML generation |
+| 106–165 | `load_*()` data loaders |
+| 166–260 | `prepare_summary_table()`, MATCHED_TARGETS, ALIAS_MAP |
+| 261–497 | `prepare_boxplot_data()` (§4.2), `prepare_stratified_data()` (§4.3) |
+| 498–660 | `prepare_consistency_data()`, `prepare_heatmap_data()` |
+| 661–805 | `prepare_levels_data()` (§4.7) — with BH-FDR stats |
+| 806–870 | `prepare_bulk_validation_data()` |
+| 871–1030 | `prepare_cross_platform_data()` (§4.4) |
+| 1031–1077 | `prepare_scatter_data()`, `prepare_good_bad_data()` (§4.5) |
+| 1078–1190 | `prepare_7target_data()` (§5) — donor + celltype level |
+| 1191–1430 | `generate_html()` function signature + CSS/head |
+| 1431–1600 | HTML template: Executive Summary, Sections 1–3 |
+| 1601–1900 | HTML template: Section 4 (§4.1–4.10) |
+| 1900–1968 | HTML template: Section 5 (§5.1–5.3, Figures 11–12) |
+| 1969–2040 | HTML template: Sections 6–7, Appendix, closing HTML |
+| 2041–2170 | JavaScript: `sigStars()`, `formatPval()`, `formatQval()`, `renderBoxplot()` |
+| 2170–2340 | JavaScript: `renderStratified()`, cross-platform rendering |
+| 2340–2620 | JavaScript: good/bad, consistency, levels, scatter, heatmap |
+| 2620–2725 | JavaScript: 7-target donor + celltype charts (§5) |
+| 2725–2960 | JavaScript: rankings, TOC, back-to-top |
+| 2961–3063 | `main()` — orchestrates data loading + HTML generation |
 
 ### Report Sections (Interactive HTML)
 
@@ -158,13 +172,13 @@ cp scripts/generate_interactive_report.py /vf/users/parks34/projects/2cytoatlas/
 
 ## Known Divergences
 
-- **REPORT.md vs Interactive HTML Section 5**: REPORT.md has §5.1–5.5 (Method Overview, When LinCytoSig Outperforms, Why LinCytoSig Underperforms, SecAct Breadth, Biologically Important Targets Deep Dive). Interactive HTML has §5.1–5.3 (Method Overview, Effect of Aggregation Level, SecAct Breadth). The Markdown version is more detailed.
-- **Stats supplements**: Session handoff previously listed 4 files (4.1, 4.2, 4.3, 4.6) but these were consolidated. Only `stats_section_4.1.html` remains, serving as a comprehensive supplement for all of Section 4.
+- **REPORT.md figure numbering gap**: REPORT.md goes Figure 1–7 (§4.1–4.7), then Figure 11–12 (§5.1–5.2). The gap (Figures 8–10) corresponds to interactive-only figures in §4.8–4.10 (scatter plots, heatmap, rankings) which have no static equivalents in the Markdown.
+- **Stats supplements**: Only `stats_section_4.1.html` remains, serving as a comprehensive supplement for all of Section 4.
 
 ---
 
 ## Potential Next Steps
 
-- Align Section 5 structure between REPORT.md (§5.1–5.5) and interactive HTML (§5.1–5.3)
-- Consider adding LinCytoSig to the interactive comparisons (currently only in static Section 5 panels)
+- Consider adding LinCytoSig to the interactive Section 4 comparisons (currently only in Section 5 panels)
 - Validate all figure numbers are consecutive and correct throughout both REPORT.md and HTML
+- Add static figure equivalents for §4.8–4.10 to close the figure numbering gap in REPORT.md
