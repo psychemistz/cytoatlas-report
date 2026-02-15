@@ -9,11 +9,11 @@
 CytoAtlas is a comprehensive computational resource that maps cytokine and secreted protein signaling activity across **~29 million human cells and ~31,000 bulk RNA-seq samples** from six independent datasets spanning two bulk RNA-seq resources (GTEx, TCGA) and four single-cell compendia: CIMA (6.5M healthy donor cells), Inflammation Atlas (6.3M disease cells across 3 cohorts; Main cohort used for validation), scAtlas (6.4M organ and cancer cells), and parse_10M (9.7M cytokine-perturbed cells). The system uses **linear ridge regression** against experimentally derived signature matrices to infer activity — producing fully interpretable, conditional z-scores rather than black-box predictions. This makes CytoAtlas an orthogonal tool to deep learning approaches: every prediction traces back to a known gene-to-cytokine relationship with a quantifiable confidence interval.
 
 **Key results:**
-- 1,213 signatures (43 CytoSig cytokines + 1,170 SecAct secreted proteins), plus 178 cell-type-specific LinCytoSig variants, validated across 6 independent datasets (2 bulk RNA-seq, 4 single-cell)
+- 1,213 signatures (43 CytoSig cytokines + 1,170 SecAct secreted proteins), plus 178 cell-type-specific LinCytoSig variants, validated across 6 independent datasets
 - Spearman correlations between predicted activity and target gene expression reach ρ=0.6-0.9 for well-characterized cytokines (IL1B, TNFA, VEGFA, TGFB family)
 - Cross-dataset consistency demonstrates that signatures generalize across CIMA, Inflammation Atlas Main, scAtlas, GTEx, and TCGA
 - Cell-type-specific signatures (LinCytoSig) improve prediction for select immune cell types (Basophil, NK, DC: +0.18-0.21 Δρ) but generally underperform global CytoSig for non-immune cell types
-- SecAct provides the broadest validated coverage with 805–1,161 targets per dataset (varying by gene overlap), achieving the highest correlations in bulk and organ-level analyses (median ρ=0.40 in GTEx/TCGA)
+- SecAct provides the broadest validated coverage with 805–1,161 targets per dataset (varying by gene overlap), achieving the highest median correlations in 5 of 6 datasets (independence-corrected median ρ=0.31–0.46)
 
 ---
 
@@ -367,9 +367,9 @@ We evaluate ten approaches for cytokine activity inference, covering three signa
 
 SecAct covers 1,170 secreted proteins vs CytoSig's 43 cytokines. Key advantages:
 
-- **Highest median ρ** in organ-level analyses (scAtlas normal: 0.307, cancer: 0.363)
-- **Highest median ρ** in bulk RNA-seq (GTEx: 0.395, TCGA: 0.415)
-- **97.1% positive correlation** in TCGA — nearly all targets work
+- **Highest median ρ** in single-cell datasets (scAtlas Normal: 0.455, Cancer: 0.399, independence-corrected)
+- **Highest median ρ** in bulk RNA-seq (GTEx: 0.314, TCGA: 0.357, independence-corrected median-of-medians)
+- **95.8% positive correlation** in TCGA (independence-corrected) — nearly all targets work
 - Discovers novel validated targets beyond canonical cytokines
 
 **Top novel SecAct targets (not in CytoSig-43, consistently ρ > 0.5):** These represent secreted proteins with strong validated activity-expression correlations that would be missed by CytoSig alone. They represent potential novel paracrine signaling axes.
