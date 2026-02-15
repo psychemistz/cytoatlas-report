@@ -1912,8 +1912,8 @@ Ridge regression (L2-regularized linear regression) was chosen deliberately over
 <p><strong>Dataset-dependent targets (negative in single-cell, positive in bulk):</strong></p>
 <ul>
   <li><strong>CD40L</strong>: &minus;0.48 CIMA, &minus;0.55 Inflammation Atlas Main, but <strong>+0.57 GTEx, +0.40 TCGA</strong></li>
-  <li><strong>TRAIL</strong>: &minus;0.46 CIMA, &minus;0.54 Inflammation Atlas Main, but <strong>+0.58 GTEx, +0.31 TCGA</strong></li>
-  <li><strong>LTA</strong>: &minus;0.33 CIMA, but +0.26 TCGA; <strong>HGF</strong>: &minus;0.25 CIMA, &minus;0.30 Inflammation Atlas Main, but <strong>+0.40 GTEx</strong></li>
+  <li><strong>TRAIL</strong>: &minus;0.45 CIMA, &minus;0.54 Inflammation Atlas Main, but <strong>+0.58 GTEx, +0.31 TCGA</strong></li>
+  <li><strong>LTA</strong>: &minus;0.33 CIMA, but +0.26 TCGA; <strong>HGF</strong>: &minus;0.25 CIMA, &minus;0.29 Inflammation Atlas Main, but <strong>+0.40 GTEx</strong></li>
 </ul>
 
 <div class="callout">
