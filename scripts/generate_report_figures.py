@@ -518,9 +518,9 @@ def fig_system_architecture():
     Output:
         fig_system_architecture.png, fig_system_architecture.pdf
     """
-    fig, ax = plt.subplots(1, 1, figsize=(16, 14))
+    fig, ax = plt.subplots(1, 1, figsize=(16, 11))
     ax.set_xlim(0, 16)
-    ax.set_ylim(0, 14)
+    ax.set_ylim(0.5, 11.6)
     ax.axis('off')
 
     # ── Colors by layer ──
@@ -581,8 +581,8 @@ def fig_system_architecture():
     CX = 8.0  # center of the figure
 
     # ═══ LAYER 1: Client (top) ═══
-    L1_Y = 12.5
-    bw, bh = 5.0, 0.9
+    L1_Y = 10.2
+    bw, bh = 5.0, 0.85
     draw_box(CX - bw / 2, L1_Y, bw, bh, C['client'], lw=2.0)
     ax.text(CX, L1_Y + bh * 0.62, 'Browser', fontsize=TITLE_FS, fontweight='bold',
             ha='center', va='center', color='#1E293B')
@@ -590,13 +590,13 @@ def fig_system_architecture():
             fontsize=DETAIL_FS, ha='center', va='center', color='#475569')
 
     # Arrow: Client → Nginx
-    draw_arrow(CX, L1_Y, CX, L1_Y - 0.5)
-    arrow_label(CX + 0.7, L1_Y - 0.25, 'HTTPS')
+    draw_arrow(CX, L1_Y, CX, L1_Y - 0.35)
+    arrow_label(CX + 0.7, L1_Y - 0.18, 'HTTPS')
 
     # ═══ LAYER 2: Gateway / Nginx ═══
-    L2_Y = 10.7
+    L2_Y = 9.15
     bw2 = 4.0
-    bh2 = 0.75
+    bh2 = 0.65
     draw_box(CX - bw2 / 2, L2_Y, bw2, bh2, C['gateway'], lw=1.8)
     ax.text(CX, L2_Y + bh2 * 0.62, 'Nginx', fontsize=TITLE_FS, fontweight='bold',
             ha='center', va='center', color='#1E293B')
@@ -604,13 +604,13 @@ def fig_system_architecture():
             fontsize=DETAIL_FS, ha='center', va='center', color='#475569')
 
     # Arrow: Nginx → FastAPI
-    draw_arrow(CX, L2_Y, CX, L2_Y - 0.55)
-    arrow_label(CX + 0.7, L2_Y - 0.28, 'proxy')
+    draw_arrow(CX, L2_Y, CX, L2_Y - 0.35)
+    arrow_label(CX + 0.7, L2_Y - 0.18, 'proxy')
 
     # ═══ LAYER 3: FastAPI Application ═══
-    L3_Y = 9.0
+    L3_Y = 7.75
     bw3 = 10.0
-    bh3 = 0.85
+    bh3 = 0.8
     draw_box(CX - bw3 / 2, L3_Y, bw3, bh3, C['app'], lw=2.0)
     ax.text(CX, L3_Y + bh3 * 0.62, 'FastAPI Application', fontsize=TITLE_FS,
             fontweight='bold', ha='center', va='center', color='#1E293B')
@@ -619,8 +619,8 @@ def fig_system_architecture():
             fontsize=DETAIL_FS, ha='center', va='center', color='#475569')
 
     # ═══ LAYER 4: Services (3 boxes side-by-side) ═══
-    L4_Y = 6.5
-    svc_h = 2.0
+    L4_Y = 5.5
+    svc_h = 1.9
 
     # -- Data Query Service (left) --
     dqs_x, dqs_w = 1.0, 3.5
@@ -646,8 +646,8 @@ def fig_system_architecture():
     # -- Dual LLM sub-box (left half of chat) --
     llm_x = acs_x + 0.25
     llm_w = 2.4
-    llm_y = L4_Y + 0.2
-    llm_h = 1.3
+    llm_y = L4_Y + 0.15
+    llm_h = 1.25
     draw_box(llm_x, llm_y, llm_w, llm_h, C['llm_pri'], alpha=0.08, lw=1.2)
     ax.text(llm_x + llm_w / 2, llm_y + llm_h - 0.2, 'Dual LLM',
             fontsize=DETAIL_FS, fontweight='bold', ha='center', va='center', color='#92400E')
@@ -664,7 +664,7 @@ def fig_system_architecture():
     rag_x = llm_x + llm_w + 0.3
     rag_w = 2.3
     rag_y = llm_y
-    rag_h = 1.3
+    rag_h = 1.25
     draw_box(rag_x, rag_y, rag_w, rag_h, C['rag'], alpha=0.08, lw=1.2)
     ax.text(rag_x + rag_w / 2, rag_y + rag_h - 0.2, 'RAG + Tools',
             fontsize=DETAIL_FS, fontweight='bold', ha='center', va='center', color='#065F46')
@@ -695,8 +695,8 @@ def fig_system_architecture():
     draw_arrow(CX + 2.5, L3_Y, bt_x + bt_w / 2, L4_Y + svc_h + 0.05)
 
     # ═══ LAYER 5: Storage ═══
-    L5_Y = 3.2
-    store_h = 2.5
+    L5_Y = 2.8
+    store_h = 2.2
     store_w = 14.0
     store_x = CX - store_w / 2
     draw_group(store_x, L5_Y, store_w, store_h, C['storage'], lw=1.5)
@@ -705,7 +705,7 @@ def fig_system_architecture():
 
     # Three storage boxes inside
     sb_y = L5_Y + 0.3
-    sb_h = 1.7
+    sb_h = 1.5
     sb_gap = 0.4
     sb_w = (store_w - 1.0 - 2 * sb_gap) / 3  # equal width for 3 boxes
     sb_start = store_x + 0.5
@@ -763,9 +763,9 @@ def fig_system_architecture():
     draw_arrow(bt_x + bt_w / 2, L4_Y, rd_x + sb_w / 2, sb_y + sb_h + 0.05)
 
     # ═══ LAYER 6: GPU Pipeline (bottom) ═══
-    L6_Y = 1.2
+    L6_Y = 1.0
     gpu_w = 5.0
-    gpu_h = 1.2
+    gpu_h = 1.1
     draw_box(CX - gpu_w / 2, L6_Y, gpu_w, gpu_h, C['gpu'], lw=2.0)
     ax.text(CX, L6_Y + gpu_h * 0.72, 'GPU Pipeline (Offline)',
             fontsize=TITLE_FS, fontweight='bold', ha='center', va='center', color='#1E293B')
@@ -778,11 +778,11 @@ def fig_system_architecture():
     arrow_label(CX + 1.0, (L6_Y + gpu_h + L5_Y) / 2, 'batch writes')
 
     # ═══ Title ═══
-    fig.suptitle('CytoAtlas System Architecture', fontsize=15, fontweight='bold',
-                 y=0.97, color='#0F172A')
+    ax.text(CX, 11.3, 'CytoAtlas System Architecture', fontsize=15, fontweight='bold',
+            ha='center', va='center', color='#0F172A')
 
-    fig.savefig(FIG_DIR / 'fig_system_architecture.png')
-    fig.savefig(FIG_DIR / 'fig_system_architecture.pdf')
+    fig.savefig(FIG_DIR / 'fig_system_architecture.png', pad_inches=0.2)
+    fig.savefig(FIG_DIR / 'fig_system_architecture.pdf', pad_inches=0.2)
     plt.close(fig)
     print('  \u2713 System Architecture diagram')
 
