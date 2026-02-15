@@ -666,7 +666,7 @@ def prepare_heatmap_data(df):
 
 
 def prepare_levels_data(df):
-    """Prepare aggregation level comparison data for CytoSig and SecAct (section 4.6).
+    """Prepare aggregation level comparison data for CytoSig and SecAct (section 4.7).
 
     Data source:
         Merged correlation CSVs filtered by atlas and aggregation level.
@@ -1990,6 +1990,10 @@ Ridge regression (L2-regularized linear regression) was chosen deliberately over
   <tr><td>Tumor &times; Cancer</td><td>Per-cancer type pseudobulk (HCC, PAAD, CRC, etc.)</td><td>29 types</td></tr>
   <tr><td>Tumor &times; Cancer &times; CT1</td><td>Broad cell types within each cancer type</td><td>~120</td></tr>
 </table>
+
+<div class="callout">
+<p><strong>Key insight:</strong> SecAct is consistently more robust to fine-grained aggregation than CytoSig, retaining 27&ndash;44% of coarse-level signal vs CytoSig&rsquo;s 4&ndash;39% across all 4 datasets. At the finest levels both methods converge toward the noise floor (e.g., Inflammation Main L2: CytoSig 0.044 vs SecAct 0.048). Pro-inflammatory cytokines (IL1A, IL1B, TNFA, IL27) degrade most (&minus;0.3&ndash;0.55 &rho;), while targets with negative coarse-level &rho; (CD40L, LTA, HGF) improve at finer resolution&mdash;suggesting confounding resolution at the cell-type level.</p>
+</div>
 
 <h3>4.8 Representative Scatter Plots</h3>
 <div class="plotly-container">

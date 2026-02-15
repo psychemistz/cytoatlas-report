@@ -289,26 +289,33 @@ Of the 29 matched CytoSig targets with data in ≥4 datasets, two categories eme
 
 ### 4.7 Effect of Aggregation Level ([statistical methods](stats_section_4.1.html#aggregation-level))
 
-> **Figure 7** (`fig7_validation_levels.png`): Aggregation level comparison across all 6 datasets.
+> **Figure 7** (interactive): CytoSig vs SecAct boxplots across aggregation levels for each single-cell dataset (Total/Matched tabs, atlas dropdown). Mann-Whitney U (Total) and Wilcoxon signed-rank (Matched) tests with BH-FDR correction.
 
-**Unified aggregation table (CytoSig, median Spearman ρ):**
+**Median Spearman ρ at coarsest and finest aggregation levels:**
 
-| Dataset | Pooled | Independent | Finest |
-|---------|--------|-------------|--------|
-| GTEx | donor_only: 0.211 | by_tissue: 0.170 | — |
-| TCGA | donor_only: 0.238 | primary_by_cancer: 0.147 | — |
-| CIMA | donor_only: 0.114 | donor_only: 0.114 | donor × L4: 0.005 |
-| Inflammation Main | donor_only: 0.323 | donor_only: 0.323 | donor × L2: 0.037 |
-| scAtlas Normal | donor_organ: 0.120 | donor_only: 0.173 | donor_organ × CT2: 0.020 |
-| scAtlas Cancer | donor_only: 0.218 | tumor_only: 0.184 | tumor × CT1: 0.031 |
+| Dataset | Coarsest Level | CytoSig | SecAct | Finest Level | CytoSig | SecAct |
+|---------|---------------|---------|--------|-------------|---------|--------|
+| CIMA | Donor Only | 0.114 | 0.191 | Donor × L4 (73 types) | 0.005 | 0.052 |
+| Inflammation Main | Donor Only | 0.323 | 0.173 | Donor × L2 (65 types) | 0.044 | 0.048 |
+| scAtlas Normal | Donor × Organ | 0.150 | 0.295 | Donor × Organ × CT2 (356 types) | 0.059 | 0.129 |
+| scAtlas Cancer | Tumor Only | 0.184 | 0.399 | Tumor × Cancer × CT1 (~120 types) | 0.033 | 0.171 |
+
+**Signal retention (finest / coarsest median ρ):**
+
+| Dataset | CytoSig Retention | SecAct Retention | SecAct Advantage |
+|---------|-------------------|------------------|-----------------|
+| CIMA | 4% | 27% | 6.2× more robust |
+| Inflammation Main | 14% | 28% | 2.0× |
+| scAtlas Normal | 39% | 44% | 1.1× |
+| scAtlas Cancer | 18% | 43% | 2.4× |
 
 **Key insights:**
-- **GTEx/TCGA pooled ρ is 24–62% higher than the independent level** — this inflation from cross-tissue/cancer confounding validates the independence-first approach. GTEx donor_only (0.211) conflates tissue-level differences (Liver has high albumin expression AND high albumin activity); by_tissue (0.170) isolates within-tissue donor variation
-- **Single-cell datasets show steep drops** from donor to cell-type levels — CIMA: 0.114 → 0.005 (donor to L4), reflecting noise amplification as pseudobulk groups shrink
-- **CIMA and Inflammation Main** have no confounding at donor level (one compartment per donor), so pooled = independent
-- **scAtlas Normal donor_only** (0.173) exceeds donor_organ (0.120) because pooling all organs per donor creates a more complete transcriptional profile with less noise, despite the donor_organ level having more data points
+- **SecAct is consistently more robust to fine-grained aggregation** than CytoSig across all 4 datasets — retaining 27–44% of coarse-level signal vs CytoSig's 4–39%. SecAct's broader gene coverage (7,919 genes) provides more stable estimates as pseudobulk groups shrink
+- **All datasets show monotonic decline** except scAtlas Cancer CytoSig, which *increases* from Tumor Only (0.184) to Tumor × Cancer (0.223) before dropping to CT1 (0.033) — cancer-type stratification can improve signal before cell-type dilution dominates
+- **At the finest levels, CytoSig and SecAct converge** — Inflammation Main L2: 0.044 vs 0.048; both approach the noise floor when pseudobulk groups contain too few cells
+- **Pro-inflammatory cytokines degrade most**: IL1A, IL1B, TNFA, and IL27 lose 0.3–0.55 ρ from coarse to fine across all 4 datasets — their donor-level signal reflects systemic inflammatory state that dilutes when split by cell type. Conversely, targets with negative coarse-level ρ (CD40L, LTA, HGF) *improve* at finer levels, suggesting confounding resolution
 
-Per-tissue GTEx breakdowns, per-cancer TCGA breakdowns, and per-level Mann-Whitney/Wilcoxon tests for all 3 methods are in the [supplement](stats_section_4.1.html#aggregation-level).
+Per-level Mann-Whitney/Wilcoxon tests with BH-FDR correction for all datasets are in the [supplement](stats_section_4.1.html#aggregation-level).
 
 ---
 

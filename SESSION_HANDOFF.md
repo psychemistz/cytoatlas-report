@@ -1,65 +1,61 @@
-# Session Handoff — 2024-02-14
+# Session Handoff — 2026-02-15
 
-## What Was Done This Session
+## Current State Summary
 
-### 1. Renamed "Inflammation Atlas" to "Inflammation Main" (Section 4+)
+Repository is **clean** on `main`, all three sync locations are in sync, no TBDs or TODOs remaining in REPORT.md. Two parallel sessions (A and B) completed a major document overhaul on Feb 14 (88 commits total, 20+ on Feb 14 alone). Both sessions are now finished and all file locks are released.
 
-**Problem**: The report merged 3 inflammation cohorts (main/val/ext) via `merge_inflammation_atlases()`, inflating n_targets to 108 and conflating independent cohorts.
+---
 
-**Fix**: Removed `merge_inflammation_atlases()` from `main()`. Updated all global configs to use `'inflammation_main'`/`'Inflammation Main'` directly. Pre-computed JSON files (`method_comparison_8way_all.json`, `level_comparison.json`) still use old "Inflammation Atlas" keys — remapped at load time via `.replace('Inflammation Atlas', 'Inflammation Main')` in `prepare_method_comparison_boxplot()`, `prepare_celltype_comparison()`, and `prepare_level_comparison_data()`.
+## What Was Done (Feb 14 Sessions A + B Combined)
 
-**Result**: n_targets now correct: 33 CytoSig, 805 SecAct (main cohort only, 817 donors).
+### Terminology and Labeling
+- "Inflammation Main" renamed to "Inflammation Atlas Main" throughout
+- Generic "atlas/atlases" replaced with "dataset/datasets" in all user-facing prose
+- "91 cytokines" corrected to "90 cytokines (+PBS control)"
+- "ground truth" label removed from parse_10M references
+- Signature terminology fixes: "in-vitro stimulation" → "median log2FC", "Visium-derived spatial" → "spatial correlation"
 
-### 2. Fixed scAtlas Cancer Data
+### Section 1 Restructuring
+- Split old "1.1 Why This Architecture?" into "1.1 Architecture and Processing" + "1.2 Validation Strategy"
+- Removed false "bootstrap resampled" claim
+- Updated Figure 1 caption and schematic
 
-- **Section 4.4 (Good/Bad)**: Changed level from `'donor_organ'` (0 rows) to `'tumor_only'` (1,339 rows) in `prepare_good_bad_data()`
-- **Section 4.6 (Levels)**: Changed levels from `['donor_organ', 'donor_organ_celltype1', 'donor_organ_celltype2']` to `['tumor_only', 'tumor_by_cancer', 'tumor_by_cancer_celltype1']` in `prepare_levels_data()`
+### Section 4 Restructuring (Major)
+- **Removed** redundant §4.7 "Bulk RNA-seq Validation" (content already in §4.1–4.3)
+- **Added** new §4.4 "Cross-Platform Comparison: Bulk vs Pseudobulk" with interactive Plotly grouped boxplot
+- **Renumbered** all sections to §4.1–4.10
+- **Added** section numbers to formerly unnumbered §4.8, §4.9, §4.10
+- Updated all figure numbers and cross-references throughout
 
-### 3. Reordered All Dropdowns
+### Data and Statistics Fixes
+- Inflammation Atlas: Removed `merge_inflammation_atlases()` — uses only `inflammation_main` (817 donors, 33 CytoSig / 805 SecAct targets)
+- scAtlas Cancer: Fixed levels from `donor_organ` (0 rows) to `tumor_only` (1,339 rows)
+- Section 4.5: Data-driven target classification tables with verified values
+- Section 4.6: Data-driven consistency tiers, corrected bulk vs SC claim
+- BH-FDR correction added to aggregation level comparison
+- Stats supplements consolidated into single comprehensive `stats_section_4.1.html`
 
-All interactive dropdowns now follow: GTEx, TCGA, CIMA, Inflammation Main, scAtlas Normal, scAtlas Cancer (Sections 4.7, 4.8, 4.9).
-
-### 4. Added Total/Matched Tabs to Section 4.6
-
-Section 4.6 (Effect of Aggregation Level) now has the same tab structure as Section 4.3:
-- **Total tab**: CytoSig (all ~43 targets) vs SecAct (all ~1,170 targets) boxplots
-- **Matched tab**: 32 shared targets only
-
-### 5. Added Statistical Significance Testing to Section 4.6
-
-**Tests per level within each atlas**:
-- **Total**: Mann-Whitney U test (CytoSig rhos vs SecAct rhos, all targets)
-- **Matched**: Wilcoxon signed-rank test (32 shared targets, paired via alias resolution, median-aggregated across celltypes at finer levels)
-
-**Multiple testing correction**: BH-FDR applied across levels within each atlas (5 tests for CIMA, 3 for others). Implemented via `statsmodels.stats.multitest.multipletests(pvals, method='fdr_bh')`.
-
-**JavaScript**: Added significance annotations above each level's boxplot pair showing `sigStars(q)` + `formatQval(q)`. New `formatQval()` helper for q-value labels.
-
-**Key results**:
-- CIMA: Total always significant (q < 0.05), Matched never significant after FDR correction
-- Inflammation Main: Nothing significant (CytoSig ≈ SecAct performance)
-- scAtlas Normal/Cancer: Highly significant at all levels (q < 0.001) both Total and Matched
-
-### 6. Created/Updated Stats Supplements
-
-- `stats_section_4.1.html` — Overall Performance Summary (created by agent)
-- `stats_section_4.2.html` — Cross-Dataset Comparison (updated)
-- `stats_section_4.3.html` — Per-Tissue/Per-Cancer Stratified (created by agent)
-- `stats_section_4.6.html` — Effect of Aggregation Level (fully updated with BH-FDR tables)
-- Deleted `stats_section_4.5.html` (old numbering, no longer needed)
+### Interactive Report Enhancements
+- Figure 1 redesigned with all 6 datasets, embedded as base64
+- System architecture extracted to standalone `system_architecture.html`
+- Floating sidebar TOC with hover expand and scroll-spy
+- Floating back-to-top button
+- All dropdowns reordered to standard: GTEx, TCGA, CIMA, Inflammation Atlas Main, scAtlas Normal, scAtlas Cancer
+- Total/Matched tabs added to aggregation level section
 
 ---
 
 ## Current State of Files
 
-| File | Status |
-|------|--------|
-| `scripts/generate_interactive_report.py` | Main script, ~2,900 lines. All sections 4.1–4.9 functional. |
-| `baseline/index.html` | Regenerated, 13,145 KB. All interactive figures working. |
-| `baseline/REPORT.md` | Updated with current section numbering, results, and figure references. |
-| `baseline/stats_section_4.*.html` | All four supplements current with computed values. |
-| `CLAUDE.md` | Updated with full architecture documentation. |
-| `/vf/users/parks34/projects/2cytoatlas/report/generate_interactive_report.py` | Synced copy of script. |
+| File | Size | Status |
+|------|------|--------|
+| `scripts/generate_interactive_report.py` | 3,414 lines | All §4.1–4.10 functional, 21 `prepare_*` and utility functions |
+| `scripts/generate_report_figures.py` | — | System architecture diagram redesigned as top-to-bottom layered diagram |
+| `baseline/index.html` | ~15 MB (1,905 lines) | Regenerated, all interactive figures working, synced |
+| `baseline/REPORT.md` | 519 lines | Sections 1–7 + Appendix, no TBDs remaining |
+| `baseline/stats_section_4.1.html` | ~1.1 MB | Comprehensive stats supplement (all Section 4 methods) |
+| `baseline/system_architecture.html` | ~611 KB | Standalone detailed architecture document |
+| Upstream sync copies | — | All synced (no diffs) |
 
 ---
 
@@ -70,7 +66,7 @@ Section 4.6 (Effect of Aggregation Level) now has the same tab structure as Sect
 ```bash
 cd /vf/users/parks34/projects/2cytoatlas-report
 python scripts/generate_interactive_report.py
-# Output: /data/parks34/projects/2cytoatlas/report/REPORT.html (~13 MB)
+# Output: /data/parks34/projects/2cytoatlas/report/REPORT.html (~15 MB)
 cp /data/parks34/projects/2cytoatlas/report/REPORT.html baseline/index.html
 cp scripts/generate_interactive_report.py /vf/users/parks34/projects/2cytoatlas/report/generate_interactive_report.py
 ```
@@ -80,32 +76,55 @@ cp scripts/generate_interactive_report.py /vf/users/parks34/projects/2cytoatlas/
 - **Correlation CSVs**: `/data/parks34/projects/2cytoatlas/results/cross_sample_validation/correlations/`
   - Format: atlas, level, celltype, signature, target, spearman_rho, ...
   - ~1M records loaded via `load_data()`
+  - Last regenerated: Feb 13, 2026
 - **Pre-computed JSONs**: `/data/parks34/projects/2cytoatlas/visualization/data/validation/`
   - `method_comparison_8way_all.json` — 8-way method comparison (CytoSig, SecAct, LinCytoSig variants)
   - `level_comparison.json` — aggregation level comparison
   - `method_comparison.json` — method comparison
+  - Last updated: Feb 10–12, 2026
 
-### Script Structure (generate_interactive_report.py)
+### Script Structure (generate_interactive_report.py, 3,414 lines)
 
 | Lines (approx) | Section |
 |----------------|---------|
-| 1–70 | Constants, atlas configs, imports |
-| 70–260 | MATCHED_TARGETS, ALIAS_MAP, helper functions |
-| 260–360 | `prepare_summary_data()`, `prepare_boxplot_data()` |
-| 360–480 | `prepare_stratified_data()` (Section 4.2) |
-| 480–640 | `prepare_method_comparison_boxplot()` |
-| 640–720 | `prepare_levels_data()` (Section 4.6) — with stats |
-| 720–780 | `prepare_bulk_validation_data()` |
-| 780–860 | `prepare_scatter_data()` |
-| 860–1080 | `prepare_celltype_comparison()`, `prepare_level_comparison_data()`, `prepare_good_bad_data()` |
-| 1080–1100 | `prepare_consistency_data()`, `prepare_heatmap_data()` |
-| 1100–1700 | HTML template (Sections 1–4.6) |
-| 1700–2000 | HTML template (Sections 4.7–4.9, closing) |
-| 2000–2070 | JavaScript: `sigStars()`, `formatPval()`, `formatQval()`, `renderBoxplot()` |
-| 2070–2200 | JavaScript: `renderStratified()` |
-| 2200–2450 | JavaScript: good/bad, consistency, levels |
-| 2450–2700 | JavaScript: bulk, scatter, method comparison, celltype, level comparison |
-| 2700–2980 | `generate_html()`, `main()` |
+| 1–105 | Constants, atlas configs, imports |
+| 106–172 | `load_*()` data loaders, `merge_inflammation_atlases()` |
+| 173–266 | `prepare_summary_table()`, MATCHED_TARGETS, ALIAS_MAP |
+| 267–386 | `prepare_boxplot_data()` (Section 4.2) |
+| 387–506 | `prepare_stratified_data()` (Section 4.3) |
+| 507–562 | `prepare_method_comparison_boxplot()` |
+| 563–667 | `prepare_consistency_data()`, `prepare_heatmap_data()` |
+| 668–812 | `prepare_levels_data()` (Section 4.7) — with BH-FDR stats |
+| 813–880 | `prepare_bulk_validation_data()` |
+| 881–1032 | `prepare_cross_platform_data()` (Section 4.4) |
+| 1033–1092 | `prepare_scatter_data()` |
+| 1093–1322 | `prepare_celltype_comparison()`, `prepare_level_comparison_data()` |
+| 1323–1370 | `prepare_good_bad_data()` (Section 4.5) |
+| 1371–1615 | `generate_html()` function signature + CSS/head |
+| 1616–1792 | HTML template: Executive Summary, Sections 1–3 |
+| 1793–2059 | HTML template: Section 4 (§4.1–4.10) |
+| 2060–2237 | HTML template: Section 5 (CytoSig vs LinCytoSig vs SecAct) |
+| 2238–2310 | HTML template: Sections 6–7, Appendix, closing HTML |
+| 2311–2435 | JavaScript: `sigStars()`, `formatPval()`, `formatQval()`, `renderBoxplot()` |
+| 2436–2600 | JavaScript: `renderStratified()`, cross-platform rendering |
+| 2601–2880 | JavaScript: good/bad, consistency, levels, scatter, heatmap |
+| 2881–3315 | JavaScript: method comparison, celltype, level comparison, rankings |
+| 3316–3414 | `main()` — orchestrates data loading + HTML generation |
+
+### Report Sections (Interactive HTML)
+
+| Section | Title | Interactive Features |
+|---------|-------|---------------------|
+| 4.1 | Overall Performance Summary | Sortable table |
+| 4.2 | Cross-Dataset Comparison | Total/Matched tabs |
+| 4.3 | Per-Tissue/Per-Cancer Stratified | Total/Matched tabs, GTEx/TCGA dropdown |
+| 4.4 | Cross-Platform Comparison | GTEx/TCGA toggle, CytoSig/SecAct + Matched tabs |
+| 4.5 | Best/Worst Correlated Targets | Signature + dataset dropdowns |
+| 4.6 | Cross-Atlas Consistency | Line chart with legend toggle |
+| 4.7 | Effect of Aggregation Level | Total/Matched tabs, dataset dropdown |
+| 4.8 | Representative Scatter Plots | Dataset + target + signature dropdowns |
+| 4.9 | Biologically Important Targets Heatmap | CytoSig/SecAct tabs |
+| 4.10 | Per-Target Correlation Rankings | Dataset + signature dropdowns |
 
 ### Key Design Patterns
 
@@ -117,9 +136,15 @@ cp scripts/generate_interactive_report.py /vf/users/parks34/projects/2cytoatlas/
 
 ---
 
+## Known Divergences
+
+- **REPORT.md vs Interactive HTML Section 5**: REPORT.md has §5.1–5.5 (Method Overview, When LinCytoSig Outperforms, Why LinCytoSig Underperforms, SecAct Breadth, Biologically Important Targets Deep Dive). Interactive HTML has §5.1–5.3 (Method Overview, Effect of Aggregation Level, SecAct Breadth). The Markdown version is more detailed.
+- **Stats supplements**: Session handoff previously listed 4 files (4.1, 4.2, 4.3, 4.6) but these were consolidated. Only `stats_section_4.1.html` remains, serving as a comprehensive supplement for all of Section 4.
+
+---
+
 ## Potential Next Steps
 
-- Add BH-FDR correction to Section 4.3 (Cross-Dataset Comparison) — currently uses raw p-values
-- Consider adding LinCytoSig to the interactive comparisons (currently only static in method comparison panels)
-- Fill in any remaining [TBD] values in REPORT.md
-- Validate that all 12 figure numbers are consecutive and correct throughout the HTML
+- Align Section 5 structure between REPORT.md (§5.1–5.5) and interactive HTML (§5.1–5.3)
+- Consider adding LinCytoSig to the interactive comparisons (currently only in static Section 5 panels)
+- Validate all figure numbers are consecutive and correct throughout both REPORT.md and HTML
