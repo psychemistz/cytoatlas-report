@@ -1889,10 +1889,10 @@ Ridge regression (L2-regularized linear regression) was chosen deliberately over
   <div class="caption"><strong>Figure 5.</strong> Top 15 (best) and bottom 15 (worst) correlated targets. Select signature type and dataset from dropdowns.</div>
 </div>
 
-<p>Of the 29 matched CytoSig targets with data in &ge;4 datasets, two categories emerge (mean &rho; across 6 datasets):</p>
+<p>All 32 matched targets have data in &ge;4 datasets. Using donor-level aggregation (matching Figure 5), two categories emerge (mean &rho; across datasets):</p>
 
 <table>
-<tr><th colspan="5" style="background:var(--emerald);color:#fff;text-align:left;padding:8px;">Consistent in Both CytoSig and SecAct (15 targets)</th></tr>
+<tr><th colspan="5" style="background:var(--emerald);color:#fff;text-align:left;padding:8px;">Consistent in Both CytoSig and SecAct (16 targets, both mean &rho; &gt; 0.25)</th></tr>
 <tr><th>Target</th><th>CytoSig Mean &rho;</th><th>Range</th><th>SecAct Mean &rho;</th><th>Datasets &rho;&gt;0.2</th></tr>
 <tr><td>IL1B</td><td>+0.56</td><td>+0.24 to +0.72</td><td>+0.58</td><td>6/6 &amp; 6/6</td></tr>
 <tr><td>TNFA</td><td>+0.50</td><td>+0.26 to +0.63</td><td>+0.46</td><td>6/6 &amp; 6/6</td></tr>
@@ -1908,11 +1908,12 @@ Ridge regression (L2-regularized linear regression) was chosen deliberately over
 <tr><td>TGFB1</td><td>+0.34</td><td>+0.05 to +0.56</td><td>+0.41</td><td>4/6 &amp; 5/6</td></tr>
 <tr><td>BMP4</td><td>+0.33</td><td>&minus;0.02 to +0.61</td><td>+0.43</td><td>4/6 &amp; 5/6</td></tr>
 <tr><td>BMP2</td><td>+0.31</td><td>+0.19 to +0.41</td><td>+0.45</td><td>5/6 &amp; 6/6</td></tr>
+<tr><td>Activin A</td><td>+0.29</td><td>+0.12 to +0.54</td><td>+0.56</td><td>4/6 &amp; 6/6</td></tr>
 <tr><td>GMCSF</td><td>+0.26</td><td>+0.01 to +0.46</td><td>+0.37</td><td>4/6 &amp; 4/6</td></tr>
 </table>
 
 <table>
-<tr><th colspan="5" style="background:var(--amber);color:#fff;text-align:left;padding:8px;">SecAct-Only: CytoSig Near-Zero, SecAct Rescues (10 targets)</th></tr>
+<tr><th colspan="5" style="background:var(--amber);color:#fff;text-align:left;padding:8px;">SecAct-Only: CytoSig Near-Zero, SecAct Rescues (11 targets)</th></tr>
 <tr><th>Target</th><th>CytoSig Mean &rho;</th><th>Range</th><th>SecAct Mean &rho;</th><th>&Delta;</th></tr>
 <tr><td>LTA</td><td>&minus;0.02</td><td>&minus;0.33 to +0.26</td><td><strong>+0.53</strong></td><td>+0.55</td></tr>
 <tr><td>HGF</td><td>+0.06</td><td>&minus;0.29 to +0.40</td><td><strong>+0.58</strong></td><td>+0.51</td></tr>
@@ -1922,12 +1923,15 @@ Ridge regression (L2-regularized linear regression) was chosen deliberately over
 <tr><td>TRAIL</td><td>&minus;0.00</td><td>&minus;0.54 to +0.58</td><td><strong>+0.44</strong></td><td>+0.44</td></tr>
 <tr><td>CD40L</td><td>+0.02</td><td>&minus;0.55 to +0.57</td><td><strong>+0.46</strong></td><td>+0.43</td></tr>
 <tr><td>FGF2</td><td>+0.04</td><td>&minus;0.23 to +0.29</td><td><strong>+0.46</strong></td><td>+0.42</td></tr>
+<tr><td>MCSF</td><td>+0.16</td><td>&minus;0.26 to +0.50</td><td><strong>+0.40</strong></td><td>+0.24</td></tr>
 <tr><td>IL21</td><td>&minus;0.02</td><td>&minus;0.22 to +0.09</td><td><strong>+0.22</strong></td><td>+0.24</td></tr>
 <tr><td>BDNF</td><td>+0.11</td><td>&minus;0.07 to +0.20</td><td><strong>+0.33</strong></td><td>+0.21</td></tr>
 </table>
 
+<p style="font-size:0.9em;color:#555;">Remaining 5 targets do not fit either category: VEGFA and IFNL are CytoSig-only (CytoSig mean +0.38/+0.21, SecAct &lt; 0.2), GDF11 and GCSF are borderline (CytoSig mean +0.23 each, SecAct +0.43/+0.35), and IL36 shows near-zero correlations in both methods.</p>
+
 <div class="callout">
-<p><strong>Key insight:</strong> CytoSig&rsquo;s median log2FC signatures reliably detect 15 canonical cytokines with strong transcriptional programs (IL1B, TNFA, IFNG, etc.). SecAct&rsquo;s spatial correlation signatures additionally rescue 10 targets where CytoSig averages near zero&mdash;including membrane-bound (CD40L, TRAIL), paracrine (HGF, FGF2), and heteromeric (LTA) signaling targets that require tissue-level spatial context. TWEAK and IL21 are the clearest cases: CytoSig never exceeds &rho;=0.11 in any dataset, while SecAct achieves +0.44 and +0.22. Select &ldquo;SecAct&rdquo; in the dropdown above to explore interactively.</p>
+<p><strong>Key insight:</strong> CytoSig&rsquo;s median log2FC signatures reliably detect 16 canonical cytokines with strong transcriptional programs. SecAct&rsquo;s spatial correlation signatures additionally rescue 11 targets where CytoSig averages near zero&mdash;including membrane-bound (CD40L, TRAIL), paracrine (HGF, FGF2), and heteromeric (LTA) signaling targets. TWEAK and IL21 are the clearest cases: CytoSig averages near zero across all datasets, while SecAct achieves +0.44 and +0.22. Note: this section uses donor-level aggregation (matching Figure 5), not the independence-corrected median-of-medians used in &sect;4.1&ndash;4.3. Select &ldquo;SecAct&rdquo; in the dropdown above to explore interactively.</p>
 </div>
 
 <!-- Item 10: Interactive consistency plot -->

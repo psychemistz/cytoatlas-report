@@ -41,8 +41,8 @@ Files must stay in sync across three locations. After editing any synced file, c
 | `scripts/generate_interactive_report.py` | — | — | Section 5 links to lincytosig_issues.html added |
 | `scripts/generate_report_figures.py` | — | — | fig_system_architecture() redesigned as top-to-bottom system design diagram |
 | `baseline/index.html` | — | — | Regenerated with Section 5 links |
-| `baseline/lincytosig_issues.html` | — | — | Standalone LinCytoSig issues document (6 issues) |
-| `baseline/REPORT.md` | — | — | §4.7 rewritten with data-driven CytoSig+SecAct comparison |
+| `baseline/lincytosig_issues.html` | D | 2026-02-15 | Adding representative celltype-cytokine pairs to Issue 3 |
+| `baseline/REPORT.md` | — | — | §4.5 tables fixed: +Activin A, +MCSF, remaining 5 noted |
 | `baseline/stats_section_4.*.html` | — | — | §4.4 matched-target control tables added |
 | `CLAUDE.md` | — | — | Report Sections table updated |
 | `SESSION_HANDOFF.md` | — | — | |
