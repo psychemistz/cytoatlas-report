@@ -91,9 +91,10 @@ Pipeline scripts live in `../2cytoatlas/scripts/`. Key scripts for bulk validati
 | 4.5 | Best/Worst Correlated Targets | Figure 5 | Signature + atlas dropdowns |
 | 4.6 | Cross-Atlas Consistency | Figure 6 | Line chart with legend toggle |
 | 4.7 | Effect of Aggregation Level | Figure 7 | Total/Matched tabs, atlas dropdown |
-| 4.8 | Representative Scatter Plots | Figure 8 | Atlas + target + signature dropdowns |
-| 4.9 | Biologically Important Targets Heatmap | Figure 9 | CytoSig/SecAct tabs |
-| 4.10 | Per-Target Correlation Rankings | Figure 10 | Dataset + signature dropdowns |
+| 4.8 | Residual Correlation: Cell-Fraction Adjustment | Figure 8 | Dataset dropdown, CytoSig/SecAct tabs, dumbbell chart |
+| 4.9 | Representative Scatter Plots | Figure 9 | Atlas + target + signature dropdowns |
+| 4.10 | Biologically Important Targets Heatmap | Figure 10 | CytoSig/SecAct tabs |
+| 4.11 | Per-Target Correlation Rankings | Figure 11 | Dataset + signature dropdowns |
 
 ### Statistical Testing Pattern
 

@@ -38,11 +38,11 @@ Files must stay in sync across three locations. After editing any synced file, c
 
 | File | Owner | Since | Notes |
 |------|-------|-------|-------|
-| `scripts/generate_interactive_report.py` | — | — | §5 restructured: 3 focused subsections, 7-target comparison |
+| `scripts/generate_interactive_report.py` | — | — | §4.8 Residual Correlation added (Figure 8), renumbered §4.8–4.10→4.9–4.11, Figures 8–12→9–13 |
 | `scripts/generate_report_figures.py` | — | — | fig_system_architecture() redesigned as top-to-bottom system design diagram |
-| `baseline/index.html` | — | — | Regenerated with new §5 (Figures 11-12) |
+| `baseline/index.html` | — | — | Regenerated with §4.8 (Figures 1–13) |
 | `baseline/lincytosig_issues.html` | — | — | Archived §5 content + interactive 10-way boxplot |
-| `baseline/REPORT.md` | — | — | §5 aligned with interactive HTML (§5.1–5.3) |
+| `baseline/REPORT.md` | — | — | §4.8 Residual Correlation added, §4.9–4.11, Figures 12–13 renumbered |
 | `baseline/stats_section_4.*.html` | — | — | §4.4 matched-target control tables added |
 | `CLAUDE.md` | — | — | Report Sections table updated |
 | `SESSION_HANDOFF.md` | — | — | |

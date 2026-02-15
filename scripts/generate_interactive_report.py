@@ -1031,6 +1031,23 @@ def prepare_scatter_data():
     return result
 
 
+def prepare_residual_data():
+    """Load residual correlation data (cell-fraction adjustment).
+
+    Reads residual_correlation.json produced by 16_residual_correlation.py.
+    Returns dict keyed by dataset label, each containing 'cytosig' and 'secact'
+    entries with direct and residual correlations for embedding in the report.
+    """
+    residual_path = VIZ_DIR / 'residual_correlation.json'
+    if not residual_path.exists():
+        print(f'  WARNING: {residual_path} not found, skipping residual data')
+        return {}
+    with open(residual_path) as f:
+        data = json.load(f)
+    # Pass through — JSON structure matches what the JS needs directly
+    return data
+
+
 def prepare_good_bad_data(df):
     """Prepare top/bottom correlated targets per atlas for CytoSig and SecAct.
 
@@ -1196,7 +1213,8 @@ def prepare_7target_data(df):
 
 def generate_html(summary_table, boxplot_data, consistency_data, heatmap_data,
                   levels_data, bulk_data, scatter_data, good_bad_data,
-                  seven_target_data, stratified_data, cross_platform_data):
+                  seven_target_data, stratified_data, cross_platform_data,
+                  residual_data):
 
     # Serialize all data as JSON for embedding
     data_json = json.dumps({
@@ -1214,6 +1232,7 @@ def generate_html(summary_table, boxplot_data, consistency_data, heatmap_data,
         'familyColors': FAMILY_COLORS,
         'sevenTarget': seven_target_data,
         'crossPlatform': cross_platform_data,
+        'residual': residual_data,
     }, separators=(',', ':'))
 
     # Embed Figure 1 as base64 so HTML is self-contained
@@ -1515,6 +1534,7 @@ Ridge regression (L2-regularized linear regression) was chosen deliberately over
   <tr><td><strong>Donor &times; cell-type</strong></td><td>Stratified by cell type within each donor</td><td>CIMA, Inflammation Atlas Main, scAtlas Normal/Cancer</td><td>&sect;4.7</td></tr>
   <tr><td><strong>Per-tissue / per-cancer</strong></td><td>Median-of-medians across tissues or cancer types</td><td>GTEx (29 tissues), TCGA (33 cancer types)</td><td>&sect;4.2, &sect;4.3</td></tr>
   <tr><td><strong>Cross-platform</strong></td><td>Bulk vs pseudobulk concordance per tissue/cancer</td><td>GTEx vs scAtlas Normal, TCGA vs scAtlas Cancer</td><td>&sect;4.4</td></tr>
+  <tr><td><strong>Residual (composition-adjusted)</strong></td><td>Activity&ndash;expression correlation after regressing out cell-type fractions</td><td>CIMA, Inflammation Atlas Main, scAtlas Cancer</td><td>&sect;4.8</td></tr>
 </table>
 
 <p>All statistics use <strong>independence-corrected</strong> values &mdash; preventing inflation from repeated measures across tissues, cancer types, or cell types. CytoSig vs SecAct comparisons use Mann-Whitney U (total) and Wilcoxon signed-rank (32 matched targets) with BH-FDR correction. See Section 3.3 for the validation philosophy and Section 4 for full results.</p>
@@ -1525,7 +1545,7 @@ Ridge regression (L2-regularized linear regression) was chosen deliberately over
 
 <div class="figure">
   <img src="data:image/png;base64,{fig1_b64}" alt="Figure 1: Dataset Overview" style="max-width:100%;">
-  <div class="caption"><strong>Figure 1.</strong> CytoAtlas overview. Data sources (4 single-cell compendia, 2 bulk RNA-seq resources) are processed through ridge regression against 3 signature matrices, then validated across 7 complementary analyses (&sect;4.1&ndash;&sect;4.7).</div>
+  <div class="caption"><strong>Figure 1.</strong> CytoAtlas overview. Data sources (4 single-cell compendia, 2 bulk RNA-seq resources) are processed through ridge regression against 3 signature matrices, then validated across 8 complementary analyses (&sect;4.1&ndash;&sect;4.8).</div>
 </div>
 
 <hr>
@@ -1597,8 +1617,8 @@ Ridge regression (L2-regularized linear regression) was chosen deliberately over
 <h3>3.2 What Scientific Questions Does CytoAtlas Answer?</h3>
 <ol>
   <li><strong>Which cytokines are active in which cell types across diseases?</strong> &mdash; IL1B/TNFA in monocytes/macrophages, IFNG in CD8+ T and NK cells, IL17A in Th17, VEGFA in endothelial/tumor cells, TGFB family in stromal cells &mdash; quantified across 19 diseases, 35 organs, and 15 cancer types.</li>
-  <li><strong>Are cytokine activities consistent across independent cohorts?</strong> &mdash; Yes. IL1B, TNFA, VEGFA, and TGFB family show consistent positive correlations across all 6 validation datasets (Figure 8).</li>
-  <li><strong>Does cell-type-specific biology matter for cytokine inference?</strong> &mdash; For select targets, yes: LinCytoSig improves IL6&times;Macrophage, VEGFA&times;Endothelial, and IL2&times;CD8T prediction in normal tissue, but global CytoSig wins overall and the advantage does not transfer to cancer (Figures 11&ndash;12).</li>
+  <li><strong>Are cytokine activities consistent across independent cohorts?</strong> &mdash; Yes. IL1B, TNFA, VEGFA, and TGFB family show consistent positive correlations across all 6 validation datasets (Figure 10).</li>
+  <li><strong>Does cell-type-specific biology matter for cytokine inference?</strong> &mdash; For select targets, yes: LinCytoSig improves IL6&times;Macrophage, VEGFA&times;Endothelial, and IL2&times;CD8T prediction in normal tissue, but global CytoSig wins overall and the advantage does not transfer to cancer (Figures 12&ndash;13).</li>
   <li><strong>Which secreted proteins beyond cytokines show validated activity?</strong> &mdash; SecAct (1,170 targets) achieves the highest correlations in 5 of 6 datasets (median &rho;=0.19&ndash;0.46), with novel validated targets like INHBA/Activin A (&rho;=0.91 in TCGA Colon), CXCL12 (&rho;=0.94 in scAtlas Normal Fibroblast), and BMP family.</li>
   <li><strong>Can we predict treatment response from cytokine activity?</strong> &mdash; We are incorporating cytokine-blocking therapy outcomes from bulk RNA-seq to test whether predicted cytokine activity associates with therapy response. Additionally, Inflammation Atlas responder/non-responder labels enable treatment response prediction using cytokine activity profiles as features.</li>
 </ol>
@@ -1819,7 +1839,32 @@ Ridge regression (L2-regularized linear regression) was chosen deliberately over
   <tr><td>Per Cancer Type &times; CT1</td><td>Broad cell types within each cancer type</td><td>~120</td></tr>
 </table>
 
-<h3>4.8 Representative Scatter Plots</h3>
+<h3>4.8 Residual Correlation: Cell-Fraction Adjustment</h3>
+<p>Direct correlations between predicted activity and target gene expression may be confounded by cell-type composition: if a donor has many monocytes, both TNF expression and predicted TNF activity will be high&mdash;not because the prediction is accurate, but because both are driven by monocyte abundance. This section removes that confound.</p>
+<p><strong>Method:</strong> For each target, we fit X = b<sub>0</sub> + b<sub>1</sub>&middot;F + b<sub>2</sub>&middot;(A&times;F) + &epsilon;, where F = cell-type fractions and A&times;F = interaction terms. The <em>residual correlation</em> Spearman(&epsilon;, A) tests whether predicted activity associates with expression <strong>independent</strong> of cell-type composition.</p>
+<p>Applied to 3 single-cell datasets with matched cell-fraction data: CIMA (6 L1 cell types), Inflammation Atlas Main (15 L1 cell types), and scAtlas Cancer (15 cell types incl. tumor). scAtlas Normal is excluded due to incompatible donor identifiers between pseudobulk files.</p>
+
+<div class="plotly-container">
+  <div class="controls">
+    <label>Dataset:</label>
+    <select id="residual-dataset-select" onchange="updateResidual()">
+    </select>
+    <div class="tab-bar" id="residual-tabs" style="display:inline-flex;margin-left:16px;">
+      <button class="tab-btn cytosig active" onclick="switchResidualTab('cytosig')">CytoSig</button>
+      <button class="tab-btn secact" onclick="switchResidualTab('secact')">SecAct</button>
+    </div>
+  </div>
+  <div id="residual-stats" style="font-size:13px;color:#555;margin:8px 0;padding:8px 12px;background:#f8f9fa;border-radius:4px;"></div>
+  <div id="residual-chart" style="height:600px;"></div>
+  <div class="caption"><strong>Figure 8.</strong> Dumbbell chart: each target is a row. Blue circles = direct &rho; (unadjusted), red diamonds = residual &rho; (composition-adjusted). Connecting lines show the shift: gray = minimal change (&lt;0.05), orange = decreased, green = increased. Targets sorted by direct &rho; descending.</div>
+</div>
+
+<div class="callout">
+<p><strong>Key finding:</strong> In PBMC-dominated datasets (CIMA, Inflammation Main), most direct correlations collapse after cell-fraction adjustment: CIMA retains only 29% of positive correlations (CytoSig) and Inflammation Main retains 43%, with median &Delta;&rho; of &minus;0.16 and &minus;0.30 respectively. This suggests that donor-level correlations in these datasets are largely driven by cell-type composition rather than within-cell-type biology.</p>
+<p>In contrast, scAtlas Cancer retains 97% of positive CytoSig correlations (median &Delta;&rho;=&minus;0.09) and 88% for SecAct (&Delta;&rho;=&minus;0.17). This is expected: tumor cells dominate the cell composition, so inter-donor variation in tumor cell fraction is smaller relative to within-tumor biological variation.</p>
+</div>
+
+<h3>4.9 Representative Scatter Plots</h3>
 <div class="plotly-container">
   <div class="controls">
     <label>Target:</label>
@@ -1835,7 +1880,7 @@ Ridge regression (L2-regularized linear regression) was chosen deliberately over
     </select>
   </div>
   <div id="scatter-chart" style="height:500px;"></div>
-  <div class="caption"><strong>Figure 8.</strong> Donor-level expression vs predicted activity. Select target, atlas, and signature method from dropdowns.</div>
+  <div class="caption"><strong>Figure 9.</strong> Donor-level expression vs predicted activity. Select target, atlas, and signature method from dropdowns.</div>
 </div>
 
 <div class="callout">
@@ -1843,15 +1888,15 @@ Ridge regression (L2-regularized linear regression) was chosen deliberately over
 <p>HGF shows a large method difference: CytoSig yields negative or weak correlations in CIMA (&minus;0.25), Inflammation Main (&minus;0.30), and TCGA (0.20), while SecAct achieves 0.64, 0.36, and 0.64 respectively. VEGFA is the most dataset-dependent target&mdash;the highest CytoSig &rho; in Inflammation Main (0.79) but weak with SecAct in GTEx (0.10) and CIMA (&minus;0.24). Bulk datasets (GTEx n=19,788; TCGA n=11,069) show consistently positive correlations across nearly all targets, while smaller cohorts (CIMA n=421; Inflammation Main n=817) show larger between-target variance and more sign reversals.</p>
 </div>
 
-<!-- Item 12: Interactive heatmap with tabs -->
-<h3>4.9 Biologically Important Targets Heatmap</h3>
+<!-- Item 13: Interactive heatmap with tabs -->
+<h3>4.10 Biologically Important Targets Heatmap</h3>
 <div class="plotly-container">
   <div class="tab-bar" id="heatmap-tabs">
     <button class="tab-btn cytosig active" onclick="switchHeatmapTab('cytosig')">CytoSig</button>
     <button class="tab-btn secact" onclick="switchHeatmapTab('secact')">SecAct</button>
   </div>
   <div id="heatmap-chart" style="min-height:500px;"></div>
-  <div class="caption"><strong>Figure 9.</strong> Spearman &rho; heatmap for biologically important targets across all datasets. Switch between signature types. Hover over cells for details.</div>
+  <div class="caption"><strong>Figure 10.</strong> Spearman &rho; heatmap for biologically important targets across all datasets. Switch between signature types. Hover over cells for details.</div>
 </div>
 
 <div class="callout">
@@ -1868,8 +1913,8 @@ Ridge regression (L2-regularized linear regression) was chosen deliberately over
 <p><strong>Key insight:</strong> A core set of ~10 CytoSig targets shows positive &rho; (&gt;0.15) across all 6 datasets (IL1B, TNFA, IL6, IL1A, IL27, IFNG, TGFB3, LIF, BMP2, VEGFA). Conversely, IL2, IL22, IL21, IL3, and IL17A show near-zero or negative &rho; across all datasets. SecAct outperforms CytoSig on 26 of 32 matched targets, with the largest differences for LTA (CytoSig &rho;&asymp;0.01 vs SecAct &rho;&asymp;0.46), CD40L (0.06 vs 0.50), and IL15 (0.03 vs 0.56). CD40L, HGF, and TRAIL flip sign between datasets (e.g., HGF is +0.65 in scAtlas Normal but &minus;0.30 in Inflammation Main).</p>
 </div>
 
-<!-- Item 13: Interactive comprehensive validation -->
-<h3>4.10 Per-Target Correlation Rankings</h3>
+<!-- Item 14: Interactive comprehensive validation -->
+<h3>4.11 Per-Target Correlation Rankings</h3>
 <div class="plotly-container">
   <div class="controls">
     <label>Dataset:</label>
@@ -1888,7 +1933,7 @@ Ridge regression (L2-regularized linear regression) was chosen deliberately over
     </select>
   </div>
   <div id="bulk-chart" style="height:500px;"></div>
-  <div class="caption"><strong>Figure 10.</strong> Validation: targets ranked by Spearman &rho; across all datasets and signature types. Select dataset and signature from dropdowns. For SecAct, green bars indicate the 32 matched CytoSig targets (22 direct + 10 alias-resolved); gray bars are additional top-ranked SecAct targets.</div>
+  <div class="caption"><strong>Figure 11.</strong> Validation: targets ranked by Spearman &rho; across all datasets and signature types. Select dataset and signature from dropdowns. For SecAct, green bars indicate the 32 matched CytoSig targets (22 direct + 10 alias-resolved); gray bars are additional top-ranked SecAct targets.</div>
 </div>
 
 <div class="callout">
@@ -1917,7 +1962,7 @@ Ridge regression (L2-regularized linear regression) was chosen deliberately over
     </select>
   </div>
   <div id="seven-target-donor-chart" style="height:500px;"></div>
-  <div class="caption"><strong>Figure 11.</strong> CytoSig vs LinCytoSig vs SecAct for 7 representative celltype&ndash;cytokine pairs at donor level. &ldquo;All Datasets&rdquo; shows per-dataset median &rho; across 7 targets; individual dataset views show per-target &rho; values. LinCytoSig uses the biologically matched cell-type signature (e.g., Macrophage__IL6 for IL6).</div>
+  <div class="caption"><strong>Figure 12.</strong> CytoSig vs LinCytoSig vs SecAct for 7 representative celltype&ndash;cytokine pairs at donor level. &ldquo;All Datasets&rdquo; shows per-dataset median &rho; across 7 targets; individual dataset views show per-target &rho; values. LinCytoSig uses the biologically matched cell-type signature (e.g., Macrophage__IL6 for IL6).</div>
 </div>
 
 <div class="callout">
@@ -1939,7 +1984,7 @@ Ridge regression (L2-regularized linear regression) was chosen deliberately over
     </select>
   </div>
   <div id="seven-target-ct-chart" style="height:450px;"></div>
-  <div class="caption"><strong>Figure 12.</strong> CytoSig vs LinCytoSig vs SecAct evaluated on matched cell-type pseudobulk (e.g., IL6 on macrophage pseudobulk) in scAtlas Normal and scAtlas Cancer. Only these two datasets have sufficient cell-type diversity for all 7 targets.</div>
+  <div class="caption"><strong>Figure 13.</strong> CytoSig vs LinCytoSig vs SecAct evaluated on matched cell-type pseudobulk (e.g., IL6 on macrophage pseudobulk) in scAtlas Normal and scAtlas Cancer. Only these two datasets have sufficient cell-type diversity for all 7 targets.</div>
 </div>
 
 <div class="callout">
@@ -2567,6 +2612,110 @@ renderCrossPlatform('cytosig');
 }})();
 
 // ═══════════════════════════════════════════════════════════════════════════
+// RESIDUAL CORRELATION DUMBBELL CHART (Section 4.8)
+// ═══════════════════════════════════════════════════════════════════════════
+(function() {{
+  var rd = DATA.residual;
+  if (!rd || Object.keys(rd).length === 0) return;
+
+  var dsSel = document.getElementById('residual-dataset-select');
+  var datasets = Object.keys(rd);
+  datasets.forEach(function(ds) {{
+    var opt = document.createElement('option');
+    opt.value = ds; opt.textContent = ds;
+    dsSel.appendChild(opt);
+  }});
+
+  var currentResidualSig = 'cytosig';
+  window.switchResidualTab = function(sig) {{
+    currentResidualSig = sig;
+    document.querySelectorAll('#residual-tabs .tab-btn').forEach(function(b){{b.classList.remove('active');}});
+    document.querySelector('#residual-tabs .tab-btn.' + sig).classList.add('active');
+    updateResidual();
+  }};
+
+  window.updateResidual = function() {{
+    var ds = dsSel.value;
+    var sig = currentResidualSig;
+    var statsDiv = document.getElementById('residual-stats');
+
+    if (!rd[ds] || !rd[ds][sig]) {{
+      Plotly.newPlot('residual-chart', [], {{title: 'No data for ' + ds + ' / ' + sig, margin:{{t:40}}}}, PLOTLY_CONFIG);
+      statsDiv.innerHTML = '';
+      return;
+    }}
+    var d = rd[ds][sig];
+    var s = d.stats;
+    var sigLabel = sig === 'secact' ? 'SecAct' : 'CytoSig';
+
+    // Stats summary
+    statsDiv.innerHTML = '<strong>' + ds + ' &mdash; ' + sigLabel + '</strong>: ' +
+      d.n_donors + ' donors, ' + d.n_celltypes + ' cell types (' + d.model_params + ' model params). ' +
+      'Targets: ' + d.targets.length + '. ' +
+      'Median direct &rho;=' + s.median_direct.toFixed(3) + ', ' +
+      'residual &rho;=' + s.median_residual.toFixed(3) + ', ' +
+      '&Delta;=' + s.median_delta.toFixed(3) + '. ' +
+      'Sign preserved: ' + s.pct_sign_preserved.toFixed(0) + '%, ' +
+      'retained positive: ' + s.pct_retained_positive.toFixed(0) + '%';
+
+    // Sort targets by direct rho descending
+    var indices = d.targets.map(function(_, i) {{ return i; }});
+    indices.sort(function(a, b) {{ return d.direct_rho[a] - d.direct_rho[b]; }});
+
+    var targets = indices.map(function(i) {{ return d.targets[i]; }});
+    var directRho = indices.map(function(i) {{ return d.direct_rho[i]; }});
+    var residRho = indices.map(function(i) {{ return d.residual_rho[i]; }});
+
+    // Limit to top 60 targets for readability (sorted by direct rho)
+    var maxShow = 60;
+    if (targets.length > maxShow) {{
+      targets = targets.slice(targets.length - maxShow);
+      directRho = directRho.slice(directRho.length - maxShow);
+      residRho = residRho.slice(residRho.length - maxShow);
+    }}
+
+    // Build connecting lines as shapes
+    var shapes = [];
+    for (var i = 0; i < targets.length; i++) {{
+      var delta = residRho[i] - directRho[i];
+      var color = Math.abs(delta) < 0.05 ? '#9CA3AF' : (delta < 0 ? '#D97706' : '#059669');
+      shapes.push({{
+        type: 'line', x0: directRho[i], x1: residRho[i], y0: i, y1: i,
+        line: {{color: color, width: 1.5}},
+      }});
+    }}
+
+    var traces = [
+      {{
+        type: 'scatter', mode: 'markers', name: 'Direct \\u03c1',
+        x: directRho, y: targets,
+        marker: {{color: '#2563EB', size: 8, symbol: 'circle'}},
+        hovertemplate: '%{{y}}<br>Direct \\u03c1 = %{{x:.3f}}<extra></extra>',
+      }},
+      {{
+        type: 'scatter', mode: 'markers', name: 'Residual \\u03c1',
+        x: residRho, y: targets,
+        marker: {{color: '#DC2626', size: 8, symbol: 'diamond'}},
+        hovertemplate: '%{{y}}<br>Residual \\u03c1 = %{{x:.3f}}<extra></extra>',
+      }},
+    ];
+
+    var h = Math.max(400, targets.length * 14 + 100);
+    document.getElementById('residual-chart').style.height = h + 'px';
+
+    Plotly.newPlot('residual-chart', traces, {{
+      title: ds + ' — ' + sigLabel + ': Direct vs Residual Correlation',
+      xaxis: {{title: 'Spearman \\u03c1', zeroline: true, zerolinecolor: '#ccc', zerolinewidth: 1}},
+      yaxis: {{tickfont: {{size: 9}}, automargin: true}},
+      shapes: shapes,
+      legend: {{x: 0.7, y: 1.05, orientation: 'h'}},
+      margin: {{t: 60, l: 120, r: 30, b: 50}},
+    }}, PLOTLY_CONFIG);
+  }};
+  updateResidual();
+}})();
+
+// ═══════════════════════════════════════════════════════════════════════════
 // SCATTER PLOTS (interactive with dropdown)
 // ═══════════════════════════════════════════════════════════════════════════
 (function() {{
@@ -3013,11 +3162,14 @@ def main():
     print(f'  7-target data: {len(seven_target_data["donor"]["datasets"])} datasets, '
           f'{len(seven_target_data["celltype"])} celltype datasets')
 
+    residual_data = prepare_residual_data()
+    print(f'  Residual data: {len(residual_data)} datasets')
+
     print('\nGenerating HTML...')
     html = generate_html(summary_table, boxplot_data, consistency_data,
                          heatmap_data, levels_data, bulk_data, scatter_data,
                          good_bad_data, seven_target_data, stratified_data,
-                         cross_platform_data)
+                         cross_platform_data, residual_data)
 
     output_path = REPORT_DIR / 'REPORT.html'
     output_path.write_text(html, encoding='utf-8')

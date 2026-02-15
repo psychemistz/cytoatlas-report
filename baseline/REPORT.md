@@ -137,7 +137,7 @@ Most single-cell analysis tools use complex models (variational autoencoders, gr
 
 1. **Which cytokines are active in which cell types across diseases?** — IL1B/TNFA in monocytes/macrophages, IFNG in CD8+ T and NK cells, IL17A in Th17, VEGFA in endothelial/tumor cells, TGFB family in stromal cells — quantified across 19 diseases, 35 organs, and 15 cancer types.
 2. **Are cytokine activities consistent across independent cohorts?** — Yes. IL1B, TNFA, VEGFA, and TGFB family show consistent positive correlations across all 6 validation datasets (Figure 6).
-3. **Does cell-type-specific biology matter for cytokine inference?** — For select targets, yes: LinCytoSig improves IL6×Macrophage, VEGFA×Endothelial, and IL2×CD8T prediction in normal tissue, but global CytoSig wins overall and the advantage does not transfer to cancer (Figures 11–12).
+3. **Does cell-type-specific biology matter for cytokine inference?** — For select targets, yes: LinCytoSig improves IL6×Macrophage, VEGFA×Endothelial, and IL2×CD8T prediction in normal tissue, but global CytoSig wins overall and the advantage does not transfer to cancer (Figures 12–13).
 4. **Which secreted proteins beyond cytokines show validated activity?** — SecAct (1,170 targets) achieves the highest correlations in 5 of 6 datasets (median ρ=0.19–0.46), with validated targets including INHBA/Activin A (ρ=0.91 in TCGA Colon), CXCL12 (ρ=0.94 in scAtlas Normal Fibroblast), and BMP family.
 5. **Can we predict treatment response from cytokine activity?** — We are incorporating cytokine-blocking therapy outcomes from bulk RNA-seq to test whether predicted cytokine activity associates with therapy response. Additionally, Inflammation Atlas responder/non-responder labels (208 samples across 6 diseases: RA, PS, PSA, CD, UC, SLE) enable treatment response prediction using cytokine activity profiles as features.
 
@@ -321,6 +321,53 @@ All 32 matched targets have data in ≥4 datasets. Using donor-level aggregation
 
 Per-level Mann-Whitney/Wilcoxon tests with BH-FDR correction for all datasets are in the [supplement](stats_section_4.1.html#aggregation-level).
 
+### 4.8 Residual Correlation: Cell-Fraction Adjustment
+
+> **Figure 8** (interactive): Dumbbell chart showing direct vs residual ρ for each target. Blue circles = direct (unadjusted), red diamonds = residual (composition-adjusted). Dataset dropdown and CytoSig/SecAct tabs.
+
+Direct correlations between predicted activity and target gene expression may be confounded by cell-type composition. To test this, we fit X = b₀ + b₁·F + b₂·(A×F) + ε, where F = cell-type fractions and A×F = interaction terms, then compute Spearman(ε, A) — the residual correlation independent of composition.
+
+Applied to 3 single-cell datasets with matched cell-fraction data (scAtlas Normal excluded due to incompatible donor identifiers between pseudobulk files):
+
+**CytoSig — Direct vs Residual ρ:**
+
+| Dataset | Donors | Cell Types | Median Direct ρ | Median Residual ρ | Δρ | Sign Preserved | Retained Positive |
+|---------|--------|------------|-----------------|-------------------|----|---------------|-------------------|
+| CIMA | 421 | 5 (L1) | 0.125 | −0.006 | −0.159 | 38% | 29% |
+| Inflammation Main | 817 | 13 (L1) | 0.337 | −0.012 | −0.301 | 48% | 43% |
+| scAtlas Cancer | 500 | 14 (CT1) | 0.288 | 0.222 | −0.087 | 93% | 97% |
+
+**SecAct — Direct vs Residual ρ:**
+
+| Dataset | Donors | Cell Types | Median Direct ρ | Median Residual ρ | Δρ | Sign Preserved | Retained Positive |
+|---------|--------|------------|-----------------|-------------------|----|---------------|-------------------|
+| CIMA | 421 | 5 (L1) | 0.191 | −0.011 | −0.222 | 28% | 26% |
+| Inflammation Main | 817 | 13 (L1) | 0.173 | −0.021 | −0.239 | 38% | 28% |
+| scAtlas Cancer | 500 | 14 (CT1) | 0.424 | 0.251 | −0.169 | 87% | 88% |
+
+**Key findings:**
+- **PBMC-dominated datasets** (CIMA, Inflammation Main): most direct correlations collapse after cell-fraction adjustment. Only 29–43% of positive CytoSig correlations remain positive, with median residual ρ near zero. This indicates donor-level correlations are largely driven by cell-type composition rather than within-cell-type biology
+- **scAtlas Cancer retains 97% of positive CytoSig correlations** (median Δρ = −0.09) and 88% for SecAct (Δρ = −0.17). Tumor cells dominate the composition, so inter-donor variation in tumor fraction is smaller relative to within-tumor biological variation
+- The composition confound does not invalidate activity predictions — it means that donor-level pseudobulk correlations in PBMC datasets capture a mix of compositional and biological signal. Cell-type-stratified analyses (§4.7) partially address this by evaluating within homogeneous populations
+
+### 4.9 Representative Scatter Plots
+
+> **Figure 9** (interactive): Donor-level expression vs predicted activity scatter plots. Target, atlas, and signature method dropdowns.
+
+See interactive report for per-target scatter plots with regression lines and correlation statistics.
+
+### 4.10 Biologically Important Targets Heatmap
+
+> **Figure 10** (interactive): Spearman ρ heatmap for biologically important targets across all 6 datasets. CytoSig/SecAct tabs.
+
+See interactive report for the full heatmap with hover details.
+
+### 4.11 Per-Target Correlation Rankings
+
+> **Figure 11** (interactive): Targets ranked by Spearman ρ across all datasets and signature types. Dataset and signature dropdowns.
+
+See interactive report for the full per-target rankings.
+
 ---
 
 ## 5. CytoSig vs LinCytoSig vs SecAct Comparison
@@ -331,7 +378,7 @@ For the full 10-way method comparison (8 LinCytoSig strategies + CytoSig + SecAc
 
 ### 5.1 Donor-Level: 7 Representative Targets
 
-> **Figure 11** (interactive): CytoSig vs LinCytoSig vs SecAct grouped bar chart for 7 representative celltype–cytokine pairs at donor level. LinCytoSig uses the biologically matched cell-type signature (e.g., Macrophage__IL6 for IL6).
+> **Figure 12** (interactive): CytoSig vs LinCytoSig vs SecAct grouped bar chart for 7 representative celltype–cytokine pairs at donor level. LinCytoSig uses the biologically matched cell-type signature (e.g., Macrophage__IL6 for IL6).
 
 **Key findings (donor-level, 7 targets):**
 
@@ -341,7 +388,7 @@ For the full 10-way method comparison (8 LinCytoSig strategies + CytoSig + SecAc
 
 ### 5.2 Celltype-Level Evaluation
 
-> **Figure 12** (interactive): CytoSig vs LinCytoSig vs SecAct evaluated on matched cell-type pseudobulk (e.g., IL6 on macrophage pseudobulk) in scAtlas Normal and scAtlas Cancer. Only these two datasets have sufficient cell-type diversity for all 7 targets.
+> **Figure 13** (interactive): CytoSig vs LinCytoSig vs SecAct evaluated on matched cell-type pseudobulk (e.g., IL6 on macrophage pseudobulk) in scAtlas Normal and scAtlas Cancer. Only these two datasets have sufficient cell-type diversity for all 7 targets.
 
 **Key findings (celltype-level):**
 
