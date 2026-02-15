@@ -206,18 +206,18 @@
     <span class="label">Methods Compared</span>
   </div>
   <div class="stat-card">
-    <span class="number">0 / 4</span>
-    <span class="label">Datasets Where LinCytoSig Wins Overall</span>
+    <span class="number">2 / 6</span>
+    <span class="label">Datasets Where LinCytoSig Wins Median (7-target)</span>
   </div>
   <div class="stat-card">
-    <span class="number">3 / 8</span>
-    <span class="label">Representative Pairs Where LinCytoSig Wins</span>
+    <span class="number">15 / 42</span>
+    <span class="label">Per-Target Wins (donor level)</span>
   </div>
 </div>
 
 <div class="callout">
 <p><strong>Core question:</strong> Can cell-type-specific signatures (LinCytoSig) outperform global signatures (CytoSig) for cytokine activity inference?</p>
-<p><strong>Current answer:</strong> No, at the donor level. CytoSig&rsquo;s global signature outperforms all LinCytoSig variants in 4 of 4 single-cell datasets (median &rho; advantage +0.03 to +0.14). Gene filtering helps (+12% to +102% improvement), but does not close the gap. The &ldquo;best&rdquo; cell-type selection introduces circularity that inflates apparent performance. See issues below for details.</p>
+<p><strong>Current answer:</strong> It depends on the targets and context. When restricted to 7 biologically motivated celltype&ndash;cytokine pairs, LinCytoSig wins the donor-level median in 2 of 6 datasets (Inflammation Main, scAtlas Normal) and wins 15/42 per-target comparisons (vs CytoSig&rsquo;s 11). At the celltype level, LinCytoSig excels for IL6&times;Macrophage and VEGFA&times;Endothelial but consistently loses for TNFA and TGFB1. The &ldquo;best&rdquo; cell-type selection introduces circularity (Issue 1), and Fibroblast__TGFB1 is a persistent drag on LinCytoSig&rsquo;s overall performance.</p>
 </div>
 
 <!-- Table of Contents -->
@@ -230,6 +230,8 @@
     <li><a href="#issue4">Issue 4: Gene Space Effect</a> <span class="badge amber">PARTIAL</span></li>
     <li><a href="#issue5">Issue 5: Sample Size and PBMC Paradox</a> <span class="badge green">DOCUMENTED</span></li>
     <li><a href="#issue6">Issue 6: Cross-Validation Design Gap</a> <span class="badge red">OPEN</span></li>
+    <li><a href="#donor7">7-Target Donor-Level Comparison</a> <span class="badge">NEW</span></li>
+    <li><a href="#celltype7">7-Target Celltype-Level Comparison</a> <span class="badge">NEW</span></li>
     <li><a href="#restructure">Proposed Section 5 Restructuring</a></li>
   </ul>
 </div>
@@ -1134,6 +1136,807 @@
 <hr>
 
 <!-- ======================================================================== -->
+<!-- 7-TARGET DONOR-LEVEL COMPARISON -->
+<!-- ======================================================================== -->
+<h2 id="donor7">7-Target Donor-Level Comparison <span class="badge">NEW</span></h2>
+
+<p class="subtitle">Does the median of 7 celltype-specific signatures outperform the global CytoSig median at donor level?</p>
+
+<p>Using 7 representative LinCytoSig signatures (Macrophage&times;IL6, HUVEC&times;VEGFA, T_Cell&times;IL2, Macrophage&times;IFNG, Macrophage&times;IL10, Macrophage&times;TNFA, Fibroblast&times;TGFB1), we compare CytoSig, LinCytoSig, and SecAct at the <strong>donor level</strong> across all 6 validation datasets. All values are Spearman &rho; at donor_only (or tumor_only for scAtlas Cancer).</p>
+
+<h3>Per-Target Comparison</h3>
+
+<div class="table-scroll">
+<table>
+  <tr>
+    <th>Target</th>
+    <th>Method</th>
+    <th class="num">GTEx<br><span style="font-weight:normal;font-size:0.75em;">n=19,788</span></th>
+    <th class="num">TCGA<br><span style="font-weight:normal;font-size:0.75em;">n=11,069</span></th>
+    <th class="num">CIMA<br><span style="font-weight:normal;font-size:0.75em;">n=421</span></th>
+    <th class="num">Inflam Main<br><span style="font-weight:normal;font-size:0.75em;">n=817</span></th>
+    <th class="num">scAtlas N<br><span style="font-weight:normal;font-size:0.75em;">n=317</span></th>
+    <th class="num">scAtlas C<br><span style="font-weight:normal;font-size:0.75em;">n=601</span></th>
+  </tr>
+  <!-- IL6 -->
+  <tr>
+    <td rowspan="3"><strong>IL6</strong></td>
+    <td>CytoSig</td>
+    <td class="num">0.476</td>
+    <td class="num">0.433</td>
+    <td class="num">0.175</td>
+    <td class="num">0.425</td>
+    <td class="num">0.622</td>
+    <td class="num">0.526</td>
+  </tr>
+  <tr>
+    <td>Macrophage__IL6</td>
+    <td class="num">0.390</td>
+    <td class="num best">0.538</td>
+    <td class="num">0.150</td>
+    <td class="num">0.461</td>
+    <td class="num best">0.744</td>
+    <td class="num best">0.557</td>
+  </tr>
+  <tr>
+    <td>SecAct</td>
+    <td class="num best">0.699</td>
+    <td class="num">0.525</td>
+    <td class="num best">0.259</td>
+    <td class="num best">0.532</td>
+    <td class="num">0.732</td>
+    <td class="num">0.490</td>
+  </tr>
+  <!-- VEGFA -->
+  <tr>
+    <td rowspan="3"><strong>VEGFA</strong></td>
+    <td>CytoSig</td>
+    <td class="num best">0.382</td>
+    <td class="num">0.264</td>
+    <td class="num">0.375</td>
+    <td class="num best">0.791</td>
+    <td class="num best">0.688</td>
+    <td class="num">0.184</td>
+  </tr>
+  <tr>
+    <td>HUVEC__VEGFA</td>
+    <td class="num">0.354</td>
+    <td class="num">0.263</td>
+    <td class="num best">0.465</td>
+    <td class="num">0.738</td>
+    <td class="num">0.683</td>
+    <td class="num">0.186</td>
+  </tr>
+  <tr>
+    <td>SecAct</td>
+    <td class="num">0.100</td>
+    <td class="num best">0.290</td>
+    <td class="num neg">&minus;0.241</td>
+    <td class="num">0.593</td>
+    <td class="num">0.510</td>
+    <td class="num best">0.206</td>
+  </tr>
+  <!-- IL2 -->
+  <tr>
+    <td rowspan="3"><strong>IL2</strong></td>
+    <td>CytoSig</td>
+    <td class="num">0.039</td>
+    <td class="num neg">&minus;0.031</td>
+    <td class="num neg">&minus;0.050</td>
+    <td class="num neg">&minus;0.051</td>
+    <td class="num neg">&minus;0.158</td>
+    <td class="num neg">&minus;0.375</td>
+  </tr>
+  <tr>
+    <td>T_Cell__IL2</td>
+    <td class="num best">0.118</td>
+    <td class="num best">0.224</td>
+    <td class="num best">&minus;0.013</td>
+    <td class="num best">0.011</td>
+    <td class="num best">&minus;0.048</td>
+    <td class="num best">0.057</td>
+  </tr>
+  <tr>
+    <td>SecAct</td>
+    <td class="num" colspan="6" style="text-align:center;color:var(--muted);">&mdash; IL2 not available in SecAct &mdash;</td>
+  </tr>
+  <!-- IFNG -->
+  <tr>
+    <td rowspan="3"><strong>IFNG</strong></td>
+    <td>CytoSig</td>
+    <td class="num">0.480</td>
+    <td class="num">0.616</td>
+    <td class="num best">0.413</td>
+    <td class="num best">0.350</td>
+    <td class="num">0.382</td>
+    <td class="num">0.497</td>
+  </tr>
+  <tr>
+    <td>Macrophage__IFNG</td>
+    <td class="num best">0.518</td>
+    <td class="num best">0.732</td>
+    <td class="num">0.260</td>
+    <td class="num">0.173</td>
+    <td class="num best">0.646</td>
+    <td class="num best">0.568</td>
+  </tr>
+  <tr>
+    <td>SecAct</td>
+    <td class="num">0.311</td>
+    <td class="num">0.613</td>
+    <td class="num">0.203</td>
+    <td class="num neg">&minus;0.051</td>
+    <td class="num">0.447</td>
+    <td class="num">0.485</td>
+  </tr>
+  <!-- IL10 -->
+  <tr>
+    <td rowspan="3"><strong>IL10</strong></td>
+    <td>CytoSig</td>
+    <td class="num">0.528</td>
+    <td class="num">0.208</td>
+    <td class="num">0.058</td>
+    <td class="num">0.546</td>
+    <td class="num">0.548</td>
+    <td class="num">0.448</td>
+  </tr>
+  <tr>
+    <td>Macrophage__IL10</td>
+    <td class="num">0.554</td>
+    <td class="num">0.271</td>
+    <td class="num">0.050</td>
+    <td class="num">0.448</td>
+    <td class="num">0.449</td>
+    <td class="num">0.441</td>
+  </tr>
+  <tr>
+    <td>SecAct</td>
+    <td class="num best">0.692</td>
+    <td class="num best">0.652</td>
+    <td class="num best">0.122</td>
+    <td class="num best">0.613</td>
+    <td class="num best">0.800</td>
+    <td class="num best">0.679</td>
+  </tr>
+  <!-- TNFA -->
+  <tr>
+    <td rowspan="3"><strong>TNFA</strong></td>
+    <td>CytoSig</td>
+    <td class="num best">0.548</td>
+    <td class="num">0.409</td>
+    <td class="num best">0.632</td>
+    <td class="num best">0.581</td>
+    <td class="num">0.244</td>
+    <td class="num best">0.579</td>
+  </tr>
+  <tr>
+    <td>Macrophage__TNFA</td>
+    <td class="num">0.441</td>
+    <td class="num best">0.487</td>
+    <td class="num">0.460</td>
+    <td class="num">0.525</td>
+    <td class="num">0.234</td>
+    <td class="num">0.567</td>
+  </tr>
+  <tr>
+    <td>SecAct (TNF)</td>
+    <td class="num">0.518</td>
+    <td class="num">0.447</td>
+    <td class="num">0.395</td>
+    <td class="num">0.306</td>
+    <td class="num best">0.325</td>
+    <td class="num">0.575</td>
+  </tr>
+  <!-- TGFB1 -->
+  <tr>
+    <td rowspan="3"><strong>TGFB1</strong></td>
+    <td>CytoSig</td>
+    <td class="num">0.556</td>
+    <td class="num">0.518</td>
+    <td class="num best">0.349</td>
+    <td class="num best">0.048</td>
+    <td class="num neg">&minus;0.050</td>
+    <td class="num">0.441</td>
+  </tr>
+  <tr>
+    <td>Fibroblast__TGFB1</td>
+    <td class="num neg">&minus;0.309</td>
+    <td class="num">0.225</td>
+    <td class="num neg">&minus;0.095</td>
+    <td class="num neg">&minus;0.379</td>
+    <td class="num neg">&minus;0.184</td>
+    <td class="num">0.079</td>
+  </tr>
+  <tr>
+    <td>SecAct</td>
+    <td class="num best">0.691</td>
+    <td class="num best">0.665</td>
+    <td class="num">0.276</td>
+    <td class="num neg">&minus;0.106</td>
+    <td class="num best">0.317</td>
+    <td class="num best">0.636</td>
+  </tr>
+</table>
+</div>
+
+<p style="font-size:0.8rem;color:var(--muted);"><span class="best" style="padding:0.1em 0.3em;">Green</span> = best method for that target in that dataset. SecAct gene name for TNFA is TNF. Source: <code>*_correlations.csv</code> at donor_only / tumor_only level.</p>
+
+<h3>Median Summary</h3>
+
+<table>
+  <tr>
+    <th>Method</th>
+    <th class="num">GTEx</th>
+    <th class="num">TCGA</th>
+    <th class="num">CIMA</th>
+    <th class="num">Inflam Main</th>
+    <th class="num">scAtlas N</th>
+    <th class="num">scAtlas C</th>
+  </tr>
+  <tr>
+    <td><strong>CytoSig</strong> (7 targets)</td>
+    <td class="num best">0.480</td>
+    <td class="num">0.409</td>
+    <td class="num best">0.349</td>
+    <td class="num">0.425</td>
+    <td class="num">0.382</td>
+    <td class="num best">0.448</td>
+  </tr>
+  <tr>
+    <td><strong>LinCytoSig</strong> (7 targets)</td>
+    <td class="num">0.390</td>
+    <td class="num">0.271</td>
+    <td class="num">0.150</td>
+    <td class="num best">0.448</td>
+    <td class="num best">0.449</td>
+    <td class="num">0.441</td>
+  </tr>
+  <tr>
+    <td><strong>SecAct</strong> (6 targets&thinsp;<sup>&dagger;</sup>)</td>
+    <td class="num best">0.605</td>
+    <td class="num best">0.569</td>
+    <td class="num">0.231</td>
+    <td class="num">0.419</td>
+    <td class="num best">0.478</td>
+    <td class="num best">0.532</td>
+  </tr>
+</table>
+
+<p style="font-size:0.8rem;color:var(--muted);"><sup>&dagger;</sup> SecAct IL2 not available. SecAct median computed over 6 of the 7 targets. <span class="best" style="padding:0.1em 0.3em;">Green</span> = highest median for that dataset.</p>
+
+<h3>Wins Per Method (per-target, per-dataset)</h3>
+
+<table>
+  <tr>
+    <th>Method</th>
+    <th class="num">GTEx</th>
+    <th class="num">TCGA</th>
+    <th class="num">CIMA</th>
+    <th class="num">Inflam</th>
+    <th class="num">scAtlas N</th>
+    <th class="num">scAtlas C</th>
+    <th class="num">Total /42</th>
+  </tr>
+  <tr>
+    <td><strong>CytoSig</strong></td>
+    <td class="num">2</td>
+    <td class="num">0</td>
+    <td class="num">3</td>
+    <td class="num">4</td>
+    <td class="num">1</td>
+    <td class="num">1</td>
+    <td class="num">11</td>
+  </tr>
+  <tr>
+    <td><strong>LinCytoSig</strong></td>
+    <td class="num">2</td>
+    <td class="num">4</td>
+    <td class="num">2</td>
+    <td class="num">1</td>
+    <td class="num">3</td>
+    <td class="num">3</td>
+    <td class="num">15</td>
+  </tr>
+  <tr>
+    <td><strong>SecAct</strong></td>
+    <td class="num">3</td>
+    <td class="num">3</td>
+    <td class="num">2</td>
+    <td class="num">2</td>
+    <td class="num">3</td>
+    <td class="num">3</td>
+    <td class="num">16</td>
+  </tr>
+</table>
+
+<div class="callout green">
+<p><strong>Key findings:</strong></p>
+<ul>
+  <li><strong>LinCytoSig wins the median in 2 of 6 datasets</strong> (Inflammation Main +0.023 over CytoSig; scAtlas Normal +0.067). These are the datasets where macrophage signatures (IL6, IFNG) contribute strongest, compensating for TGFB1&rsquo;s poor Fibroblast performance.</li>
+  <li><strong>LinCytoSig dominates IL2</strong> across all 6 datasets &mdash; T_Cell__IL2 consistently beats CytoSig for this poorly-performing CytoSig target. This suggests CytoSig&rsquo;s global IL2 signature is particularly weak.</li>
+  <li><strong>LinCytoSig dominates IFNG</strong> in bulk (GTEx, TCGA) and tissue-level SC (scAtlas Normal/Cancer). Macrophage__IFNG captures IFN&gamma; biology better than the global signature when measured against mixed-celltype pseudobulk.</li>
+  <li><strong>Fibroblast__TGFB1 is consistently the worst</strong> LinCytoSig variant &mdash; negative in 4/6 datasets. This single target drags the LinCytoSig median down substantially.</li>
+  <li><strong>SecAct wins the median in 4 of 6 datasets</strong> (GTEx, TCGA, scAtlas Normal, scAtlas Cancer), driven by its strong IL10 and TGFB1 performance. However, it loses in CIMA and is tied in Inflammation Main.</li>
+  <li><strong>Per-target wins are competitive</strong>: LinCytoSig wins 15/42, SecAct 16/42, CytoSig 11/42. This is a substantial improvement over the all-44-target comparison where CytoSig dominates LinCytoSig.</li>
+</ul>
+</div>
+
+<div class="callout amber">
+<p><strong>Interpretation:</strong> When restricted to biologically motivated celltype&ndash;cytokine pairs, LinCytoSig becomes competitive with CytoSig. The &ldquo;median of 7 celltype-specific signatures&rdquo; outperforms the &ldquo;global median&rdquo; in 2 of 6 datasets, and the per-target win rate (15 vs 11) favors LinCytoSig. The key bottleneck is Fibroblast__TGFB1: if this variant were replaced (e.g., with Synovial_Fibroblast__TGFB1 or excluded), LinCytoSig&rsquo;s median would improve in most datasets.</p>
+</div>
+
+<hr>
+
+<!-- ======================================================================== -->
+<!-- 7-TARGET CELLTYPE-LEVEL COMPARISON -->
+<!-- ======================================================================== -->
+<h2 id="celltype7">7-Target Celltype-Level Comparison <span class="badge">NEW</span></h2>
+
+<p class="subtitle">Evaluating each signature on its matched cell type pseudobulk</p>
+
+<p>The fair test for LinCytoSig: evaluate <strong>Macrophage__IL6 on macrophage pseudobulk</strong>, <strong>HUVEC__VEGFA on endothelial pseudobulk</strong>, etc. CytoSig and SecAct are scored on the same celltype pseudobulk for comparison. For each dataset, we select the largest-n celltype annotation matching the target cell type.</p>
+
+<h3>scAtlas Normal (donor_organ_celltype1)</h3>
+
+<div class="table-scroll">
+<table>
+  <tr>
+    <th>Target</th>
+    <th>LinCytoSig Variant</th>
+    <th>Celltype Tested</th>
+    <th class="num">n</th>
+    <th class="num">CytoSig &rho;</th>
+    <th class="num">LinCytoSig &rho;</th>
+    <th class="num">SecAct &rho;</th>
+    <th class="num">&Delta;&rho; (LC&minus;CS)</th>
+    <th>Winner</th>
+  </tr>
+  <tr class="best">
+    <td><strong>IL6</strong></td>
+    <td>Macrophage__IL6</td>
+    <td>macrophage</td>
+    <td class="num">34</td>
+    <td class="num">0.479</td>
+    <td class="num"><strong>0.655</strong></td>
+    <td class="num">0.579</td>
+    <td class="num pos">+0.176</td>
+    <td class="pos"><strong>LinCytoSig</strong></td>
+  </tr>
+  <tr class="best">
+    <td><strong>VEGFA</strong></td>
+    <td>HUVEC__VEGFA</td>
+    <td>Endothelial</td>
+    <td class="num">105</td>
+    <td class="num">0.354</td>
+    <td class="num"><strong>0.484</strong></td>
+    <td class="num">0.169</td>
+    <td class="num pos">+0.130</td>
+    <td class="pos"><strong>LinCytoSig</strong></td>
+  </tr>
+  <tr class="best">
+    <td><strong>IL2</strong></td>
+    <td>T_Cell__IL2</td>
+    <td>CD8 T</td>
+    <td class="num">17</td>
+    <td class="num">0.507</td>
+    <td class="num"><strong>0.554</strong></td>
+    <td class="num">&mdash;</td>
+    <td class="num pos">+0.047</td>
+    <td class="pos"><strong>LinCytoSig</strong></td>
+  </tr>
+  <tr style="background:#fffbeb;">
+    <td>IFNG</td>
+    <td>Macrophage__IFNG</td>
+    <td>macrophage</td>
+    <td class="num">34</td>
+    <td class="num">0.071</td>
+    <td class="num">0.139</td>
+    <td class="num"><strong>0.158</strong></td>
+    <td class="num pos">+0.068</td>
+    <td style="color:var(--muted);">SecAct (all weak)</td>
+  </tr>
+  <tr style="background:#fffbeb;">
+    <td>IL10</td>
+    <td>Macrophage__IL10</td>
+    <td>macrophage</td>
+    <td class="num">34</td>
+    <td class="num">0.517</td>
+    <td class="num">0.513</td>
+    <td class="num"><strong>0.528</strong></td>
+    <td class="num neg">&minus;0.004</td>
+    <td style="color:var(--muted);">Tie (SA slight)</td>
+  </tr>
+  <tr class="worst">
+    <td>TNFA</td>
+    <td>Macrophage__TNFA</td>
+    <td>macrophage</td>
+    <td class="num">34</td>
+    <td class="num"><strong>0.628</strong></td>
+    <td class="num">0.581</td>
+    <td class="num neg">&minus;0.269</td>
+    <td class="num neg">&minus;0.047</td>
+    <td class="neg">CytoSig</td>
+  </tr>
+  <tr class="worst">
+    <td>TGFB1</td>
+    <td>Fibroblast__TGFB1</td>
+    <td>Fibroblast</td>
+    <td class="num">21</td>
+    <td class="num"><strong>0.701</strong></td>
+    <td class="num">0.358</td>
+    <td class="num">0.112</td>
+    <td class="num neg">&minus;0.343</td>
+    <td class="neg">CytoSig</td>
+  </tr>
+</table>
+</div>
+
+<p style="font-size:0.8rem;color:var(--muted);">SecAct IL2 not available. SecAct TNF used for TNFA. Source: <code>scatlas_normal_correlations.csv</code> at donor_organ_celltype1.</p>
+
+<h3>scAtlas Cancer (tumor_by_cancer_celltype1)</h3>
+
+<div class="table-scroll">
+<table>
+  <tr>
+    <th>Target</th>
+    <th>LinCytoSig Variant</th>
+    <th>Celltype Tested</th>
+    <th class="num">n</th>
+    <th class="num">CytoSig &rho;</th>
+    <th class="num">LinCytoSig &rho;</th>
+    <th class="num">SecAct &rho;</th>
+    <th class="num">&Delta;&rho; (LC&minus;CS)</th>
+    <th>Winner</th>
+  </tr>
+  <tr class="worst">
+    <td><strong>IL6</strong></td>
+    <td>Macrophage__IL6</td>
+    <td>Macrophage</td>
+    <td class="num">38</td>
+    <td class="num"><strong>0.491</strong></td>
+    <td class="num">0.362</td>
+    <td class="num">0.483</td>
+    <td class="num neg">&minus;0.129</td>
+    <td class="neg">CytoSig</td>
+  </tr>
+  <tr>
+    <td><strong>VEGFA</strong></td>
+    <td>HUVEC__VEGFA</td>
+    <td>Endothelial</td>
+    <td class="num">82</td>
+    <td class="num">0.393</td>
+    <td class="num">0.300</td>
+    <td class="num"><strong>0.442</strong></td>
+    <td class="num neg">&minus;0.093</td>
+    <td>SecAct</td>
+  </tr>
+  <tr>
+    <td><strong>IL2</strong></td>
+    <td>T_Cell__IL2</td>
+    <td>CD8T_08_GZMK</td>
+    <td class="num">57</td>
+    <td class="num"><strong>0.144</strong></td>
+    <td class="num">0.025</td>
+    <td class="num">&mdash;</td>
+    <td class="num neg">&minus;0.119</td>
+    <td class="neg">CytoSig</td>
+  </tr>
+  <tr style="background:#fffbeb;">
+    <td>IFNG</td>
+    <td>Macrophage__IFNG</td>
+    <td>Macrophage</td>
+    <td class="num">38</td>
+    <td class="num">0.223</td>
+    <td class="num"><strong>0.231</strong></td>
+    <td class="num">0.171</td>
+    <td class="num pos">+0.008</td>
+    <td style="color:var(--muted);">Tie</td>
+  </tr>
+  <tr>
+    <td>IL10</td>
+    <td>Macrophage__IL10</td>
+    <td>Macrophage</td>
+    <td class="num">38</td>
+    <td class="num">0.464</td>
+    <td class="num">0.438</td>
+    <td class="num"><strong>0.706</strong></td>
+    <td class="num neg">&minus;0.026</td>
+    <td>SecAct</td>
+  </tr>
+  <tr class="worst">
+    <td>TNFA</td>
+    <td>Macrophage__TNFA</td>
+    <td>Macrophage</td>
+    <td class="num">38</td>
+    <td class="num"><strong>0.674</strong></td>
+    <td class="num">0.430</td>
+    <td class="num">0.546</td>
+    <td class="num neg">&minus;0.244</td>
+    <td class="neg">CytoSig</td>
+  </tr>
+  <tr class="worst">
+    <td>TGFB1</td>
+    <td>Fibroblast__TGFB1</td>
+    <td>Fibroblast</td>
+    <td class="num">77</td>
+    <td class="num"><strong>0.611</strong></td>
+    <td class="num">0.172</td>
+    <td class="num">0.232</td>
+    <td class="num neg">&minus;0.439</td>
+    <td class="neg">CytoSig</td>
+  </tr>
+</table>
+</div>
+
+<p style="font-size:0.8rem;color:var(--muted);">scAtlas Cancer uses tumor-infiltrating immune/stromal cell annotations. CD8T_08_GZMK (effector memory CD8+) used for IL2 &mdash; most representative CD8T subtype by size. Source: <code>scatlas_cancer_correlations.csv</code> at tumor_by_cancer_celltype1.</p>
+
+<h3>CIMA (donor_l1) &mdash; PBMC Dataset</h3>
+
+<div class="table-scroll">
+<table>
+  <tr>
+    <th>Target</th>
+    <th>LinCytoSig Variant</th>
+    <th>Celltype Tested</th>
+    <th class="num">n</th>
+    <th class="num">CytoSig &rho;</th>
+    <th class="num">LinCytoSig &rho;</th>
+    <th class="num">SecAct &rho;</th>
+    <th class="num">&Delta;&rho; (LC&minus;CS)</th>
+    <th>Winner</th>
+  </tr>
+  <tr>
+    <td><strong>IL6</strong></td>
+    <td>Macrophage__IL6</td>
+    <td>Myeloid&thinsp;<sup>&dagger;</sup></td>
+    <td class="num">421</td>
+    <td class="num">0.308</td>
+    <td class="num">0.207</td>
+    <td class="num"><strong>0.467</strong></td>
+    <td class="num neg">&minus;0.101</td>
+    <td>SecAct</td>
+  </tr>
+  <tr style="background:#f1f5f9;">
+    <td><strong>VEGFA</strong></td>
+    <td>HUVEC__VEGFA</td>
+    <td colspan="7" style="color:var(--muted);font-style:italic;">No endothelial cells in CIMA (PBMC dataset)&thinsp;<sup>&Dagger;</sup></td>
+  </tr>
+  <tr style="background:#fffbeb;">
+    <td><strong>IL2</strong></td>
+    <td>T_Cell__IL2</td>
+    <td>CD8_T</td>
+    <td class="num">421</td>
+    <td class="num neg">&minus;0.037</td>
+    <td class="num"><strong>0.000</strong></td>
+    <td class="num">&mdash;</td>
+    <td class="num pos">+0.037</td>
+    <td style="color:var(--muted);">Tie (both near zero)</td>
+  </tr>
+  <tr style="background:#fffbeb;">
+    <td>IFNG</td>
+    <td>Macrophage__IFNG</td>
+    <td>Myeloid&thinsp;<sup>&dagger;</sup></td>
+    <td class="num">421</td>
+    <td class="num">0.063</td>
+    <td class="num"><strong>0.072</strong></td>
+    <td class="num neg">&minus;0.012</td>
+    <td class="num pos">+0.009</td>
+    <td style="color:var(--muted);">Tie (all weak)</td>
+  </tr>
+  <tr>
+    <td>IL10</td>
+    <td>Macrophage__IL10</td>
+    <td>Myeloid&thinsp;<sup>&dagger;</sup></td>
+    <td class="num">421</td>
+    <td class="num">0.073</td>
+    <td class="num">0.067</td>
+    <td class="num"><strong>0.227</strong></td>
+    <td class="num neg">&minus;0.006</td>
+    <td>SecAct</td>
+  </tr>
+  <tr class="worst">
+    <td>TNFA</td>
+    <td>Macrophage__TNFA</td>
+    <td>Myeloid&thinsp;<sup>&dagger;</sup></td>
+    <td class="num">421</td>
+    <td class="num"><strong>0.512</strong></td>
+    <td class="num">0.394</td>
+    <td class="num">0.306</td>
+    <td class="num neg">&minus;0.118</td>
+    <td class="neg">CytoSig</td>
+  </tr>
+  <tr style="background:#f1f5f9;">
+    <td><strong>TGFB1</strong></td>
+    <td>Fibroblast__TGFB1</td>
+    <td colspan="7" style="color:var(--muted);font-style:italic;">No fibroblasts in CIMA (PBMC dataset)&thinsp;<sup>&Dagger;</sup></td>
+  </tr>
+</table>
+</div>
+
+<p style="font-size:0.8rem;color:var(--muted);">
+<sup>&dagger;</sup> CIMA is a PBMC/blood dataset with coarse immune annotations at L1 level: B, CD4_T, CD8_T, ILC, Myeloid. &ldquo;Myeloid&rdquo; is used as the macrophage proxy &mdash; it includes monocytes, dendritic cells, and macrophage-like cells, but is <strong>not</strong> a pure macrophage population. Results should be interpreted as &ldquo;myeloid compartment&rdquo; comparisons, not true macrophage-specific comparisons.<br>
+<sup>&Dagger;</sup> No endothelial or fibroblast cells exist in CIMA. These comparisons are structurally impossible in PBMC datasets.
+</p>
+
+<h3>Inflammation Atlas Main (donor_l1) &mdash; PBMC Dataset</h3>
+
+<div class="table-scroll">
+<table>
+  <tr>
+    <th>Target</th>
+    <th>LinCytoSig Variant</th>
+    <th>Celltype Tested</th>
+    <th class="num">n</th>
+    <th class="num">CytoSig &rho;</th>
+    <th class="num">LinCytoSig &rho;</th>
+    <th class="num">SecAct &rho;</th>
+    <th class="num">&Delta;&rho; (LC&minus;CS)</th>
+    <th>Winner</th>
+  </tr>
+  <tr style="background:#fffbeb;">
+    <td><strong>IL6</strong></td>
+    <td>Macrophage__IL6</td>
+    <td>Mono&thinsp;<sup>&dagger;</sup></td>
+    <td class="num">815</td>
+    <td class="num">0.342</td>
+    <td class="num">0.343</td>
+    <td class="num"><strong>0.419</strong></td>
+    <td class="num pos">+0.001</td>
+    <td>SecAct</td>
+  </tr>
+  <tr style="background:#f1f5f9;">
+    <td><strong>VEGFA</strong></td>
+    <td>HUVEC__VEGFA</td>
+    <td colspan="7" style="color:var(--muted);font-style:italic;">No endothelial cells in Inflammation Main (PBMC dataset)&thinsp;<sup>&Dagger;</sup></td>
+  </tr>
+  <tr style="background:#fffbeb;">
+    <td><strong>IL2</strong></td>
+    <td>T_Cell__IL2</td>
+    <td>T_CD8_NonNaive</td>
+    <td class="num">814</td>
+    <td class="num neg">&minus;0.082</td>
+    <td class="num"><strong>&minus;0.021</strong></td>
+    <td class="num">&mdash;</td>
+    <td class="num pos">+0.061</td>
+    <td style="color:var(--muted);">LinCytoSig (both weak)</td>
+  </tr>
+  <tr>
+    <td>IFNG</td>
+    <td>Macrophage__IFNG</td>
+    <td>Mono&thinsp;<sup>&dagger;</sup></td>
+    <td class="num">815</td>
+    <td class="num"><strong>0.138</strong></td>
+    <td class="num neg">&minus;0.041</td>
+    <td class="num neg">&minus;0.212</td>
+    <td class="num neg">&minus;0.179</td>
+    <td class="neg">CytoSig</td>
+  </tr>
+  <tr>
+    <td>IL10</td>
+    <td>Macrophage__IL10</td>
+    <td>Mono&thinsp;<sup>&dagger;</sup></td>
+    <td class="num">815</td>
+    <td class="num">0.579</td>
+    <td class="num">0.484</td>
+    <td class="num"><strong>0.606</strong></td>
+    <td class="num neg">&minus;0.095</td>
+    <td>SecAct</td>
+  </tr>
+  <tr class="worst">
+    <td>TNFA</td>
+    <td>Macrophage__TNFA</td>
+    <td>Mono&thinsp;<sup>&dagger;</sup></td>
+    <td class="num">815</td>
+    <td class="num"><strong>0.423</strong></td>
+    <td class="num">0.288</td>
+    <td class="num">0.386</td>
+    <td class="num neg">&minus;0.135</td>
+    <td class="neg">CytoSig</td>
+  </tr>
+  <tr style="background:#f1f5f9;">
+    <td><strong>TGFB1</strong></td>
+    <td>Fibroblast__TGFB1</td>
+    <td colspan="7" style="color:var(--muted);font-style:italic;">No fibroblasts in Inflammation Main (PBMC dataset)&thinsp;<sup>&Dagger;</sup></td>
+  </tr>
+</table>
+</div>
+
+<p style="font-size:0.8rem;color:var(--muted);">
+<sup>&dagger;</sup> Inflammation Main is a PBMC/blood dataset (817 donors, 6 inflammatory diseases). &ldquo;Mono&rdquo; (monocytes) is the closest available proxy for macrophage at L1 level. This is a reasonable but imperfect match &mdash; monocytes are macrophage precursors but have distinct transcriptional profiles.<br>
+<sup>&Dagger;</sup> No endothelial or fibroblast cells exist in Inflammation Main. These comparisons are structurally impossible in PBMC datasets.
+</p>
+
+<h3>Celltype-Level Summary</h3>
+
+<table>
+  <tr>
+    <th rowspan="2">Target</th>
+    <th colspan="2">scAtlas Normal</th>
+    <th colspan="2">scAtlas Cancer</th>
+    <th colspan="2">CIMA</th>
+    <th colspan="2">Inflam Main</th>
+  </tr>
+  <tr>
+    <th>Winner</th>
+    <th class="num">&Delta;&rho;</th>
+    <th>Winner</th>
+    <th class="num">&Delta;&rho;</th>
+    <th>Winner</th>
+    <th class="num">&Delta;&rho;</th>
+    <th>Winner</th>
+    <th class="num">&Delta;&rho;</th>
+  </tr>
+  <tr>
+    <td><strong>IL6</strong></td>
+    <td class="pos">LC</td><td class="num pos">+0.18</td>
+    <td class="neg">CS</td><td class="num neg">&minus;0.13</td>
+    <td>SA</td><td class="num neg">&minus;0.10</td>
+    <td>SA</td><td class="num">+0.00</td>
+  </tr>
+  <tr>
+    <td><strong>VEGFA</strong></td>
+    <td class="pos">LC</td><td class="num pos">+0.13</td>
+    <td>SA</td><td class="num neg">&minus;0.09</td>
+    <td colspan="2" style="color:var(--muted);">n/a&thinsp;<sup>&Dagger;</sup></td>
+    <td colspan="2" style="color:var(--muted);">n/a&thinsp;<sup>&Dagger;</sup></td>
+  </tr>
+  <tr>
+    <td><strong>IL2</strong></td>
+    <td class="pos">LC</td><td class="num pos">+0.05</td>
+    <td class="neg">CS</td><td class="num neg">&minus;0.12</td>
+    <td style="color:var(--muted);">Tie</td><td class="num pos">+0.04</td>
+    <td class="pos">LC</td><td class="num pos">+0.06</td>
+  </tr>
+  <tr>
+    <td><strong>IFNG</strong></td>
+    <td>SA</td><td class="num pos">+0.07</td>
+    <td style="color:var(--muted);">Tie</td><td class="num pos">+0.01</td>
+    <td style="color:var(--muted);">Tie</td><td class="num pos">+0.01</td>
+    <td class="neg">CS</td><td class="num neg">&minus;0.18</td>
+  </tr>
+  <tr>
+    <td><strong>IL10</strong></td>
+    <td>SA</td><td class="num neg">&minus;0.00</td>
+    <td>SA</td><td class="num neg">&minus;0.03</td>
+    <td>SA</td><td class="num neg">&minus;0.01</td>
+    <td>SA</td><td class="num neg">&minus;0.10</td>
+  </tr>
+  <tr>
+    <td><strong>TNFA</strong></td>
+    <td class="neg">CS</td><td class="num neg">&minus;0.05</td>
+    <td class="neg">CS</td><td class="num neg">&minus;0.24</td>
+    <td class="neg">CS</td><td class="num neg">&minus;0.12</td>
+    <td class="neg">CS</td><td class="num neg">&minus;0.14</td>
+  </tr>
+  <tr>
+    <td><strong>TGFB1</strong></td>
+    <td class="neg">CS</td><td class="num neg">&minus;0.34</td>
+    <td class="neg">CS</td><td class="num neg">&minus;0.44</td>
+    <td colspan="2" style="color:var(--muted);">n/a&thinsp;<sup>&Dagger;</sup></td>
+    <td colspan="2" style="color:var(--muted);">n/a&thinsp;<sup>&Dagger;</sup></td>
+  </tr>
+</table>
+
+<p style="font-size:0.8rem;color:var(--muted);">&Delta;&rho; = LinCytoSig &minus; CytoSig. LC = LinCytoSig, CS = CytoSig, SA = SecAct. <sup>&Dagger;</sup> PBMC datasets lack endothelial and fibroblast cells.</p>
+
+<div class="callout green">
+<p><strong>Key findings (celltype-level):</strong></p>
+<ul>
+  <li><strong>LinCytoSig wins for IL6, VEGFA, and IL2 in scAtlas Normal</strong> &mdash; the same 3 targets identified in Issue 3. These are cytokines with strong biological specificity to the tested cell type (IL6 in macrophages, VEGFA in endothelial cells).</li>
+  <li><strong>The advantage does NOT transfer to scAtlas Cancer</strong> &mdash; LinCytoSig loses for IL6 and IL2 in cancer, likely because tumor-associated macrophages have different transcriptional programs than normal-tissue macrophages.</li>
+  <li><strong>CytoSig consistently wins for TNFA and TGFB1</strong> across all datasets at the celltype level. For TNFA, the global signature captures TNF signaling better even on macrophage-specific pseudobulk. For TGFB1, the fibroblast-specific signature is consistently inferior to the global signature on fibroblast pseudobulk.</li>
+  <li><strong>SecAct dominates IL10</strong> at the celltype level in every dataset, suggesting its spatial-correlation-derived IL10 signature captures biology that neither CytoSig nor LinCytoSig captures.</li>
+  <li><strong>PBMC datasets (CIMA, Inflam Main) show weaker signals overall</strong> &mdash; myeloid/monocyte proxies for macrophage produce noisier comparisons. When matched cell types don&rsquo;t exist (VEGFA, TGFB1), the comparison is structurally impossible.</li>
+</ul>
+</div>
+
+<div class="callout amber">
+<p><strong>Overall conclusion:</strong> At the celltype level, LinCytoSig&rsquo;s value is <strong>target-specific and dataset-dependent</strong>. It excels for IL6 and VEGFA in normal tissue (scAtlas Normal), where the biological match between signature origin (macrophage, HUVEC) and evaluation target (macrophage, endothelial pseudobulk) is strongest. However, it consistently loses for TNFA and TGFB1 &mdash; suggesting that for these cytokines, CytoSig&rsquo;s broader gene set captures the signaling response better than the cell-type-restricted signature, even when evaluated on the &ldquo;right&rdquo; cell type.</p>
+</div>
+
+<hr>
+
+<!-- ======================================================================== -->
 <!-- PROPOSED RESTRUCTURING -->
 <!-- ======================================================================== -->
 <h2 id="restructure">Proposed Section 5 Restructuring</h2>
@@ -1160,8 +1963,8 @@
 <hr>
 
 <footer>
-  <p>CytoAtlas Reports &mdash; LinCytoSig Issues &amp; Analysis &mdash; Generated February 15, 2026</p>
-  <p>Data sources: <code>best_lincytosig_selection.json</code>, <code>method_comparison_8way_all.json</code>, <code>lincytosig_variants_44cytokines.csv</code>, <code>*_lincyto_{filt,orig}_correlations.csv</code>, <code>scatlas_normal_correlations.csv</code></p>
+  <p>CytoAtlas Reports &mdash; LinCytoSig Issues &amp; Analysis &mdash; Updated February 15, 2026</p>
+  <p>Data sources: <code>best_lincytosig_selection.json</code>, <code>method_comparison_8way_all.json</code>, <code>lincytosig_variants_44cytokines.csv</code>, <code>*_lincyto_{filt,orig}_correlations.csv</code>, <code>{gtex,tcga,cima,inflammation_main,scatlas_normal,scatlas_cancer}_correlations.csv</code></p>
 </footer>
 
 </main>
