@@ -314,7 +314,6 @@ Of the 29 matched CytoSig targets with data in ≥4 datasets, two categories eme
 - **In aggregate, SecAct's larger target pool shows higher retention** (27–44% vs CytoSig's 4–39%), but this reflects unequal target counts (~1,170 vs 43). On the 32 matched targets, CytoSig actually retains more signal in 2 of 4 datasets — the apparent SecAct advantage disappears when comparing like-for-like
 - **All datasets show monotonic decline** except scAtlas Cancer CytoSig, which *increases* from Tumor Only (0.184) to Tumor × Cancer (0.223) before dropping to CT1 (0.033) — cancer-type stratification can improve signal before cell-type dilution dominates
 - **CytoSig and SecAct converge in some datasets** — Inflammation Main L2: 0.044 vs 0.048 — but not universally (scAtlas Cancer CT1: 0.033 vs 0.171). Convergence occurs where both methods approach the noise floor
-- **Pro-inflammatory cytokines degrade most**: IL1A, IL1B, TNFA, and IL27 lose 0.3–0.55 ρ from coarse to fine across all 4 datasets — their donor-level signal reflects systemic inflammatory state that dilutes when split by cell type. Targets with negative coarse-level ρ (CD40L, LTA, HGF) improve on average at finer levels in CIMA and Inflammation Main, though the pattern is inconsistent in scAtlas datasets
 
 Per-level Mann-Whitney/Wilcoxon tests with BH-FDR correction for all datasets are in the [supplement](stats_section_4.1.html#aggregation-level).
 
