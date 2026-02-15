@@ -137,8 +137,8 @@ Most single-cell analysis tools use complex models (variational autoencoders, gr
 
 1. **Which cytokines are active in which cell types across diseases?** — IL1B/TNFA in monocytes/macrophages, IFNG in CD8+ T and NK cells, IL17A in Th17, VEGFA in endothelial/tumor cells, TGFB family in stromal cells — quantified across 19 diseases, 35 organs, and 15 cancer types.
 2. **Are cytokine activities consistent across independent cohorts?** — Yes. IL1B, TNFA, VEGFA, and TGFB family show consistent positive correlations across all 6 validation datasets (Figure 6).
-3. **Does cell-type-specific biology matter for cytokine inference?** — For select immune types, yes: LinCytoSig improves prediction for Basophils (+0.21 Δρ), NK cells (+0.19), and DCs (+0.18), but global CytoSig wins overall (Figures 11–12).
-4. **Which secreted proteins beyond cytokines show validated activity?** — SecAct (1,170 targets) achieves the highest correlations in 5 of 6 datasets (median ρ=0.19–0.46), with validated targets including INHBA/Activin A (ρ=0.91 in TCGA Colon), CXCL12 (ρ=0.94 in scAtlas Normal Fibroblast), and BMP family (Figure 13).
+3. **Does cell-type-specific biology matter for cytokine inference?** — For select targets, yes: LinCytoSig improves IL6×Macrophage, VEGFA×Endothelial, and IL2×CD8T prediction in normal tissue, but global CytoSig wins overall and the advantage does not transfer to cancer (Figures 11–12).
+4. **Which secreted proteins beyond cytokines show validated activity?** — SecAct (1,170 targets) achieves the highest correlations in 5 of 6 datasets (median ρ=0.19–0.46), with validated targets including INHBA/Activin A (ρ=0.91 in TCGA Colon), CXCL12 (ρ=0.94 in scAtlas Normal Fibroblast), and BMP family.
 5. **Can we predict treatment response from cytokine activity?** — We are incorporating cytokine-blocking therapy outcomes from bulk RNA-seq to test whether predicted cytokine activity associates with therapy response. Additionally, Inflammation Atlas responder/non-responder labels (208 samples across 6 diseases: RA, PS, PSA, CD, UC, SLE) enable treatment response prediction using cytokine activity profiles as features.
 
 ### 3.3 Validation Philosophy
@@ -325,127 +325,40 @@ Per-level Mann-Whitney/Wilcoxon tests with BH-FDR correction for all datasets ar
 
 ## 5. CytoSig vs LinCytoSig vs SecAct Comparison
 
-### 5.1 Method Overview
+Can cell-type-specific signatures outperform global CytoSig for specific targets? We test 7 biologically motivated celltype–cytokine pairs (Macrophage×IL6, HUVEC×VEGFA, T Cell×IL2, Macrophage×IFNG, Macrophage×IL10, Macrophage×TNFA, Fibroblast×TGFB1) across all 6 datasets, comparing CytoSig, LinCytoSig, and SecAct.
 
-> **Figure 10** (`fig10_method_comparison.png`): 10-way method comparison across all atlases.
+For the full 10-way method comparison (8 LinCytoSig strategies + CytoSig + SecAct), see the [Open Issues & Analysis document](lincytosig_issues.html#full10way).
 
-We evaluate ten approaches for cytokine activity inference, covering three signature matrices and eight LinCytoSig strategies:
+### 5.1 Donor-Level: 7 Representative Targets
 
-| # | Method | Targets | Description |
-|---|--------|---------|-------------|
-| 1 | **CytoSig** | 43 | Global (all cell types) signatures from experimental bulk RNA-seq |
-| 2 | **LinCytoSig (no filter)** | 178 | Cell-type-specific signatures using all ~20K genes |
-| 3 | **LinCytoSig (gene filter)** | 178 | Cell-type-specific signatures restricted to CytoSig gene space (~4,881 genes) |
-| 4 | **LinCytoSig Best (combined)** | 43 | Best cell-type variant per cytokine selected via combined bulk (GTEx+TCGA) correlation, all genes |
-| 5 | **LinCytoSig Best (comb+filt)** | 43 | Best cell-type variant per cytokine selected via combined bulk correlation, gene-filtered |
-| 6 | **LinCytoSig Best (GTEx)** | 54 | Best cell-type variant per cytokine selected via GTEx correlation only |
-| 7 | **LinCytoSig Best (TCGA)** | 50 | Best cell-type variant per cytokine selected via TCGA correlation only |
-| 8 | **LinCytoSig Best (GTEx+filt)** | 54 | GTEx-selected best cell-type variant, gene-filtered |
-| 9 | **LinCytoSig Best (TCGA+filt)** | 50 | TCGA-selected best cell-type variant, gene-filtered |
-| 10 | **SecAct** | 1,170 | Global signatures from spatial transcriptomics (Moran's I) |
+> **Figure 11** (interactive): CytoSig vs LinCytoSig vs SecAct grouped bar chart for 7 representative celltype–cytokine pairs at donor level. LinCytoSig uses the biologically matched cell-type signature (e.g., Macrophage__IL6 for IL6).
 
-**LinCytoSig strategy rationale:**
-- Methods 2–3 use the **cell-type-matched** LinCytoSig signature for each cytokine (e.g., Macrophage__IFNG for macrophages). The "no filter" version uses all ~20K genes in the signature; the "gene filter" version restricts to the ~4,881 genes present in CytoSig's gene space, testing whether the extra ~15K genes help or hurt prediction.
-- Methods 4–5 take a **bulk-selected best** approach: for each cytokine, test all available cell-type-specific LinCytoSig signatures and select the one with the highest expression-activity correlation in combined bulk RNA-seq (GTEx + TCGA). This single "best" signature is then applied across all single-cell datasets.
-- Methods 6–9 test whether **dataset-specific selection** improves generalization: the best cell-type variant is chosen independently from GTEx (54 cytokines) or TCGA (50 cytokines) correlations alone. Methods 8–9 additionally apply gene filtering to these dataset-specific selections.
+**Key findings (donor-level, 7 targets):**
 
-**Donor-level pseudobulk validation (20 matched cytokines, median Spearman ρ):**
+- **LinCytoSig wins the median in 2 of 6 datasets** (Inflammation Atlas Main, scAtlas Normal) — datasets with rich immune cell diversity.
+- **Per-target:** LinCytoSig wins 15/42 comparisons vs CytoSig's 11/42 (SecAct: 16/42). IL2 and IFNG are LinCytoSig's strongest targets; Fibroblast__TGFB1 is the main drag.
+- **SecAct wins the median in 4 of 6 datasets** (GTEx, TCGA, CIMA, scAtlas Cancer), driven by its broad coverage of secreted proteins.
 
-| Atlas | CytoSig | LinCyto (orig) | LinCyto (filt) | Best (comb) | Best (c+f) | Best (GTEx) | Best (TCGA) | Best (GTEx+f) | Best (TCGA+f) | SecAct |
-|-------|---------|----------------|----------------|-------------|------------|-------------|-------------|---------------|---------------|--------|
-| **CIMA** | 0.225 | 0.082 | 0.166 | 0.063 | 0.141 | 0.063 | 0.040 | 0.082 | 0.075 | 0.334 |
-| **Inflammation Atlas** | 0.285 | 0.133 | 0.201 | 0.235 | 0.228 | 0.239 | 0.168 | 0.200 | 0.260 | 0.379 |
-| **scAtlas Normal** | 0.216 | 0.173 | 0.193 | 0.298 | 0.230 | 0.231 | 0.169 | 0.179 | 0.203 | 0.391 |
-| **scAtlas Cancer** | 0.344 | 0.172 | 0.146 | 0.275 | 0.267 | 0.300 | 0.167 | 0.267 | 0.182 | 0.492 |
+### 5.2 Celltype-Level Evaluation
 
-**Key observations from Figure 10:**
-- **SecAct consistently achieves the highest median ρ** across all 4 atlases (0.334–0.492).
-- **CytoSig outperforms most LinCytoSig variants** at donor level. The gap is largest in CIMA (0.225 vs best LinCytoSig variant 0.166). However, in scAtlas Normal, LinCytoSig Best-combined (0.298) exceeds CytoSig (0.216).
-- **Gene filtering improves LinCytoSig** in 3 of 4 atlases (all except scAtlas Cancer). The improvement is most pronounced in CIMA (0.082 → 0.166, +102%).
-- **GTEx-selected vs TCGA-selected:** GTEx-selected best variants generally outperform TCGA-selected in single-cell atlases — particularly in Inflammation Atlas (0.239 vs 0.168) and scAtlas Cancer (0.300 vs 0.167).
-- **Gene filtering of GTEx/TCGA-selected:** The "+filt" variants show mixed results. TCGA+filt improves substantially in Inflammation Atlas (0.260 vs TCGA-orig 0.168). GTEx+filt shows modest changes.
-- **General ranking with caveats:** SecAct > CytoSig ≥ LinCytoSig Best > LinCytoSig (filtered) > LinCytoSig (orig). This ordering holds broadly but is not universal — LinCytoSig Best outperforms CytoSig in scAtlas Normal, and GTEx-selected best outperforms combined-selected best in scAtlas Cancer. For donor-level analysis, global signatures (CytoSig, SecAct) generally outperform cell-type-specific ones.
+> **Figure 12** (interactive): CytoSig vs LinCytoSig vs SecAct evaluated on matched cell-type pseudobulk (e.g., IL6 on macrophage pseudobulk) in scAtlas Normal and scAtlas Cancer. Only these two datasets have sufficient cell-type diversity for all 7 targets.
 
-### 5.2 When Does LinCytoSig Outperform CytoSig?
+**Key findings (celltype-level):**
 
-> **Figure 11** (`fig11_lincytosig_vs_cytosig_scatter.png`): Matched target scatter plots.
-> **Figure 12** (`fig12_lincytosig_advantage_by_celltype.png`): Cell-type-specific advantage analysis.
+- **LinCytoSig excels where biology matches:** IL6×Macrophage, VEGFA×Endothelial, and IL2×CD8T in scAtlas Normal — cytokines with strong cell-type specificity to the tested cell type.
+- **Advantage does NOT transfer to cancer:** LinCytoSig loses for IL6 and VEGFA in scAtlas Cancer, likely because tumor-associated cells have different transcriptional programs.
+- **CytoSig wins TNFA and TGFB1 consistently** across all datasets at celltype level — the global signature captures these signaling responses better even on the "right" cell type.
 
-**Key finding from Figure 11:** In matched comparisons across 4 atlases (136 matched targets each):
+CIMA and Inflammation Atlas Main lack macrophage, endothelial, and fibroblast annotations — only 2–3 of 7 targets evaluable using Myeloid/Mono proxies. See [full celltype analysis](lincytosig_issues.html#celltype7).
 
-| Atlas | LinCytoSig Wins | CytoSig Wins | Tie |
-|-------|----------------|-------------|-----|
-| CIMA | 63 | 64 | 9 |
-| Inflammation Atlas | 41 | 90 | 5 |
-| scAtlas Normal | 54 | 78 | 4 |
-| scAtlas Cancer | 58 | 71 | 7 |
+### 5.3 Limitations: Experimental Bias in the CytoSig Database
 
-**CytoSig wins overall**, but LinCytoSig has specific advantages:
+The CytoSig database has systematic experimental bias: it preferentially acquires specific cell types (macrophage, fibroblast, cancer lines) and specific cytokines (IFNG, TGFB1, IL6). Cell types with fewer than 10 experiments per cytokine produce noisy signatures, making it difficult to systematically select the "best" cell-type-specific signature for each target.
 
-**LinCytoSig wins (Figure 12, top cell types):**
-- **Basophil** (+0.21 mean Δρ): Basophil-specific IL3 response not captured by global CytoSig
-- **NK Cell** (+0.19): NK-specific IL15/IL2 responses differ from global average
-- **Dendritic Cell** (+0.18): DC-specific GMCSF and IL12 responses
-- **Trophoblast** (+0.09): Placenta-specific cytokine responses
+- **45% of cytokines get different "best" cell type** depending on the selection dataset (GTEx vs TCGA), indicating that best-selection is unstable (see [Issue 1](lincytosig_issues.html#issue1)).
+- **The approach cannot be validated generally** with current data — but shows promise for specific high-quality targets where the biological match between signature origin and evaluation context is strong.
 
-**CytoSig wins (LinCytoSig loses):**
-- **Lymphatic Endothelial** (-0.73): Too few experiments in LinCytoSig database
-- **Adipocyte** (-0.44): Single experiment for most cytokines → noisy signatures
-- **Osteocyte** (-0.40): Very limited experimental data
-- **PBMC** (-0.38): PBMC is already a mixture — global CytoSig *is* the PBMC signature
-- **Dermal Fibroblast** (-0.33): Subtype-specific but insufficient replicates
-
-### 5.3 Why LinCytoSig Underperforms for Some Cell Types
-
-**Root cause analysis** (based on `/results/celltype_signatures/metadata.json`):
-
-1. **Sample size effect:** LinCytoSig stratifies CytoSig's ~2,000 experiments by cell type. Cell types with <10 experiments per cytokine produce **noisy median signatures** (high variance, low reproducibility).
-   - Breast Cancer Line: 108 experiments, 11 cytokines → reliable
-   - Adipocyte: 1 experiment for BMP2 → unreliable
-
-2. **Cell-type mismatch:** LinCytoSig's 45 cell types don't perfectly map to atlas annotations. When atlas cell types (e.g., "CD4+ Memory T") don't have a LinCytoSig equivalent, the system falls back to the closest match, introducing noise.
-
-3. **The "PBMC paradox":** For donor-level analysis where all cell types are aggregated, CytoSig (which is already a mixture-level signature) naturally outperforms cell-type-specific LinCytoSig.
-
-**Recommendation:** Use LinCytoSig for **cell-type-resolved** questions (e.g., "is IL15 activity specifically elevated in NK cells?") and CytoSig for **donor-level** questions (e.g., "does this patient have high IFNG activity?").
-
-### 5.4 SecAct: Breadth Over Depth
-
-> **Figure 13** (`fig13_secact_novel_signatures.png`): Novel SecAct targets with consistent high correlation.
-
-SecAct covers 1,170 secreted proteins vs CytoSig's 43 cytokines. Key advantages:
-
-- **Highest median ρ** in single-cell datasets (scAtlas Normal: 0.455, Cancer: 0.399, independence-corrected)
-- **Highest median ρ** in bulk RNA-seq (GTEx: 0.314, TCGA: 0.357, independence-corrected median-of-medians)
-- **95.8% positive correlation** in TCGA (independence-corrected) — nearly all targets work
-- Validates targets beyond CytoSig's 43 cytokines
-
-**Top SecAct targets not in CytoSig-43 (consistently ρ > 0.5):** These are secreted proteins with validated activity-expression correlations that are not covered by CytoSig.
-
-### 5.5 Biologically Important Targets Deep Dive
-
-> **Figure 8** (`fig8_bio_targets_heatmap.png`): Heatmap across all atlases.
-> **Figure 15** (`fig15_lincytosig_specificity.png`): LinCytoSig advantage/disadvantage cases.
-> **Figure 16** (`fig16_celltype_scatter_examples.png`): Cell-type-level scatter examples.
-
-**Interferon family:**
-- IFNG: ρ = 0.25-0.68 across atlases (CytoSig), consistently positive
-- B_Cell__IFNG (LinCytoSig): ρ = 0.37-0.73, *better* than global CytoSig in CIMA and Inflammation Val
-- IFN1 (type I): ρ = 0.20-0.40, lower but consistent
-- IFNL: ρ = 0.20-0.23 in CIMA, shows tissue-specific activity
-
-**TGF-beta family:**
-- TGFB1: ρ = 0.35 (CIMA), 0.90 (scAtlas) — strong in organ-level analysis
-- TGFB3: ρ = 0.33 (CIMA), 0.55 (Inflammation), 0.90 (scAtlas)
-- BMP2: ρ = 0.19 (CIMA), 0.43 (Inflammation), 0.90 (scAtlas)
-- BMP4: ρ = 0.92 (scAtlas) — bone morphogenetic protein activity validated
-
-**Interleukin family:**
-- IL1B: ρ = 0.67 (CIMA), 0.68 (Inflammation) — top performer
-- IL6: ρ = 0.41 (Inflammation), 0.90 (scAtlas)
-- IL10: ρ = 0.38 (CIMA), 0.52 (Inflammation) — immunosuppressive
-- IL17A: ρ = variable, atlas-dependent (Th17-specific)
-- IL27: ρ = 0.43 (CIMA), 0.54 (Inflammation) — emerging immunotherapy target
+**The cell-type-specific approach has merit for well-characterized targets (IL6×Macrophage, VEGFA×Endothelial, IFNG×Macrophage) but the current CytoSig database cannot support systematic evaluation.** Future work could use perturbation data (parse_10M: 90 cytokines × 12 donors × 18 cell types) or expanded cell-type databases to revisit this question. See [full issues & analysis](lincytosig_issues.html).
 
 ---
 
