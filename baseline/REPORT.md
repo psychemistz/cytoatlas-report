@@ -182,7 +182,7 @@ Validation uses a simple, conservative principle: if a method predicts high acti
 
 > **Figure 3** (`fig3_cross_dataset_boxplot.png`): CytoSig vs SecAct Spearman ρ distributions across atlases, with Total/Matched tabs.
 
-**Independence-corrected approach:** Each target gets one representative ρ at the independent level. For datasets with per-stratum correlations (GTEx 29 tissues, TCGA 33 cancers), the representative ρ is the **median across strata** (median-of-medians). For donor-only datasets (CIMA, Inflammation Main, scAtlas Normal/Cancer), each target already has one ρ. This yields n = 43 CytoSig values and n = 1,085–1,140 SecAct values per dataset.
+**Independence-corrected approach:** Each target gets one representative ρ at the independent level. For datasets with per-stratum correlations (GTEx 29 tissues, TCGA 33 cancers), the representative ρ is the **median across strata** (median-of-medians). For donor-only datasets (CIMA, Inflammation Main, scAtlas Normal/Cancer), each target already has one ρ. This yields n = 33–43 CytoSig values and n = 805–1,161 SecAct values per dataset (Inflammation Main has fewer targets due to stricter expression filtering in a smaller cohort).
 
 **Total comparison (Mann-Whitney U):** Compares all CytoSig targets vs all SecAct targets.
 
@@ -193,11 +193,11 @@ Validation uses a simple, conservative principle: if a method predicts high acti
 | GTEx | 4.76 × 10⁻⁴ | 3.54 × 10⁻⁵ | 32 | SecAct > CytoSig |
 | TCGA | 2.85 × 10⁻³ | 3.24 × 10⁻⁶ | 30 | SecAct > CytoSig |
 | CIMA | 3.18 × 10⁻² | 2.28 × 10⁻² | 32 | SecAct > CytoSig |
-| Inflammation Main | 0.548 (ns) | 0.141 (ns) | 27 | CytoSig > SecAct |
+| Inflammation Main | 0.548 (ns) | 0.141 (ns) | 27 | ns (mixed) |
 | scAtlas Normal | 1.04 × 10⁻⁴ | 3.54 × 10⁻⁵ | 32 | SecAct > CytoSig |
 | scAtlas Cancer | 1.06 × 10⁻⁵ | 3.54 × 10⁻⁵ | 32 | SecAct > CytoSig |
 
-SecAct significantly outperforms CytoSig in 5 of 6 datasets on both total and matched comparisons. The Inflammation Main exception (p = 0.548 total, p = 0.141 matched) reflects disease-driven cytokine variance that preferentially boosts CytoSig's canonical targets — in inflammatory conditions, the 43 CytoSig cytokines are the most biologically active, giving CytoSig a domain advantage.
+SecAct significantly outperforms CytoSig in 5 of 6 datasets. The Inflammation Main exception is non-significant on both tests (p = 0.548 total, p = 0.141 matched); on total targets CytoSig has higher median ρ (0.32 vs 0.17), but on the 27 matched targets SecAct actually has higher median ρ (0.44 vs 0.35). The total-target advantage reflects disease-driven cytokine variance that preferentially boosts CytoSig's canonical targets — in inflammatory conditions, the 33 CytoSig cytokines available are the most biologically active, giving CytoSig a domain advantage that disappears when restricting to shared targets.
 
 ### 4.3 Per-Tissue and Per-Cancer Stratified Validation ([full results](stats_section_4.1.html#per-tissue-stratified))
 
@@ -213,9 +213,9 @@ Four datasets have per-stratum breakdowns:
 **Statistical tests per stratum:** Mann-Whitney U (CytoSig vs SecAct total targets within each tissue/cancer) and Wilcoxon signed-rank (32 shared targets). BH-FDR correction applied within each dataset (29 tests for GTEx, 33 for TCGA, etc.). Full per-stratum results with FDR q-values are in the [supplement](stats_section_4.1.html#per-tissue-stratified).
 
 **Key findings:**
-- **Matched targets (strongest test):** On the 32 shared targets, SecAct wins direction in every stratum — 29/29 GTEx tissues and 33/33 TCGA cancer types — with 25/29 and 31/33 reaching significance (q < 0.05). This unanimous result across 62 independent strata rules out Simpson's paradox and confirms the Section 4.2 aggregate is not driven by a few dominant strata
-- **Total targets:** SecAct wins direction in 28/29 GTEx tissues (21 significant) and 30/33 TCGA cancers (15 significant). The few CytoSig-favored strata (Brain in GTEx; Kidney Chromophobe, Ovarian, Uveal Melanoma in TCGA) are all non-significant, reflecting low cytokine signaling rather than genuine CytoSig superiority
-- **Spatial signatures capture context-dependent regulation:** Since SecAct outperforms CytoSig on the *same 32 cytokines*, the advantage is not about target breadth but about signature quality. SecAct's spatial correlation signatures capture tissue-context-dependent cytokine regulation that CytoSig's median log2FC signatures might not capture. The advantage is largest in tissues with complex cellular microenvironments — GTEx: Small Intestine (Δ = +0.47), Esophagus (+0.41), Salivary Gland (+0.34); TCGA: Testicular (+0.33), Cervical (+0.32), Lung Adeno (+0.29) — and smallest in homogeneous contexts where spatial context matters less: GTEx: Breast (+0.001), Pituitary (+0.06); TCGA: Brain Glioma (+0.06), Kidney Chromophobe (+0.09)
+- **Matched targets (strongest test):** On matched targets (23 pairs per GTEx tissue, 19–21 per TCGA cancer after expression filtering), SecAct wins direction in 29/29 GTEx tissues and 32/33 TCGA cancer types, with 23/29 and 31/33 reaching significance (q < 0.05). The sole exception is Acute Myeloid Leukemia (Δ = −0.08, q = 0.83), a low-sample liquid tumor. This near-unanimous result across 61 of 62 strata rules out Simpson's paradox and confirms the Section 4.2 aggregate is not driven by a few dominant strata
+- **Total targets:** SecAct wins direction in 28/29 GTEx tissues (21 significant) and 30/33 TCGA cancers (15 significant). The few CytoSig-favored strata on total targets (Brain in GTEx; Kidney Chromophobe, Ovarian, Uveal Melanoma in TCGA) are all non-significant, reflecting low cytokine signaling rather than genuine CytoSig superiority
+- **Spatial signatures capture context-dependent regulation:** Since SecAct outperforms CytoSig on the *same* matched cytokines, the advantage is not about target breadth but about signature quality. SecAct's spatial correlation signatures capture tissue-context-dependent cytokine regulation that CytoSig's median log2FC signatures miss. The advantage is largest in tissues with complex cellular microenvironments — GTEx: Small Intestine (Δ = +0.55), Vagina (+0.34), Salivary Gland (+0.30); TCGA: Pancreatic (+0.34), Head & Neck (+0.27), Lung Adeno (+0.25) — and smallest in homogeneous or low-cytokine contexts: GTEx: Heart (+0.06), Skin (+0.06), Brain (+0.06); TCGA: Uveal Melanoma (+0.07), Kidney Chromophobe (+0.10)
 - scAtlas strata with Tier B sample sizes (<30 donors) are shown with reduced confidence
 
 ### 4.4 Cross-Platform Comparison: Bulk vs Pseudobulk
