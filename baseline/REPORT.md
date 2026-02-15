@@ -47,7 +47,7 @@ Ridge regression (L2-regularized linear regression) was chosen deliberately over
 
 **Total:** ~29M single cells + ~31K bulk RNA-seq samples, processed through ridge regression against 3 signature matrices (CytoSig: 43 cytokines, LinCytoSig: 178 cell-type-specific, SecAct: 1,170 secreted proteins). **Processing Time** = wall-clock time for full activity inference on a single NVIDIA A100 GPU (80 GB VRAM). For bulk datasets (GTEx/TCGA), ridge regression is applied with within-tissue/within-cancer mean centering to remove tissue-level variation. See Section 2.1 for per-dataset details.
 
-> **System Architecture** (`fig_system_architecture.png`): Full platform diagram showing data pipeline, DuckDB/JSON storage, FastAPI layer (262 endpoints), React dashboard, and AI chat assistant with RAG, dual LLM (Mistral-24B + Claude), and 16 data tools.
+> **System Architecture** (`fig_system_architecture.png`): Top-to-bottom layered system design diagram. Users interact via a React SPA through Nginx and FastAPI (17 routers, JWT auth). The API serves a Data Query Service (DuckDB, 3 databases, 80+ tables) and an AI Chat Service with dual LLM (Mistral-Small-24B via vLLM + Claude fallback), RAG (LanceDB + MiniLM), and 22 data tools. An offline GPU pipeline (SLURM/A100) performs batch activity inference into the storage layer.
 
 ### 1.2 Validation Strategy
 

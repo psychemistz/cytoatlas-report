@@ -1661,6 +1661,11 @@ def generate_html(summary_table, boxplot_data, consistency_data, heatmap_data,
 <!-- SECTION 1 -->
 <h2 id="sec1">1. System Architecture and Design Rationale</h2>
 
+<div class="figure">
+  <img src="data:image/png;base64,{fig_arch_b64}" alt="System Architecture" style="max-width:100%;">
+  <div class="caption"><strong>System Architecture.</strong> CytoAtlas platform: users interact via a React SPA through Nginx and FastAPI (17 routers, JWT auth). The API serves two primary backends &mdash; a Data Query Service (DuckDB, 3 databases, 80+ tables) and an AI Chat Service with dual LLM (Mistral-Small-24B via vLLM + Claude fallback), RAG (LanceDB + MiniLM), and 22 data tools. An offline GPU pipeline (SLURM/A100) performs batch activity inference.</div>
+</div>
+
 <h3>1.1 Architecture and Processing</h3>
 
 <p><strong>Linear interpretability over complex models.</strong>
@@ -1687,11 +1692,6 @@ Ridge regression (L2-regularized linear regression) was chosen deliberately over
   <tr><td>parse_10M</td><td>9.7M cells</td><td>~3h</td><td>A100 80GB</td></tr>
 </table>
 <p style="font-size:0.85em;color:#555;margin-top:4px;"><strong>Total:</strong> ~29M single cells + ~31K bulk RNA-seq samples, processed through ridge regression against 3 signature matrices (CytoSig: 43 cytokines, LinCytoSig: 178 cell-type-specific, SecAct: 1,170 secreted proteins). <strong>Processing Time</strong> = wall-clock time for full activity inference on a single NVIDIA A100 GPU (80 GB VRAM). For bulk datasets (GTEx/TCGA), ridge regression is applied with within-tissue/within-cancer mean centering to remove tissue-level variation. See Section 2.1 for per-dataset details.</p>
-
-<div class="figure">
-  <img src="data:image/png;base64,{fig_arch_b64}" alt="System Architecture" style="max-width:100%;">
-  <div class="caption"><strong>System Architecture.</strong> CytoAtlas platform overview: raw data flows through GPU ridge regression into structured storage (DuckDB, H5AD, JSON), served via FastAPI (262 endpoints) to a React dashboard and an AI chat assistant with RAG (LanceDB + MiniLM), dual LLM (Mistral-Small-24B primary + Claude fallback), and 16 data tools.</div>
-</div>
 
 <h3>1.2 Validation Strategy</h3>
 

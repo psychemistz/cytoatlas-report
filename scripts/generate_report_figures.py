@@ -506,33 +506,42 @@ def fig1_dataset_overview():
 # SYSTEM ARCHITECTURE: Full Platform Overview (inserted before Figure 1 in §1.1)
 # ═══════════════════════════════════════════════════════════════════════════════
 def fig_system_architecture():
-    """4-column system architecture diagram: Data Sources → GPU Pipeline → Data Services → User Interfaces.
+    """Top-to-bottom layered system design diagram.
+
+    Layout: Browser → Nginx → FastAPI → Services → Storage → GPU Pipeline.
+    Style: System design interview diagram with color-coded layers.
 
     Data source:
-        Hardcoded values matching §1.1 tables and upstream codebase stats.
+        Hardcoded values matching the actual cytoatlas-api codebase.
     Method:
-        Schematic — no statistical computation. Reuses FancyBboxPatch style from fig1.
+        Schematic — no statistical computation. FancyBboxPatch style.
     Output:
         fig_system_architecture.png, fig_system_architecture.pdf
     """
-    fig, ax = plt.subplots(1, 1, figsize=(18, 10))
-    ax.set_xlim(0, 18)
-    ax.set_ylim(0, 10.5)
+    fig, ax = plt.subplots(1, 1, figsize=(16, 14))
+    ax.set_xlim(0, 16)
+    ax.set_ylim(0, 14)
     ax.axis('off')
 
-    # ── Colors ──
+    # ── Colors by layer ──
     C = {
-        'sc': '#3B82F6',         # blue  (single-cell)
-        'bulk': '#EC4899',       # pink  (bulk)
-        'sig': '#D97706',        # amber (signatures)
-        'pipe': '#059669',       # emerald (pipeline)
-        'storage': '#6366F1',    # indigo
-        'api': '#0891B2',        # teal
-        'dashboard': '#7C3AED',  # purple
-        'chat': '#E11D48',       # rose
+        'client':   '#3B82F6',  # blue
+        'gateway':  '#64748B',  # slate
+        'app':      '#0891B2',  # teal
+        'data_svc': '#6366F1',  # indigo
+        'chat_svc': '#E11D48',  # rose
+        'bg_tasks': '#7C3AED',  # purple
+        'llm_pri':  '#F59E0B',  # amber (Mistral/vLLM)
+        'llm_fall': '#8B5CF6',  # purple (Claude fallback)
+        'rag':      '#059669',  # emerald
+        'storage':  '#475569',  # dark slate (group)
+        'duckdb':   '#6366F1',  # indigo
+        'sqlite':   '#0891B2',  # teal
+        'redis':    '#F59E0B',  # amber
+        'gpu':      '#059669',  # emerald
     }
 
-    # ── Helpers (same style as fig1) ──
+    # ── Helpers ──
     def draw_box(x, y, w, h, color, alpha=0.12, lw=1.5):
         bg = FancyBboxPatch((x, y), w, h, boxstyle='round,pad=0.08',
                             facecolor=color, edgecolor='none', alpha=alpha, linewidth=0)
@@ -550,212 +559,223 @@ def fig_system_architecture():
                                 linestyle='--')
         ax.add_patch(border)
 
-    def draw_arrow(x1, y1, x2, y2, bidir=False):
+    def draw_arrow(x1, y1, x2, y2, color='#64748B', lw=2.0, bidir=False):
         style = '<->' if bidir else '->'
         ax.annotate('', xy=(x2, y2), xytext=(x1, y1),
-                    arrowprops=dict(arrowstyle=style, color='#64748B', lw=2.5,
+                    arrowprops=dict(arrowstyle=style, color=color, lw=lw,
                                     connectionstyle='arc3,rad=0'))
 
-    # ── Layout constants ──
-    CH = 0.55     # card height
-    CG = 0.18     # gap between cards
-    CS = CH + CG  # card step
-    TOP = 9.0     # top of content area (leaves room for column titles)
-    LABEL_FS = 9  # label font size
-    DETAIL_FS = 7.5
+    def arrow_label(x, y, text, color='#475569'):
+        ax.text(x, y, text, fontsize=7.5, ha='center', va='center',
+                color=color, fontstyle='italic',
+                bbox=dict(boxstyle='round,pad=0.15', facecolor='white',
+                          edgecolor='none', alpha=0.85))
 
-    # ═══ COLUMN 1: Data Sources (x=0.2–3.9) ═══
-    c1x, c1w = 0.2, 3.7
-    ax.text(c1x + c1w / 2, TOP + 0.7, 'Data Sources', fontsize=13, fontweight='bold',
+    # ── Font sizes ──
+    TITLE_FS = 11
+    LABEL_FS = 9.5
+    DETAIL_FS = 8
+    SUB_FS = 7.5
+
+    # Center x for all full-width boxes
+    CX = 8.0  # center of the figure
+
+    # ═══ LAYER 1: Client (top) ═══
+    L1_Y = 12.5
+    bw, bh = 5.0, 0.9
+    draw_box(CX - bw / 2, L1_Y, bw, bh, C['client'], lw=2.0)
+    ax.text(CX, L1_Y + bh * 0.62, 'Browser', fontsize=TITLE_FS, fontweight='bold',
             ha='center', va='center', color='#1E293B')
+    ax.text(CX, L1_Y + bh * 0.28, 'React 19 + TypeScript \u00b7 16 pages \u00b7 Plotly + D3',
+            fontsize=DETAIL_FS, ha='center', va='center', color='#475569')
 
-    # -- Single-cell group --
-    sc_items = [
-        ('CIMA',               '6.5M cells'),
-        ('Inflammation Atlas', '6.3M cells'),
-        ('scAtlas Normal',     '2.3M cells'),
-        ('scAtlas Cancer',     '4.1M cells'),
-        ('parse_10M',          '9.7M cells'),
-    ]
-    sc_top = TOP
-    sc_bot = sc_top - len(sc_items) * CS - 0.1
-    draw_group(c1x, sc_bot, c1w, sc_top - sc_bot + 0.25, C['sc'])
-    ax.text(c1x + 0.15, sc_top + 0.05, 'Single-Cell (29M cells)', fontsize=8.5, fontweight='bold',
-            va='bottom', color='#1E40AF')
-    for i, (name, count) in enumerate(sc_items):
-        by = sc_top - i * CS - CH
-        draw_box(c1x + 0.15, by, c1w - 0.3, CH, C['sc'])
-        ax.text(c1x + 0.35, by + CH / 2, name, fontsize=LABEL_FS, fontweight='bold',
-                va='center', color='#1E293B')
-        ax.text(c1x + c1w - 0.35, by + CH / 2, count, fontsize=DETAIL_FS, fontweight='bold',
-                va='center', ha='right', color=C['sc'])
+    # Arrow: Client → Nginx
+    draw_arrow(CX, L1_Y, CX, L1_Y - 0.5)
+    arrow_label(CX + 0.7, L1_Y - 0.25, 'HTTPS')
 
-    # -- Bulk RNA-seq group --
-    bulk_items = [
-        ('GTEx',  '19.8K samples'),
-        ('TCGA',  '11.1K samples'),
-    ]
-    bulk_top = sc_bot - 0.45
-    bulk_bot = bulk_top - len(bulk_items) * CS - 0.1
-    draw_group(c1x, bulk_bot, c1w, bulk_top - bulk_bot + 0.25, C['bulk'])
-    ax.text(c1x + 0.15, bulk_top + 0.05, 'Bulk RNA-seq (31K samples)', fontsize=8.5,
-            fontweight='bold', va='bottom', color='#9D174D')
-    for i, (name, count) in enumerate(bulk_items):
-        by = bulk_top - i * CS - CH
-        draw_box(c1x + 0.15, by, c1w - 0.3, CH, C['bulk'])
-        ax.text(c1x + 0.35, by + CH / 2, name, fontsize=LABEL_FS, fontweight='bold',
-                va='center', color='#1E293B')
-        ax.text(c1x + c1w - 0.35, by + CH / 2, count, fontsize=DETAIL_FS, fontweight='bold',
-                va='center', ha='right', color=C['bulk'])
-
-    # ═══ COLUMN 2: GPU Pipeline (x=4.6–8.5) ═══
-    c2x, c2w = 4.6, 3.9
-    ax.text(c2x + c2w / 2, TOP + 0.7, 'GPU Pipeline', fontsize=13, fontweight='bold',
+    # ═══ LAYER 2: Gateway / Nginx ═══
+    L2_Y = 10.7
+    bw2 = 4.0
+    bh2 = 0.75
+    draw_box(CX - bw2 / 2, L2_Y, bw2, bh2, C['gateway'], lw=1.8)
+    ax.text(CX, L2_Y + bh2 * 0.62, 'Nginx', fontsize=TITLE_FS, fontweight='bold',
             ha='center', va='center', color='#1E293B')
+    ax.text(CX, L2_Y + bh2 * 0.25, 'Reverse Proxy \u00b7 Rate Limiting \u00b7 SSL',
+            fontsize=DETAIL_FS, ha='center', va='center', color='#475569')
 
-    # -- Signature matrices group --
-    sig_items = [
-        ('CytoSig',    '43 cytokines',           COLORS['cytosig']),
-        ('LinCytoSig', '178 cell-type specific',  COLORS['lincytosig']),
-        ('SecAct',     '1,170 secreted proteins', COLORS['secact']),
-    ]
-    sig_top = TOP
-    sig_bot = sig_top - len(sig_items) * CS - 0.1
-    draw_group(c2x, sig_bot, c2w, sig_top - sig_bot + 0.25, C['sig'])
-    ax.text(c2x + 0.15, sig_top + 0.05, 'Signature Matrices', fontsize=8.5, fontweight='bold',
-            va='bottom', color='#92400E')
-    for i, (name, desc, color) in enumerate(sig_items):
-        by = sig_top - i * CS - CH
-        draw_box(c2x + 0.15, by, c2w - 0.3, CH, color)
-        ax.text(c2x + 0.35, by + CH / 2, name, fontsize=LABEL_FS, fontweight='bold',
-                va='center', color='#1E293B')
-        ax.text(c2x + c2w - 0.35, by + CH / 2, desc, fontsize=DETAIL_FS,
-                va='center', ha='right', color=color)
+    # Arrow: Nginx → FastAPI
+    draw_arrow(CX, L2_Y, CX, L2_Y - 0.55)
+    arrow_label(CX + 0.7, L2_Y - 0.28, 'proxy')
 
-    # -- Pipeline steps group --
-    pipe_items = [
-        ('SLURM / A100 GPU',        'CuPy-accelerated batches'),
-        ('Pseudobulk aggregation',   'Donor, donor\u00d7celltype'),
-        ('SecActpy ridge regression', '\u03bb=5\u00d710\u2075, z-scored output'),
-        ('Cross-sample correlation',  'Spearman \u03c1 vs target expr.'),
-    ]
-    pipe_top = sig_bot - 0.45
-    pipe_bot = pipe_top - len(pipe_items) * CS - 0.1
-    draw_group(c2x, pipe_bot, c2w, pipe_top - pipe_bot + 0.25, C['pipe'])
-    ax.text(c2x + 0.15, pipe_top + 0.05, 'Pipeline Steps', fontsize=8.5, fontweight='bold',
-            va='bottom', color='#065F46')
-    for i, (step, detail) in enumerate(pipe_items):
-        by = pipe_top - i * CS - CH
-        draw_box(c2x + 0.15, by, c2w - 0.3, CH, C['pipe'])
-        ax.text(c2x + 0.35, by + CH * 0.65, step, fontsize=LABEL_FS - 0.5, fontweight='bold',
-                va='center', color='#1E293B')
-        ax.text(c2x + 0.35, by + CH * 0.25, detail, fontsize=DETAIL_FS - 0.5,
-                va='center', color='#64748B')
+    # ═══ LAYER 3: FastAPI Application ═══
+    L3_Y = 9.0
+    bw3 = 10.0
+    bh3 = 0.85
+    draw_box(CX - bw3 / 2, L3_Y, bw3, bh3, C['app'], lw=2.0)
+    ax.text(CX, L3_Y + bh3 * 0.62, 'FastAPI Application', fontsize=TITLE_FS,
+            fontweight='bold', ha='center', va='center', color='#1E293B')
+    ax.text(CX, L3_Y + bh3 * 0.25,
+            '17 routers \u00b7 6 middleware \u00b7 JWT auth \u00b7 CORS \u00b7 audit logging',
+            fontsize=DETAIL_FS, ha='center', va='center', color='#475569')
 
-    # ═══ COLUMN 3: Data Services (x=9.3–12.8) ═══
-    c3x, c3w = 9.3, 3.5
-    ax.text(c3x + c3w / 2, TOP + 0.7, 'Data Services', fontsize=13, fontweight='bold',
-            ha='center', va='center', color='#1E293B')
+    # ═══ LAYER 4: Services (3 boxes side-by-side) ═══
+    L4_Y = 6.5
+    svc_h = 2.0
 
-    # -- Storage group --
-    store_items = [
-        ('H5AD / CSV',  '~50 GB raw'),
-        ('DuckDB',      '3 DBs, 68 tables'),
-        ('JSON cache',  '7.7 GB precomputed'),
-    ]
-    store_top = TOP
-    store_bot = store_top - len(store_items) * CS - 0.1
-    draw_group(c3x, store_bot, c3w, store_top - store_bot + 0.25, C['storage'])
-    ax.text(c3x + 0.15, store_top + 0.05, 'Storage', fontsize=8.5, fontweight='bold',
-            va='bottom', color='#4338CA')
-    for i, (name, detail) in enumerate(store_items):
-        by = store_top - i * CS - CH
-        draw_box(c3x + 0.15, by, c3w - 0.3, CH, C['storage'])
-        ax.text(c3x + 0.35, by + CH / 2, name, fontsize=LABEL_FS, fontweight='bold',
-                va='center', color='#1E293B')
-        ax.text(c3x + c3w - 0.35, by + CH / 2, detail, fontsize=DETAIL_FS,
-                va='center', ha='right', color=C['storage'])
+    # -- Data Query Service (left) --
+    dqs_x, dqs_w = 1.0, 3.5
+    draw_box(dqs_x, L4_Y, dqs_w, svc_h, C['data_svc'], lw=1.8)
+    ax.text(dqs_x + dqs_w / 2, L4_Y + svc_h - 0.25, 'Data Query Service',
+            fontsize=LABEL_FS, fontweight='bold', ha='center', va='center', color='#1E293B')
+    ax.text(dqs_x + dqs_w / 2, L4_Y + svc_h - 0.65, 'DuckDB repository',
+            fontsize=DETAIL_FS, ha='center', va='center', color='#475569')
+    ax.text(dqs_x + dqs_w / 2, L4_Y + svc_h - 1.0,
+            '115 safelisted tables\nParameterized queries\nAsync via run_in_executor',
+            fontsize=SUB_FS, ha='center', va='center', color='#64748B', linespacing=1.4)
 
-    # -- API group --
-    api_top = store_bot - 0.45
-    api_bot = api_top - 1 * CS - 0.1
-    draw_group(c3x, api_bot, c3w, api_top - api_bot + 0.25, C['api'])
-    ax.text(c3x + 0.15, api_top + 0.05, 'API Layer', fontsize=8.5, fontweight='bold',
-            va='bottom', color='#155E75')
-    by = api_top - CH
-    draw_box(c3x + 0.15, by, c3w - 0.3, CH, C['api'])
-    ax.text(c3x + 0.35, by + CH * 0.65, 'FastAPI', fontsize=LABEL_FS, fontweight='bold',
-            va='center', color='#1E293B')
-    ax.text(c3x + 0.35, by + CH * 0.25, '262 endpoints, 17 routers', fontsize=DETAIL_FS,
-            va='center', color='#64748B')
-    # Store API box center for bidirectional arrow
-    api_center_y = by + CH / 2
+    # Arrow: FastAPI → Data Query Service
+    draw_arrow(CX - 2.5, L3_Y, dqs_x + dqs_w / 2, L4_Y + svc_h + 0.05)
 
-    # ═══ COLUMN 4: User Interfaces (x=13.6–17.8) ═══
-    c4x, c4w = 13.6, 4.2
-    ax.text(c4x + c4w / 2, TOP + 0.7, 'User Interfaces', fontsize=13, fontweight='bold',
-            ha='center', va='center', color='#1E293B')
+    # -- AI Chat Service (center, larger) --
+    acs_x, acs_w = 5.2, 5.6
+    draw_box(acs_x, L4_Y, acs_w, svc_h, C['chat_svc'], lw=2.0)
+    ax.text(acs_x + acs_w / 2, L4_Y + svc_h - 0.25, 'AI Chat Service',
+            fontsize=LABEL_FS, fontweight='bold', ha='center', va='center', color='#1E293B')
 
-    # -- Dashboard group --
-    dash_items = [
-        ('React 19 + TypeScript',  '11.4K lines'),
-        ('12 interactive pages',   'Plotly + D3'),
-        ('Interactive Report',     '13 MB HTML'),
-    ]
-    dash_top = TOP
-    dash_bot = dash_top - len(dash_items) * CS - 0.1
-    draw_group(c4x, dash_bot, c4w, dash_top - dash_bot + 0.25, C['dashboard'])
-    ax.text(c4x + 0.15, dash_top + 0.05, 'Interactive Dashboard', fontsize=8.5,
-            fontweight='bold', va='bottom', color='#5B21B6')
-    for i, (name, detail) in enumerate(dash_items):
-        by = dash_top - i * CS - CH
-        draw_box(c4x + 0.15, by, c4w - 0.3, CH, C['dashboard'])
-        ax.text(c4x + 0.35, by + CH / 2, name, fontsize=LABEL_FS, fontweight='bold',
-                va='center', color='#1E293B')
-        ax.text(c4x + c4w - 0.35, by + CH / 2, detail, fontsize=DETAIL_FS,
-                va='center', ha='right', color=C['dashboard'])
+    # Sub-boxes inside AI Chat: Dual LLM and RAG
+    # -- Dual LLM sub-box (left half of chat) --
+    llm_x = acs_x + 0.25
+    llm_w = 2.4
+    llm_y = L4_Y + 0.2
+    llm_h = 1.3
+    draw_box(llm_x, llm_y, llm_w, llm_h, C['llm_pri'], alpha=0.08, lw=1.2)
+    ax.text(llm_x + llm_w / 2, llm_y + llm_h - 0.2, 'Dual LLM',
+            fontsize=DETAIL_FS, fontweight='bold', ha='center', va='center', color='#92400E')
+    ax.text(llm_x + llm_w / 2, llm_y + llm_h * 0.45,
+            'Mistral-Small-24B\n(vLLM, primary)',
+            fontsize=SUB_FS, ha='center', va='center', color=C['llm_pri'],
+            fontweight='bold', linespacing=1.3)
+    ax.text(llm_x + llm_w / 2, llm_y + 0.15,
+            'Claude Sonnet (fallback)',
+            fontsize=SUB_FS - 0.5, ha='center', va='center', color=C['llm_fall'],
+            fontweight='bold')
 
-    # -- AI Chat Assistant group (rose highlight, thicker border) --
-    chat_items = [
-        ('Mistral-Small-24B',       'vLLM, primary LLM'),
-        ('Claude Sonnet',            'Complex query fallback'),
-        ('RAG: LanceDB + MiniLM',   'Semantic doc retrieval'),
-        ('16 data tools',            'DuckDB, activity, genes'),
-        ('Security layer',           'Input/output guardrails'),
-    ]
-    chat_top = dash_bot - 0.45
-    chat_bot = chat_top - len(chat_items) * CS - 0.1
-    draw_group(c4x, chat_bot, c4w, chat_top - chat_bot + 0.25, C['chat'], lw=2.0)
-    ax.text(c4x + 0.15, chat_top + 0.05, 'AI Chat Assistant', fontsize=8.5, fontweight='bold',
-            va='bottom', color='#9F1239')
-    for i, (name, detail) in enumerate(chat_items):
-        by = chat_top - i * CS - CH
-        draw_box(c4x + 0.15, by, c4w - 0.3, CH, C['chat'])
-        ax.text(c4x + 0.35, by + CH * 0.65, name, fontsize=LABEL_FS, fontweight='bold',
-                va='center', color='#1E293B')
-        ax.text(c4x + 0.35, by + CH * 0.25, detail, fontsize=DETAIL_FS,
-                va='center', color='#64748B')
-    # Store chat group center for bidirectional arrow
-    chat_center_y = (chat_top + chat_bot) / 2
+    # -- RAG sub-box (right half of chat) --
+    rag_x = llm_x + llm_w + 0.3
+    rag_w = 2.3
+    rag_y = llm_y
+    rag_h = 1.3
+    draw_box(rag_x, rag_y, rag_w, rag_h, C['rag'], alpha=0.08, lw=1.2)
+    ax.text(rag_x + rag_w / 2, rag_y + rag_h - 0.2, 'RAG + Tools',
+            fontsize=DETAIL_FS, fontweight='bold', ha='center', va='center', color='#065F46')
+    ax.text(rag_x + rag_w / 2, rag_y + rag_h * 0.45,
+            'LanceDB + MiniLM\n(top-5 retrieval)',
+            fontsize=SUB_FS, ha='center', va='center', color=C['rag'],
+            fontweight='bold', linespacing=1.3)
+    ax.text(rag_x + rag_w / 2, rag_y + 0.15,
+            '22 data tools',
+            fontsize=SUB_FS, ha='center', va='center', color='#475569',
+            fontweight='bold')
 
-    # ═══ ARROWS ═══
-    col_mid_y = 5.0  # vertical midpoint for forward arrows
+    # Arrow: FastAPI → AI Chat Service
+    draw_arrow(CX, L3_Y, acs_x + acs_w / 2, L4_Y + svc_h + 0.05)
 
-    # Col 1 → Col 2
-    draw_arrow(c1x + c1w + 0.05, col_mid_y, c2x - 0.05, col_mid_y)
-    # Col 2 → Col 3
-    draw_arrow(c2x + c2w + 0.05, col_mid_y, c3x - 0.05, col_mid_y)
-    # Col 3 → Col 4 (forward)
-    draw_arrow(c3x + c3w + 0.05, col_mid_y, c4x - 0.05, col_mid_y)
-    # API ↔ Chat (bidirectional — tool calling)
-    draw_arrow(c3x + c3w + 0.05, api_center_y, c4x - 0.05,
-               chat_center_y, bidir=True)
-    # Label on bidirectional arrow
-    bidi_mid_x = (c3x + c3w + c4x) / 2
-    bidi_mid_y = (api_center_y + chat_center_y) / 2
-    ax.text(bidi_mid_x + 0.1, bidi_mid_y + 0.25, 'tool calls', fontsize=7.5,
-            ha='center', va='center', color='#475569', fontstyle='italic',
-            bbox=dict(boxstyle='round,pad=0.15', facecolor='white', edgecolor='none', alpha=0.8))
+    # -- Background Tasks (right) --
+    bt_x, bt_w = 11.5, 3.5
+    draw_box(bt_x, L4_Y, bt_w, svc_h, C['bg_tasks'], lw=1.5)
+    ax.text(bt_x + bt_w / 2, L4_Y + svc_h - 0.25, 'Background Tasks',
+            fontsize=LABEL_FS, fontweight='bold', ha='center', va='center', color='#1E293B')
+    ax.text(bt_x + bt_w / 2, L4_Y + svc_h - 0.65, 'Async workers',
+            fontsize=DETAIL_FS, ha='center', va='center', color='#475569')
+    ax.text(bt_x + bt_w / 2, L4_Y + svc_h - 1.0,
+            'Report generation\nBulk data exports\nScheduled analytics',
+            fontsize=SUB_FS, ha='center', va='center', color='#64748B', linespacing=1.4)
+
+    # Arrow: FastAPI → Background Tasks
+    draw_arrow(CX + 2.5, L3_Y, bt_x + bt_w / 2, L4_Y + svc_h + 0.05)
+
+    # ═══ LAYER 5: Storage ═══
+    L5_Y = 3.2
+    store_h = 2.5
+    store_w = 14.0
+    store_x = CX - store_w / 2
+    draw_group(store_x, L5_Y, store_w, store_h, C['storage'], lw=1.5)
+    ax.text(store_x + 0.3, L5_Y + store_h - 0.15, 'Storage Layer',
+            fontsize=LABEL_FS, fontweight='bold', va='center', color='#1E293B')
+
+    # Three storage boxes inside
+    sb_y = L5_Y + 0.3
+    sb_h = 1.7
+    sb_gap = 0.4
+    sb_w = (store_w - 1.0 - 2 * sb_gap) / 3  # equal width for 3 boxes
+    sb_start = store_x + 0.5
+
+    # DuckDB
+    db_x = sb_start
+    draw_box(db_x, sb_y, sb_w, sb_h, C['duckdb'])
+    ax.text(db_x + sb_w / 2, sb_y + sb_h - 0.25, 'DuckDB',
+            fontsize=LABEL_FS, fontweight='bold', ha='center', va='center', color='#1E293B')
+    ax.text(db_x + sb_w / 2, sb_y + sb_h * 0.5,
+            '3 databases\n80+ tables',
+            fontsize=DETAIL_FS, ha='center', va='center', color=C['duckdb'],
+            fontweight='bold', linespacing=1.3)
+    ax.text(db_x + sb_w / 2, sb_y + 0.2, 'Science data',
+            fontsize=SUB_FS, ha='center', va='center', color='#64748B')
+
+    # SQLite / PostgreSQL
+    sq_x = db_x + sb_w + sb_gap
+    draw_box(sq_x, sb_y, sb_w, sb_h, C['sqlite'])
+    ax.text(sq_x + sb_w / 2, sb_y + sb_h - 0.25, 'SQLite / PostgreSQL',
+            fontsize=LABEL_FS, fontweight='bold', ha='center', va='center', color='#1E293B')
+    ax.text(sq_x + sb_w / 2, sb_y + sb_h * 0.5,
+            'Users, sessions\nConversations',
+            fontsize=DETAIL_FS, ha='center', va='center', color=C['sqlite'],
+            fontweight='bold', linespacing=1.3)
+    ax.text(sq_x + sb_w / 2, sb_y + 0.2, 'App state',
+            fontsize=SUB_FS, ha='center', va='center', color='#64748B')
+
+    # Redis / In-Memory
+    rd_x = sq_x + sb_w + sb_gap
+    draw_box(rd_x, sb_y, sb_w, sb_h, C['redis'])
+    ax.text(rd_x + sb_w / 2, sb_y + sb_h - 0.25, 'Redis / In-Memory',
+            fontsize=LABEL_FS, fontweight='bold', ha='center', va='center', color='#1E293B')
+    ax.text(rd_x + sb_w / 2, sb_y + sb_h * 0.5,
+            'LRU eviction\nRate limiting',
+            fontsize=DETAIL_FS, ha='center', va='center', color=C['redis'],
+            fontweight='bold', linespacing=1.3)
+    ax.text(rd_x + sb_w / 2, sb_y + 0.2, 'Cache',
+            fontsize=SUB_FS, ha='center', va='center', color='#64748B')
+
+    # ═══ Arrows: Services → Storage ═══
+    # Data Query Service → DuckDB
+    draw_arrow(dqs_x + dqs_w / 2, L4_Y, db_x + sb_w / 2, sb_y + sb_h + 0.05)
+    arrow_label(dqs_x + dqs_w / 2 - 0.7, (L4_Y + sb_y + sb_h) / 2 + 0.1, 'SQL')
+
+    # AI Chat tools → DuckDB (tool calls)
+    draw_arrow(acs_x + acs_w * 0.3, L4_Y, db_x + sb_w * 0.8, sb_y + sb_h + 0.05)
+    arrow_label(acs_x + 0.3, (L4_Y + sb_y + sb_h) / 2 + 0.1, 'tool calls')
+
+    # AI Chat → RAG / LanceDB (vector search) → points to SQLite area
+    draw_arrow(acs_x + acs_w * 0.7, L4_Y, sq_x + sb_w / 2, sb_y + sb_h + 0.05)
+    arrow_label(sq_x + sb_w / 2 + 0.9, (L4_Y + sb_y + sb_h) / 2 + 0.1, 'vector search')
+
+    # Background Tasks → Redis
+    draw_arrow(bt_x + bt_w / 2, L4_Y, rd_x + sb_w / 2, sb_y + sb_h + 0.05)
+
+    # ═══ LAYER 6: GPU Pipeline (bottom) ═══
+    L6_Y = 1.2
+    gpu_w = 5.0
+    gpu_h = 1.2
+    draw_box(CX - gpu_w / 2, L6_Y, gpu_w, gpu_h, C['gpu'], lw=2.0)
+    ax.text(CX, L6_Y + gpu_h * 0.72, 'GPU Pipeline (Offline)',
+            fontsize=TITLE_FS, fontweight='bold', ha='center', va='center', color='#1E293B')
+    ax.text(CX, L6_Y + gpu_h * 0.35,
+            'SLURM / A100 \u00b7 SecActpy Ridge \u00b7 Batch Processing',
+            fontsize=DETAIL_FS, ha='center', va='center', color='#475569')
+
+    # Arrow: GPU Pipeline → Storage (upward, batch writes)
+    draw_arrow(CX, L6_Y + gpu_h, CX, L5_Y)
+    arrow_label(CX + 1.0, (L6_Y + gpu_h + L5_Y) / 2, 'batch writes')
 
     # ═══ Title ═══
     fig.suptitle('CytoAtlas System Architecture', fontsize=15, fontweight='bold',
@@ -764,7 +784,7 @@ def fig_system_architecture():
     fig.savefig(FIG_DIR / 'fig_system_architecture.png')
     fig.savefig(FIG_DIR / 'fig_system_architecture.pdf')
     plt.close(fig)
-    print('  ✓ System Architecture diagram')
+    print('  \u2713 System Architecture diagram')
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
