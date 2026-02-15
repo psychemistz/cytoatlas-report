@@ -289,9 +289,9 @@ def fig1_dataset_overview():
     Output:
         fig1_dataset_overview.png, fig1_dataset_overview.pdf
     """
-    fig, ax = plt.subplots(1, 1, figsize=(16, 9))
+    fig, ax = plt.subplots(1, 1, figsize=(16, 10))
     ax.set_xlim(0, 16)
-    ax.set_ylim(0, 12)
+    ax.set_ylim(0, 13)
     ax.axis('off')
 
     # ── Helper: draw a rounded box (no double-draw, clean single pass) ──
@@ -320,17 +320,17 @@ def fig1_dataset_overview():
                                     connectionstyle='arc3,rad=0'))
 
     # Card height and vertical gap
-    CH = 0.95    # card height
-    CG = 0.2     # gap between cards
+    CH = 0.85    # card height
+    CG = 0.3     # gap between cards
     CS = CH + CG  # card step
-    SH = 0.8     # shorter card (signatures, no subtitle)
+    SH = 0.7     # shorter card (signatures, no subtitle)
     SS = SH + CG  # signature step
-    PSH = 0.85   # pipeline step height
-    PSS = PSH + 0.15
-    GROUP_GAP = 0.8   # gap between groups within a column
-    GROUP_PAD = 0.15  # padding inside group box around cards
+    PSH = 0.75   # pipeline step height
+    PSS = PSH + 0.25
+    GROUP_GAP = 1.0   # gap between groups within a column
+    GROUP_PAD = 0.25  # padding inside group box around cards
 
-    TOP = 10.5  # top of content (all columns start here)
+    TOP = 11.5  # top of content (all columns start here)
 
     # ── Pre-compute natural bottoms for each column ──
     # Col 1: SC (4 cards) + gap + Bulk (2 cards)
@@ -353,9 +353,9 @@ def fig1_dataset_overview():
     # ═══ COLUMN 1: Data Sources (x=0.3–4.7) ═══
     col1_x, col1_w = 0.3, 4.4
 
-    ax.text(col1_x + col1_w / 2, 11.5, 'Data Sources', fontsize=14, fontweight='bold',
+    ax.text(col1_x + col1_w / 2, 12.5, 'Data Sources', fontsize=14, fontweight='bold',
             ha='center', va='center', color='#1E293B')
-    ax.text(col1_x + col1_w / 2, 11.05, '~29M cells  +  ~31K bulk samples',
+    ax.text(col1_x + col1_w / 2, 12.05, '~29M cells  +  ~31K bulk samples',
             fontsize=9, ha='center', va='center', color='#64748B')
 
     # -- Single-cell group --
@@ -408,9 +408,9 @@ def fig1_dataset_overview():
     # ═══ COLUMN 2: Activity Inference (x=5.8–10.2) ═══
     col2_x, col2_w = 5.8, 4.4
 
-    ax.text(col2_x + col2_w / 2, 11.5, 'Activity Inference', fontsize=14, fontweight='bold',
+    ax.text(col2_x + col2_w / 2, 12.5, 'Activity Inference', fontsize=14, fontweight='bold',
             ha='center', va='center', color='#1E293B')
-    ax.text(col2_x + col2_w / 2, 11.05, 'Ridge regression  ·  GPU-accelerated',
+    ax.text(col2_x + col2_w / 2, 12.05, 'Ridge regression  ·  GPU-accelerated',
             fontsize=9, ha='center', va='center', color='#64748B')
 
     # -- Signature matrices group --
@@ -460,9 +460,9 @@ def fig1_dataset_overview():
     # ═══ COLUMN 3: Validation (x=11.3–15.7) ═══
     col3_x, col3_w = 11.3, 4.4
 
-    ax.text(col3_x + col3_w / 2, 11.5, 'Validation', fontsize=14, fontweight='bold',
+    ax.text(col3_x + col3_w / 2, 12.5, 'Validation', fontsize=14, fontweight='bold',
             ha='center', va='center', color='#1E293B')
-    ax.text(col3_x + col3_w / 2, 11.05, '6 datasets  ×  3 signatures',
+    ax.text(col3_x + col3_w / 2, 12.05, '6 datasets  ×  3 signatures',
             fontsize=9, ha='center', va='center', color='#64748B')
 
     val_top = TOP
