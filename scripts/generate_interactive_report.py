@@ -1393,6 +1393,12 @@ def generate_html(summary_table, boxplot_data, consistency_data, heatmap_data,
         'crossPlatform': cross_platform_data,
     }, separators=(',', ':'))
 
+    # Embed System Architecture figure as base64
+    fig_arch_path = Path('/data/parks34/projects/2cytoatlas/report/figures/fig_system_architecture.png')
+    fig_arch_b64 = ''
+    if fig_arch_path.exists():
+        fig_arch_b64 = base64.b64encode(fig_arch_path.read_bytes()).decode('ascii')
+
     # Embed Figure 1 as base64 so HTML is self-contained
     fig1_path = Path('/data/parks34/projects/2cytoatlas/report/figures/fig1_dataset_overview.png')
     fig1_b64 = ''
@@ -1646,6 +1652,11 @@ Ridge regression (L2-regularized linear regression) was chosen deliberately over
 </table>
 <p style="font-size:0.85em;color:#555;margin-top:4px;"><strong>Total:</strong> ~29M single cells + ~31K bulk RNA-seq samples, processed through ridge regression against 3 signature matrices (CytoSig: 43 cytokines, LinCytoSig: 178 cell-type-specific, SecAct: 1,170 secreted proteins). <strong>Processing Time</strong> = wall-clock time for full activity inference on a single NVIDIA A100 GPU (80 GB VRAM). For bulk datasets (GTEx/TCGA), ridge regression is applied with within-tissue/within-cancer mean centering to remove tissue-level variation. See Section 2.1 for per-dataset details.</p>
 
+<div class="figure">
+  <img src="data:image/png;base64,{fig_arch_b64}" alt="System Architecture" style="max-width:100%;">
+  <div class="caption"><strong>System Architecture.</strong> CytoAtlas platform overview: raw data flows through GPU ridge regression into structured storage (DuckDB, H5AD, JSON), served via FastAPI (262 endpoints) to a React dashboard and an AI chat assistant with RAG (LanceDB + MiniLM), dual LLM (Mistral-Small-24B primary + Claude fallback), and 16 data tools.</div>
+</div>
+
 <h3>1.2 Validation Strategy</h3>
 
 <p>CytoAtlas validates at <strong>four aggregation levels</strong>, each testing whether predicted activity correlates with target gene expression (Spearman &rho;) across independent samples:</p>
@@ -1808,7 +1819,7 @@ Ridge regression (L2-regularized linear regression) was chosen deliberately over
 
 <div class="callout">
 <p><strong>Stratified validation:</strong> Instead of aggregating tissues/cancers into a single median-of-medians, this view shows the CytoSig vs SecAct comparison <em>within each individual tissue</em> (GTEx) or <em>cancer type</em> (TCGA). Mann-Whitney U test (Total tab: all targets) and Wilcoxon signed-rank test (Matched tab: 32 shared targets) with BH-FDR correction across all strata within each dataset.</p>
-<p><strong>Key insight:</strong> On the 32 matched targets, SecAct wins direction in <strong>every stratum</strong> &mdash; 29/29 GTEx tissues and 33/33 TCGA cancer types &mdash; with 25/29 and 31/33 reaching significance (q&lt;0.05). This unanimous result across 62 independent strata rules out Simpson&rsquo;s paradox. On total targets, SecAct wins in 28/29 GTEx tissues (21 significant) and 30/33 TCGA cancers (15 significant); the few CytoSig-favored strata (Brain in GTEx; Kidney Chromophobe, Ovarian, Uveal Melanoma in TCGA) are all non-significant. Since SecAct outperforms CytoSig on the <em>same 32 cytokines</em>, the advantage is not about target breadth but about <strong>signature quality</strong>. SecAct&rsquo;s spatial-transcriptomics-derived signatures (Visium) capture tissue-context-dependent cytokine regulation that CytoSig&rsquo;s bulk stimulation experiments cannot represent. The advantage is largest in tissues with complex cellular microenvironments (GTEx: Small Intestine &Delta;=+0.47, Esophagus +0.41; TCGA: Testicular +0.33, Cervical +0.32) and smallest in homogeneous contexts (GTEx: Breast +0.001, Pituitary +0.06; TCGA: Brain Glioma +0.06, Kidney Chromophobe +0.09).</p>
+<p><strong>Key insight:</strong> On the 32 matched targets, SecAct wins direction in <strong>every stratum</strong> &mdash; 29/29 GTEx tissues and 33/33 TCGA cancer types &mdash; with 25/29 and 31/33 reaching significance (q&lt;0.05). This unanimous result across 62 independent strata rules out Simpson&rsquo;s paradox. On total targets, SecAct wins in 28/29 GTEx tissues (21 significant) and 30/33 TCGA cancers (15 significant); the few CytoSig-favored strata (Brain in GTEx; Kidney Chromophobe, Ovarian, Uveal Melanoma in TCGA) are all non-significant. Since SecAct outperforms CytoSig on the <em>same 32 cytokines</em>, the advantage is not about target breadth but about <strong>signature quality</strong>. SecAct&rsquo;s spatial-transcriptomics-derived signatures (Visium) capture tissue-context-dependent cytokine regulation that CytoSig&rsquo;s case-control cytokine treatment experiments might not capture. The advantage is largest in tissues with complex cellular microenvironments (GTEx: Small Intestine &Delta;=+0.47, Esophagus +0.41; TCGA: Testicular +0.33, Cervical +0.32) and smallest in homogeneous contexts (GTEx: Breast +0.001, Pituitary +0.06; TCGA: Brain Glioma +0.06, Kidney Chromophobe +0.09).</p>
 </div>
 
 <!-- Cross-Platform Comparison: bulk vs pseudobulk -->
