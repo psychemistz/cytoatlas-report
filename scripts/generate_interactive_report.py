@@ -1529,14 +1529,15 @@ Ridge regression (L2-regularized linear regression) was chosen deliberately over
   <tr><td>1</td><td><strong>GTEx</strong></td><td>Bulk RNA-seq</td><td>19,788 samples</td><td>946 donors</td><td>&mdash;</td><td>GTEx Consortium, v11</td></tr>
   <tr><td>2</td><td><strong>TCGA</strong></td><td>Bulk RNA-seq</td><td>11,069 samples</td><td>10,274 donors</td><td>&mdash;</td><td>TCGA PanCancer</td></tr>
   <tr><td>3</td><td><strong>CIMA</strong></td><td>scRNA-seq</td><td>6,484,974</td><td>421 donors</td><td>27 L2 / 100+ L3</td><td>J. Yin et al., <em>Science</em>, 2026</td></tr>
-  <tr><td>4</td><td><strong>Inflammation Atlas Main</strong></td><td>scRNA-seq</td><td>4,918,140</td><td>817 samples</td><td>66+</td><td>Jimenez-Gracia et al., <em>Nature Medicine</em>, 2026</td></tr>
-  <tr><td>5</td><td><strong>Inflammation Atlas Val</strong></td><td>scRNA-seq</td><td>849,922</td><td>144 samples</td><td>66+</td><td>Validation cohort</td></tr>
-  <tr><td>6</td><td><strong>Inflammation Atlas Ext</strong></td><td>scRNA-seq</td><td>572,872</td><td>86 samples</td><td>66+</td><td>External cohort</td></tr>
+  <tr><td>4</td><td><strong>Inflammation Atlas Main</strong></td><td>scRNA-seq</td><td>4,918,140</td><td>817 samples*</td><td>66+</td><td>Jimenez-Gracia et al., <em>Nature Medicine</em>, 2026</td></tr>
+  <tr><td>5</td><td><strong>Inflammation Atlas Val</strong></td><td>scRNA-seq</td><td>849,922</td><td>144 samples*</td><td>66+</td><td>Validation cohort</td></tr>
+  <tr><td>6</td><td><strong>Inflammation Atlas Ext</strong></td><td>scRNA-seq</td><td>572,872</td><td>86 samples*</td><td>66+</td><td>External cohort</td></tr>
   <tr><td>7</td><td><strong>scAtlas Normal</strong></td><td>scRNA-seq</td><td>2,293,951</td><td>317 donors</td><td>102 subCluster</td><td>Q. Shi et al., <em>Nature</em>, 2025</td></tr>
   <tr><td>8</td><td><strong>scAtlas Cancer</strong></td><td>scRNA-seq</td><td>4,146,975</td><td>717 donors (601 tumor-only)</td><td>162 cellType1</td><td>Q. Shi et al., <em>Nature</em>, 2025</td></tr>
   <tr><td>9</td><td><strong>parse_10M</strong></td><td>scRNA-seq</td><td>9,697,974</td><td>12 donors &times; 90 cytokines (+PBS control)</td><td>18 PBMC types</td><td>Oesinghaus et al., <em>bioRxiv</em>, 2026</td></tr>
 </table>
-<p><strong>Grand total:</strong> ~29 million single cells + ~31K bulk samples across 9 datasets, 100+ cell types.</p>
+<p><strong>Grand total:</strong> ~29 million single cells + ~31K bulk samples from 6 independent studies (9 datasets), 100+ cell types.</p>
+<p style="font-size:13px;color:#666;margin-top:4px;">* Inflammation Atlas does not provide donor-level identifiers; the 817/144/86 values are sample counts. The donor&ndash;sample relationship is unknown, so correlations use sampleID as the independent unit.</p>
 
 <h3>2.2 Disease and Condition Categories</h3>
 

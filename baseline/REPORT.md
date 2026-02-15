@@ -74,17 +74,21 @@ All statistics use **independence-corrected** values — preventing inflation fr
 |---|---------|------|---------------|--------|------------|--------|
 | 1 | **GTEx** | Bulk RNA-seq | 19,788 samples | 946 donors | — | GTEx v11 (30 tissues) |
 | 2 | **TCGA** | Bulk RNA-seq | 11,069 samples | 10,274 donors | — | PanCancer (33 cancer types) |
-| 3 | **CIMA** | scRNA-seq | 6,484,974 | 421 donors | 27 L2 / 100+ L3 | Cell Atlas consortium |
-| 4 | **Inflammation Atlas Main** | scRNA-seq | 4,918,140 | 817 samples | 66+ | Jimenez-Gracia et al. |
-| 5 | **Inflammation Atlas Val** | scRNA-seq | 849,922 | 144 samples | 66+ | Validation cohort |
-| 6 | **Inflammation Atlas Ext** | scRNA-seq | 572,872 | 86 samples | 66+ | External cohort |
+| 3 | **CIMA** | scRNA-seq | 6,484,974 | 421 donors | 27 L2 / 100+ L3 | J. Yin et al., *Science*, 2026 |
+| 4 | **Inflammation Atlas Main** | scRNA-seq | 4,918,140 | 817 samples\* | 66+ | Jimenez-Gracia et al., *Nature Medicine*, 2026 |
+| 5 | **Inflammation Atlas Val** | scRNA-seq | 849,922 | 144 samples\* | 66+ | Validation cohort |
+| 6 | **Inflammation Atlas Ext** | scRNA-seq | 572,872 | 86 samples\* | 66+ | External cohort |
 | 7 | **scAtlas Normal** | scRNA-seq | 2,293,951 | 317 donors | 102 subCluster | 35 organs |
 | 8 | **scAtlas Cancer** | scRNA-seq | 4,146,975 | 717 donors (601 tumor-only) | 162 cellType1 | 29 cancer types |
 | 9 | **parse_10M** | scRNA-seq | 9,697,974 | 12 donors × 90 cytokines (+PBS control) | 18 PBMC types | Cytokine perturbation |
 
-**Grand total: ~29 million single cells + ~31K bulk samples across 9 datasets, 100+ cell types**
+**Grand total: ~29 million single cells + ~31K bulk samples from 6 independent studies (9 datasets), 100+ cell types**
+
+*\* Inflammation Atlas does not provide donor-level identifiers; the 817/144/86 values are sample counts. The donor–sample relationship is unknown, so correlations use sampleID as the independent unit.*
 
 ### 2.2 Disease and Condition Categories
+
+**CIMA (421 healthy donors):** Healthy population atlas with paired blood biochemistry (19 markers: ALT, AST, glucose, lipid panel, etc.) and plasma metabolomics (1,549 features). Enables age, BMI, sex, and smoking correlations with cytokine activity.
 
 **Inflammation Atlas (20 diseases):**
 - Autoimmune: RA, SLE, Sjogren's, PSA
@@ -93,9 +97,9 @@ All statistics use **independence-corrected** values — preventing inflation fr
 - Cancer: BRCA, CRC, HNSCC, NPC
 - Other: COPD, Cirrhosis, MS, Asthma, Atopic Dermatitis
 
-**scAtlas:**
-- Normal: 35+ human organs (lung, liver, kidney, brain, heart, etc.)
-- Cancer: 15+ types (LUAD, CRC, BRCA, LIHC, PAAD, KIRC, OV, SKCM, GBM, etc.)
+**scAtlas Normal (317 donors):** 35 organs, 12 tissues with ≥20 donors for per-organ stratification (Breast 124, Lung 97, Colon 65, Heart 52, Liver 43, etc.)
+
+**scAtlas Cancer (717 donors, 601 tumor-only):** 29 cancer types, 11 with ≥20 tumor-only donors for per-cancer stratification (HCC 88, PAAD 58, CRC 51, ESCA 48, HNSC 39, LUAD 36, NPC 36, KIRC 31, BRCA 30, ICC 29, STAD 27)
 
 **parse_10M perturbations:** 90 cytokines × 12 donors (+PBS control; perturbation resource for validation, not ground truth — true ground truth is unattainable for inferential activity scores)
 
@@ -106,7 +110,7 @@ All statistics use **independence-corrected** values — preventing inflation fr
 |--------|---------|-------------|--------|
 | **CytoSig** | 43 cytokines | Median log2FC across all experimental bulk RNA-seq | Jiang et al. |
 | **LinCytoSig** | 178 (45 cell types × 1-13 cytokines) | Cell-type-stratified median from CytoSig database | This work |
-| **SecAct** | 1,170 secreted proteins | Median global Moran's I across 1,000 Visium datasets | This work |
+| **SecAct** | 1,170 secreted proteins | Median global Moran's I across 1,000 Visium datasets | Ru et al., *Nature Methods*, 2026 (in press) |
 
 ---
 

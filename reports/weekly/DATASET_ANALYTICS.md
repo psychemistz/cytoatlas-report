@@ -38,7 +38,7 @@ Every data-cleaning decision flows from this goal: each sample unit must be inde
 
 ### 2.1 CIMA (Cell Atlas)
 
-**Source:** Q. Zhang et al., *Nature*, 2024
+**Source:** J. Yin et al., *Science*, 2026
 **File:** `CIMA_RNA_6484974cells_36326genes_compressed.h5ad`
 
 | Property | Value |
@@ -133,7 +133,7 @@ Resampled (bootstrap) versions also exist for L1-L4.
 
 ### 2.2 Inflammation Atlas
 
-**Source:** Inflammatory Atlas consortium
+**Source:** Jimenez-Gracia et al., *Nature Medicine*, 2026
 **Files:**
 - Main: `INFLAMMATION_ATLAS_main_afterQC.h5ad` (4,918,140 cells, 817 samples)
 - Validation: `INFLAMMATION_ATLAS_validation_afterQC.h5ad` (849,922 cells, 144 samples)
