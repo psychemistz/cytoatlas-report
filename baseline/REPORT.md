@@ -211,8 +211,9 @@ Four datasets have per-stratum breakdowns:
 **Statistical tests per stratum:** Mann-Whitney U (CytoSig vs SecAct total targets within each tissue/cancer) and Wilcoxon signed-rank (32 shared targets). BH-FDR correction applied within each dataset (29 tests for GTEx, 33 for TCGA, etc.). Full per-stratum results with FDR q-values are in the [supplement](stats_section_4.1.html#per-tissue-stratified).
 
 **Key findings:**
-- SecAct significantly outperforms CytoSig in the majority of individual tissues and cancer types, confirming that the aggregate result from Section 4.2 is not an artifact of a few dominant strata (i.e., ruling out Simpson's paradox)
-- Tissue/cancer-specific variation is substantial: inflammation-rich tissues/cancers (Lung, Liver, Colon) show the highest CytoSig correlations, consistent with the CytoSig signature matrix being derived from cytokine stimulation experiments. SecAct's advantage comes from breadth — covering ~1,170 secreted proteins that drive signaling in tissues where non-cytokine pathways dominate
+- **Matched targets (strongest test):** On the 32 shared targets, SecAct wins direction in every stratum — 29/29 GTEx tissues and 33/33 TCGA cancer types — with 25/29 and 31/33 reaching significance (q < 0.05). This unanimous result across 62 independent strata rules out Simpson's paradox and confirms the Section 4.2 aggregate is not driven by a few dominant strata
+- **Total targets:** SecAct wins direction in 28/29 GTEx tissues (21 significant) and 30/33 TCGA cancers (15 significant). The few CytoSig-favored strata (Brain in GTEx; Kidney Chromophobe, Ovarian, Uveal Melanoma in TCGA) are all non-significant, reflecting low cytokine signaling rather than genuine CytoSig superiority
+- **Tissue context matters:** Inflammation-rich tissues/cancers (Lung, Liver, Colon, Esophagus, Pancreatic) show high CytoSig correlations, consistent with its curated cytokine focus. SecAct's advantage comes from breadth — covering ~1,170 secreted proteins that drive signaling in tissues where non-cytokine pathways dominate
 - scAtlas strata with Tier B sample sizes (<30 donors) are shown with reduced confidence
 
 ### 4.4 Cross-Platform Comparison: Bulk vs Pseudobulk
