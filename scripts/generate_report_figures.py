@@ -214,19 +214,28 @@ def fig1_dataset_overview():
     Output:
         fig1_dataset_overview.png, fig1_dataset_overview.pdf
     """
-    fig, ax = plt.subplots(1, 1, figsize=(16, 7))
+    fig, ax = plt.subplots(1, 1, figsize=(16, 9))
     ax.set_xlim(0, 16)
-    ax.set_ylim(0, 10)
+    ax.set_ylim(0, 12)
     ax.axis('off')
 
-    # ── Helper: draw a rounded box ──
-    def draw_box(x, y, w, h, color, alpha=0.15, lw=1.5):
-        box = FancyBboxPatch((x, y), w, h, boxstyle='round,pad=0.15',
-                             facecolor=color, edgecolor=color, alpha=alpha, linewidth=lw)
-        ax.add_patch(box)
-        # Solid border on top
+    # ── Helper: draw a rounded box (no double-draw, clean single pass) ──
+    def draw_box(x, y, w, h, color, alpha=0.12, lw=1.5):
+        bg = FancyBboxPatch((x, y), w, h, boxstyle='round,pad=0.1',
+                            facecolor=color, edgecolor='none', alpha=alpha, linewidth=0)
+        ax.add_patch(bg)
+        border = FancyBboxPatch((x, y), w, h, boxstyle='round,pad=0.1',
+                                facecolor='none', edgecolor=color, linewidth=lw, alpha=0.6)
+        ax.add_patch(border)
+
+    # ── Helper: draw a group container (lighter, larger pad) ──
+    def draw_group(x, y, w, h, color):
+        bg = FancyBboxPatch((x, y), w, h, boxstyle='round,pad=0.15',
+                            facecolor=color, edgecolor='none', alpha=0.04, linewidth=0)
+        ax.add_patch(bg)
         border = FancyBboxPatch((x, y), w, h, boxstyle='round,pad=0.15',
-                                facecolor='none', edgecolor=color, linewidth=lw)
+                                facecolor='none', edgecolor=color, linewidth=1.2, alpha=0.3,
+                                linestyle='--')
         ax.add_patch(border)
 
     # ── Helper: draw an arrow between columns ──
@@ -235,123 +244,151 @@ def fig1_dataset_overview():
                     arrowprops=dict(arrowstyle='->', color='#64748B', lw=2.5,
                                     connectionstyle='arc3,rad=0'))
 
+    # Card height and vertical gap
+    CH = 0.95    # card height
+    CG = 0.2     # gap between cards
+    CS = CH + CG  # card step
+
     # ═══ COLUMN 1: Data Sources (x=0.3–4.7) ═══
     col1_x, col1_w = 0.3, 4.4
+
     # Column header
-    ax.text(col1_x + col1_w / 2, 9.5, 'Data Sources', fontsize=14, fontweight='bold',
+    ax.text(col1_x + col1_w / 2, 11.5, 'Data Sources', fontsize=14, fontweight='bold',
             ha='center', va='center', color='#1E293B')
-    ax.text(col1_x + col1_w / 2, 9.05, '~29M cells  +  ~31K bulk samples',
+    ax.text(col1_x + col1_w / 2, 11.05, '~29M cells  +  ~31K bulk samples',
             fontsize=9, ha='center', va='center', color='#64748B')
 
-    # Single-cell group box
-    draw_box(col1_x, 3.6, col1_w, 5.0, '#3B82F6', alpha=0.06)
-    ax.text(col1_x + 0.25, 8.25, 'Single-Cell', fontsize=10, fontweight='bold', color='#1E40AF')
-
+    # -- Single-cell group --
+    sc_top = 10.5
     sc_datasets = [
-        ('CIMA',                   '6.5M cells',  '421 donors, healthy population',  '#3B82F6'),
-        ('Inflammation Atlas',     '6.3M cells',  'main/val/ext, 20 diseases',       '#EF4444'),
-        ('scAtlas',                '6.4M cells',  'Normal + Cancer, multi-organ',    '#10B981'),
-        ('parse_10M',              '9.7M cells',  '12 donors × 90 cytokines (+PBS)', '#F59E0B'),
+        ('CIMA',               '6.5M cells',  '421 donors, healthy population',   '#3B82F6'),
+        ('Inflammation Atlas', '6.3M cells',  'main/val/ext, 20 diseases',        '#EF4444'),
+        ('scAtlas',            '6.4M cells',  'Normal + Cancer, multi-organ',     '#10B981'),
+        ('parse_10M',          '9.7M cells',  '12 donors × 90 cytokines (+PBS)',  '#F59E0B'),
     ]
+    sc_bottom = sc_top - len(sc_datasets) * CS + CG
+    draw_group(col1_x, sc_bottom - 0.15, col1_w, sc_top - sc_bottom + 0.55, '#3B82F6')
+    ax.text(col1_x + 0.2, sc_top + 0.15, 'Single-Cell', fontsize=10.5,
+            fontweight='bold', va='bottom', color='#1E40AF')
+
     for i, (name, count, desc, color) in enumerate(sc_datasets):
-        by = 7.6 - i * 1.05
-        draw_box(col1_x + 0.15, by, col1_w - 0.3, 0.85, color, alpha=0.12)
-        ax.text(col1_x + 0.4, by + 0.5, name, fontsize=10, fontweight='bold', va='center', color='#1E293B')
-        ax.text(col1_x + col1_w - 0.35, by + 0.55, count, fontsize=9, fontweight='bold',
+        by = sc_top - i * CS - CH
+        draw_box(col1_x + 0.2, by, col1_w - 0.4, CH, color)
+        ax.text(col1_x + 0.45, by + CH * 0.62, name, fontsize=10.5, fontweight='bold',
+                va='center', color='#1E293B')
+        ax.text(col1_x + col1_w - 0.45, by + CH * 0.65, count, fontsize=9.5, fontweight='bold',
                 va='center', ha='right', color=color)
-        ax.text(col1_x + 0.4, by + 0.18, desc, fontsize=7.5, va='center', color='#64748B')
+        ax.text(col1_x + 0.45, by + CH * 0.25, desc, fontsize=8, va='center', color='#64748B')
 
-    # Bulk RNA-seq group box
-    draw_box(col1_x, 0.5, col1_w, 2.8, '#8B5CF6', alpha=0.06)
-    ax.text(col1_x + 0.25, 2.95, 'Bulk RNA-seq', fontsize=10, fontweight='bold', color='#5B21B6')
-
+    # -- Bulk RNA-seq group --
+    bulk_top = sc_bottom - 0.8
     bulk_datasets = [
-        ('GTEx',  '19.8K samples', '~50 normal tissues, TPM',   '#6366F1'),
-        ('TCGA',  '11.1K samples', '33 cancer types, RSEM',     '#EC4899'),
+        ('GTEx', '19.8K samples', '~50 normal tissues, TPM', '#6366F1'),
+        ('TCGA', '11.1K samples', '33 cancer types, RSEM',   '#EC4899'),
     ]
+    bulk_bottom = bulk_top - len(bulk_datasets) * CS + CG
+    draw_group(col1_x, bulk_bottom - 0.15, col1_w, bulk_top - bulk_bottom + 0.55, '#8B5CF6')
+    ax.text(col1_x + 0.2, bulk_top + 0.15, 'Bulk RNA-seq', fontsize=10.5,
+            fontweight='bold', va='bottom', color='#5B21B6')
+
     for i, (name, count, desc, color) in enumerate(bulk_datasets):
-        by = 2.3 - i * 1.05
-        draw_box(col1_x + 0.15, by, col1_w - 0.3, 0.85, color, alpha=0.12)
-        ax.text(col1_x + 0.4, by + 0.5, name, fontsize=10, fontweight='bold', va='center', color='#1E293B')
-        ax.text(col1_x + col1_w - 0.35, by + 0.55, count, fontsize=9, fontweight='bold',
+        by = bulk_top - i * CS - CH
+        draw_box(col1_x + 0.2, by, col1_w - 0.4, CH, color)
+        ax.text(col1_x + 0.45, by + CH * 0.62, name, fontsize=10.5, fontweight='bold',
+                va='center', color='#1E293B')
+        ax.text(col1_x + col1_w - 0.45, by + CH * 0.65, count, fontsize=9.5, fontweight='bold',
                 va='center', ha='right', color=color)
-        ax.text(col1_x + 0.4, by + 0.18, desc, fontsize=7.5, va='center', color='#64748B')
+        ax.text(col1_x + 0.45, by + CH * 0.25, desc, fontsize=8, va='center', color='#64748B')
 
     # ═══ ARROWS: Column 1 → Column 2 ═══
-    draw_arrow(5.0, 5.5, 5.7, 5.5)
+    mid_y = (sc_top + bulk_bottom) / 2
+    draw_arrow(5.0, mid_y, 5.7, mid_y)
 
     # ═══ COLUMN 2: Activity Inference (x=5.8–10.2) ═══
     col2_x, col2_w = 5.8, 4.4
-    ax.text(col2_x + col2_w / 2, 9.5, 'Activity Inference', fontsize=14, fontweight='bold',
+
+    ax.text(col2_x + col2_w / 2, 11.5, 'Activity Inference', fontsize=14, fontweight='bold',
             ha='center', va='center', color='#1E293B')
-    ax.text(col2_x + col2_w / 2, 9.05, 'Ridge regression  ·  GPU-accelerated',
+    ax.text(col2_x + col2_w / 2, 11.05, 'Ridge regression  ·  GPU-accelerated',
             fontsize=9, ha='center', va='center', color='#64748B')
 
-    # Signature matrices
-    draw_box(col2_x, 5.2, col2_w, 3.2, '#64748B', alpha=0.05)
-    ax.text(col2_x + 0.25, 8.05, '3 Signature Matrices', fontsize=10, fontweight='bold', color='#374151')
-
+    # -- Signature matrices group --
+    sig_top = 10.5
     sigs = [
-        ('CytoSig',    '43 cytokines',               COLORS['cytosig']),
-        ('LinCytoSig', '178 cell-type specific',      COLORS['lincytosig']),
-        ('SecAct',     '1,170 secreted proteins',     COLORS['secact']),
+        ('CytoSig',    '43 cytokines',           COLORS['cytosig']),
+        ('LinCytoSig', '178 cell-type specific',  COLORS['lincytosig']),
+        ('SecAct',     '1,170 secreted proteins', COLORS['secact']),
     ]
+    SH = 0.8  # shorter cards for signatures (no subtitle)
+    SS = SH + CG
+    sig_bottom = sig_top - len(sigs) * SS + CG
+    draw_group(col2_x, sig_bottom - 0.15, col2_w, sig_top - sig_bottom + 0.55, '#64748B')
+    ax.text(col2_x + 0.2, sig_top + 0.15, '3 Signature Matrices', fontsize=10.5,
+            fontweight='bold', va='bottom', color='#374151')
+
     for i, (name, desc, color) in enumerate(sigs):
-        by = 7.3 - i * 0.9
-        draw_box(col2_x + 0.15, by, col2_w - 0.3, 0.7, color, alpha=0.12)
-        ax.text(col2_x + 0.4, by + 0.38, name, fontsize=10, fontweight='bold', va='center', color='#1E293B')
-        ax.text(col2_x + col2_w - 0.35, by + 0.38, desc, fontsize=9,
+        by = sig_top - i * SS - SH
+        draw_box(col2_x + 0.2, by, col2_w - 0.4, SH, color)
+        ax.text(col2_x + 0.45, by + SH / 2, name, fontsize=10.5, fontweight='bold',
+                va='center', color='#1E293B')
+        ax.text(col2_x + col2_w - 0.45, by + SH / 2, desc, fontsize=9,
                 va='center', ha='right', color=color)
 
-    # Method details box
-    draw_box(col2_x, 1.0, col2_w, 3.8, '#64748B', alpha=0.05)
-    ax.text(col2_x + 0.25, 4.45, 'Pipeline', fontsize=10, fontweight='bold', color='#374151')
-
+    # -- Pipeline group --
+    pipe_top = sig_bottom - 0.8
     steps = [
-        ('1.', 'Pseudobulk aggregation', '(donor, donor×celltype)'),
-        ('2.', 'Gene expression matrix', '(genes × samples)'),
-        ('3.', 'Ridge regression', '(signature × samples → activity)'),
-        ('4.', 'Cross-sample correlation', '(predicted vs observed)'),
+        ('1.', 'Pseudobulk aggregation',    '(donor, donor×celltype)'),
+        ('2.', 'Gene expression matrix',     '(genes × samples)'),
+        ('3.', 'Ridge regression',           '(signature × samples → activity)'),
+        ('4.', 'Cross-sample correlation',   '(predicted vs observed)'),
     ]
+    PSH = 0.85  # pipeline step height
+    PSS = PSH + 0.15
+    pipe_bottom = pipe_top - len(steps) * PSS + 0.15
+    draw_group(col2_x, pipe_bottom - 0.15, col2_w, pipe_top - pipe_bottom + 0.55, '#64748B')
+    ax.text(col2_x + 0.2, pipe_top + 0.15, 'Pipeline', fontsize=10.5,
+            fontweight='bold', va='bottom', color='#374151')
+
     for i, (num, step, detail) in enumerate(steps):
-        sy = 3.85 - i * 0.7
-        ax.text(col2_x + 0.4, sy, num, fontsize=9, fontweight='bold', va='center', color='#374151')
-        ax.text(col2_x + 0.7, sy, step, fontsize=9, va='center', color='#1E293B')
-        ax.text(col2_x + 0.7, sy - 0.25, detail, fontsize=7.5, va='center', color='#94A3B8')
+        sy_center = pipe_top - i * PSS - PSH / 2
+        ax.text(col2_x + 0.45, sy_center + 0.1, num + '  ' + step,
+                fontsize=9.5, va='center', color='#1E293B')
+        ax.text(col2_x + 0.75, sy_center - 0.2, detail,
+                fontsize=8, va='center', color='#94A3B8')
 
     # ═══ ARROWS: Column 2 → Column 3 ═══
-    draw_arrow(10.5, 5.5, 11.2, 5.5)
+    draw_arrow(10.5, mid_y, 11.2, mid_y)
 
     # ═══ COLUMN 3: Validation (x=11.3–15.7) ═══
     col3_x, col3_w = 11.3, 4.4
-    ax.text(col3_x + col3_w / 2, 9.5, 'Validation', fontsize=14, fontweight='bold',
+
+    ax.text(col3_x + col3_w / 2, 11.5, 'Validation', fontsize=14, fontweight='bold',
             ha='center', va='center', color='#1E293B')
-    ax.text(col3_x + col3_w / 2, 9.05, '6 datasets  ×  3 signatures',
+    ax.text(col3_x + col3_w / 2, 11.05, '6 datasets  ×  3 signatures',
             fontsize=9, ha='center', va='center', color='#64748B')
 
-    # Validation approaches
-    draw_box(col3_x, 0.5, col3_w, 8.0, '#64748B', alpha=0.05)
-
+    val_top = 10.5
     val_items = [
-        ('Overall Performance',     'Spearman ρ across all targets',       '#2563EB', '§4.1'),
-        ('Per-Tissue Stratified',   'GTEx tissues / TCGA cancer types',    '#7C3AED', '§4.2'),
-        ('Cross-Dataset Comparison','CytoSig vs SecAct across 6 datasets', '#059669', '§4.3'),
-        ('Best/Worst Targets',      'Top and bottom correlated targets',   '#DC2626', '§4.4'),
-        ('Cross-Dataset Consistency','Same targets across datasets',       '#D97706', '§4.5'),
-        ('Aggregation Levels',      'Donor → celltype → single-cell',     '#0891B2', '§4.6'),
-        ('Bulk RNA-seq Validation', 'GTEx + TCGA concordance',             '#6366F1', '§4.7'),
+        ('Overall Performance',      'Spearman ρ across all targets',       '#2563EB', '§4.1'),
+        ('Per-Tissue Stratified',    'GTEx tissues / TCGA cancer types',    '#7C3AED', '§4.2'),
+        ('Cross-Dataset Comparison', 'CytoSig vs SecAct across 6 datasets', '#059669', '§4.3'),
+        ('Best/Worst Targets',       'Top and bottom correlated targets',   '#DC2626', '§4.4'),
+        ('Cross-Dataset Consistency','Same targets across datasets',        '#D97706', '§4.5'),
+        ('Aggregation Levels',       'Donor → celltype → single-cell',     '#0891B2', '§4.6'),
+        ('Bulk RNA-seq Validation',  'GTEx + TCGA concordance',             '#6366F1', '§4.7'),
     ]
     for i, (title, desc, color, sec) in enumerate(val_items):
-        vy = 7.85 - i * 1.05
-        draw_box(col3_x + 0.15, vy, col3_w - 0.3, 0.85, color, alpha=0.10)
-        ax.text(col3_x + 0.4, vy + 0.52, title, fontsize=9, fontweight='bold', va='center', color='#1E293B')
-        ax.text(col3_x + 0.4, vy + 0.2, desc, fontsize=7.5, va='center', color='#64748B')
-        ax.text(col3_x + col3_w - 0.35, vy + 0.45, sec, fontsize=8, fontweight='bold',
+        by = val_top - i * CS - CH
+        draw_box(col3_x + 0.2, by, col3_w - 0.4, CH, color, alpha=0.10)
+        ax.text(col3_x + 0.45, by + CH * 0.62, title, fontsize=9.5, fontweight='bold',
+                va='center', color='#1E293B')
+        ax.text(col3_x + 0.45, by + CH * 0.25, desc, fontsize=8, va='center', color='#64748B')
+        ax.text(col3_x + col3_w - 0.45, by + CH * 0.5, sec, fontsize=8.5, fontweight='bold',
                 va='center', ha='right', color=color)
 
     # ═══ Title ═══
     fig.suptitle('CytoAtlas: Pan-Disease Single-Cell Cytokine Activity Atlas',
-                 fontsize=15, fontweight='bold', y=0.98, color='#0F172A')
+                 fontsize=15, fontweight='bold', y=0.99, color='#0F172A')
 
     fig.savefig(FIG_DIR / 'fig1_dataset_overview.png')
     fig.savefig(FIG_DIR / 'fig1_dataset_overview.pdf')
