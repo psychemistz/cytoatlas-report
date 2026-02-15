@@ -323,26 +323,52 @@ def fig1_dataset_overview():
     CH = 0.95    # card height
     CG = 0.2     # gap between cards
     CS = CH + CG  # card step
+    SH = 0.8     # shorter card (signatures, no subtitle)
+    SS = SH + CG  # signature step
+    PSH = 0.85   # pipeline step height
+    PSS = PSH + 0.15
+    GROUP_GAP = 0.8   # gap between groups within a column
+    GROUP_PAD = 0.15  # padding inside group box around cards
+
+    TOP = 10.5  # top of content (all columns start here)
+
+    # ── Pre-compute natural bottoms for each column ──
+    # Col 1: SC (4 cards) + gap + Bulk (2 cards)
+    sc_content_h = len([1,2,3,4]) * CS - CG
+    bulk_content_h = 2 * CS - CG
+    col1_natural_bottom = TOP - sc_content_h - GROUP_GAP - bulk_content_h
+
+    # Col 2: Sigs (3 cards) + gap + Pipeline (4 steps)
+    sig_content_h = 3 * SS - CG
+    pipe_content_h = 4 * PSS - 0.15
+    col2_natural_bottom = TOP - sig_content_h - GROUP_GAP - pipe_content_h
+
+    # Col 3: Validation (7 cards)
+    val_content_h = 7 * CS - CG
+
+    # Global bottom = lowest bottom across columns, with padding for group box
+    global_bottom = min(col1_natural_bottom, col2_natural_bottom,
+                        TOP - val_content_h) - GROUP_PAD
 
     # ═══ COLUMN 1: Data Sources (x=0.3–4.7) ═══
     col1_x, col1_w = 0.3, 4.4
 
-    # Column header
     ax.text(col1_x + col1_w / 2, 11.5, 'Data Sources', fontsize=14, fontweight='bold',
             ha='center', va='center', color='#1E293B')
     ax.text(col1_x + col1_w / 2, 11.05, '~29M cells  +  ~31K bulk samples',
             fontsize=9, ha='center', va='center', color='#64748B')
 
     # -- Single-cell group --
-    sc_top = 10.5
+    sc_top = TOP
     sc_datasets = [
         ('CIMA',               '6.5M cells',  '421 donors, healthy population',   '#3B82F6'),
         ('Inflammation Atlas', '6.3M cells',  'main/val/ext, 20 diseases',        '#EF4444'),
         ('scAtlas',            '6.4M cells',  'Normal + Cancer, multi-organ',     '#10B981'),
         ('parse_10M',          '9.7M cells',  '12 donors × 90 cytokines (+PBS)',  '#F59E0B'),
     ]
-    sc_bottom = sc_top - len(sc_datasets) * CS + CG
-    draw_group(col1_x, sc_bottom - 0.15, col1_w, sc_top - sc_bottom + 0.55, '#3B82F6')
+    sc_cards_bottom = sc_top - len(sc_datasets) * CS + CG
+    draw_group(col1_x, sc_cards_bottom - GROUP_PAD, col1_w,
+               sc_top - sc_cards_bottom + GROUP_PAD + 0.4, '#3B82F6')
     ax.text(col1_x + 0.2, sc_top + 0.15, 'Single-Cell', fontsize=10.5,
             fontweight='bold', va='bottom', color='#1E40AF')
 
@@ -355,14 +381,14 @@ def fig1_dataset_overview():
                 va='center', ha='right', color=color)
         ax.text(col1_x + 0.45, by + CH * 0.25, desc, fontsize=8, va='center', color='#64748B')
 
-    # -- Bulk RNA-seq group --
-    bulk_top = sc_bottom - 0.8
+    # -- Bulk RNA-seq group (extends to global bottom) --
+    bulk_top = sc_cards_bottom - GROUP_GAP
     bulk_datasets = [
         ('GTEx', '19.8K samples', '~50 normal tissues, TPM', '#6366F1'),
         ('TCGA', '11.1K samples', '33 cancer types, RSEM',   '#EC4899'),
     ]
-    bulk_bottom = bulk_top - len(bulk_datasets) * CS + CG
-    draw_group(col1_x, bulk_bottom - 0.15, col1_w, bulk_top - bulk_bottom + 0.55, '#8B5CF6')
+    draw_group(col1_x, global_bottom, col1_w,
+               bulk_top - global_bottom + 0.4, '#8B5CF6')
     ax.text(col1_x + 0.2, bulk_top + 0.15, 'Bulk RNA-seq', fontsize=10.5,
             fontweight='bold', va='bottom', color='#5B21B6')
 
@@ -376,7 +402,7 @@ def fig1_dataset_overview():
         ax.text(col1_x + 0.45, by + CH * 0.25, desc, fontsize=8, va='center', color='#64748B')
 
     # ═══ ARROWS: Column 1 → Column 2 ═══
-    mid_y = (sc_top + bulk_bottom) / 2
+    mid_y = (TOP + global_bottom) / 2
     draw_arrow(5.0, mid_y, 5.7, mid_y)
 
     # ═══ COLUMN 2: Activity Inference (x=5.8–10.2) ═══
@@ -388,16 +414,15 @@ def fig1_dataset_overview():
             fontsize=9, ha='center', va='center', color='#64748B')
 
     # -- Signature matrices group --
-    sig_top = 10.5
+    sig_top = TOP
     sigs = [
         ('CytoSig',    '43 cytokines',           COLORS['cytosig']),
         ('LinCytoSig', '178 cell-type specific',  COLORS['lincytosig']),
         ('SecAct',     '1,170 secreted proteins', COLORS['secact']),
     ]
-    SH = 0.8  # shorter cards for signatures (no subtitle)
-    SS = SH + CG
-    sig_bottom = sig_top - len(sigs) * SS + CG
-    draw_group(col2_x, sig_bottom - 0.15, col2_w, sig_top - sig_bottom + 0.55, '#64748B')
+    sig_cards_bottom = sig_top - len(sigs) * SS + CG
+    draw_group(col2_x, sig_cards_bottom - GROUP_PAD, col2_w,
+               sig_top - sig_cards_bottom + GROUP_PAD + 0.4, '#64748B')
     ax.text(col2_x + 0.2, sig_top + 0.15, '3 Signature Matrices', fontsize=10.5,
             fontweight='bold', va='bottom', color='#374151')
 
@@ -409,18 +434,16 @@ def fig1_dataset_overview():
         ax.text(col2_x + col2_w - 0.45, by + SH / 2, desc, fontsize=9,
                 va='center', ha='right', color=color)
 
-    # -- Pipeline group --
-    pipe_top = sig_bottom - 0.8
+    # -- Pipeline group (extends to global bottom) --
+    pipe_top = sig_cards_bottom - GROUP_GAP
     steps = [
         ('1.', 'Pseudobulk aggregation',    '(donor, donor×celltype)'),
         ('2.', 'Gene expression matrix',     '(genes × samples)'),
         ('3.', 'Ridge regression',           '(signature × samples → activity)'),
         ('4.', 'Cross-sample correlation',   '(predicted vs observed)'),
     ]
-    PSH = 0.85  # pipeline step height
-    PSS = PSH + 0.15
-    pipe_bottom = pipe_top - len(steps) * PSS + 0.15
-    draw_group(col2_x, pipe_bottom - 0.15, col2_w, pipe_top - pipe_bottom + 0.55, '#64748B')
+    draw_group(col2_x, global_bottom, col2_w,
+               pipe_top - global_bottom + 0.4, '#64748B')
     ax.text(col2_x + 0.2, pipe_top + 0.15, 'Pipeline', fontsize=10.5,
             fontweight='bold', va='bottom', color='#374151')
 
@@ -442,7 +465,7 @@ def fig1_dataset_overview():
     ax.text(col3_x + col3_w / 2, 11.05, '6 datasets  ×  3 signatures',
             fontsize=9, ha='center', va='center', color='#64748B')
 
-    val_top = 10.5
+    val_top = TOP
     val_items = [
         ('Overall Performance',      'Spearman ρ across all targets',       '#2563EB', '§4.1'),
         ('Per-Tissue Stratified',    'GTEx tissues / TCGA cancer types',    '#7C3AED', '§4.2'),
@@ -452,6 +475,12 @@ def fig1_dataset_overview():
         ('Aggregation Levels',       'Donor → celltype → single-cell',     '#0891B2', '§4.6'),
         ('Bulk RNA-seq Validation',  'GTEx + TCGA concordance',             '#6366F1', '§4.7'),
     ]
+    # Validation outline box (extends to global bottom)
+    draw_group(col3_x, global_bottom, col3_w,
+               val_top - global_bottom + 0.4, '#64748B')
+    ax.text(col3_x + 0.2, val_top + 0.15, '7 Validation Analyses', fontsize=10.5,
+            fontweight='bold', va='bottom', color='#374151')
+
     for i, (title, desc, color, sec) in enumerate(val_items):
         by = val_top - i * CS - CH
         draw_box(col3_x + 0.2, by, col3_w - 0.4, CH, color, alpha=0.10)
