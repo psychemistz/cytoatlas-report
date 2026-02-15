@@ -1436,7 +1436,7 @@ def generate_html(summary_table, boxplot_data, consistency_data, heatmap_data,
   <li>1,213 signatures (43 CytoSig + 1,170 SecAct), plus 178 cell-type-specific LinCytoSig variants, validated across 6 independent datasets</li>
   <li>Spearman correlations reach &rho;=0.6&ndash;0.9 for well-characterized cytokines (IL1B, TNFA, VEGFA, TGFB family)</li>
   <li>Cross-dataset consistency demonstrates signatures generalize across CIMA, Inflammation Atlas Main, scAtlas, GTEx, and TCGA</li>
-  <li>SecAct achieves the highest correlations in bulk &amp; organ-level analyses (median &rho;=0.40 in GTEx/TCGA)</li>
+  <li>SecAct achieves the highest median correlations in 5 of 6 datasets (independence-corrected median &rho;=0.31&ndash;0.46)</li>
 </ul>
 </div>
 
@@ -1967,9 +1967,9 @@ CytoAtlas validates at five levels: donor-level pseudobulk, donor &times; cell-t
 <h3>5.3 SecAct: Breadth Over Depth</h3>
 
 <ul>
-  <li><strong>Highest median &rho;</strong> in organ-level analyses (scAtlas normal: 0.307, cancer: 0.363)</li>
-  <li><strong>Highest median &rho;</strong> in bulk RNA-seq (GTEx: 0.395, TCGA: 0.415)</li>
-  <li><strong>97.1% positive correlation</strong> in TCGA</li>
+  <li><strong>Highest median &rho;</strong> in single-cell datasets (scAtlas Normal: 0.455, Cancer: 0.399, independence-corrected)</li>
+  <li><strong>Highest median &rho;</strong> in bulk RNA-seq (GTEx: 0.314, TCGA: 0.357, independence-corrected median-of-medians)</li>
+  <li><strong>95.8% positive correlation</strong> in TCGA (independence-corrected)</li>
   <li><strong>Wins decisively at celltype level</strong> against both CytoSig and LinCytoSig in scAtlas (19/3 wins vs CytoSig in scAtlas Normal, 20/2 in Cancer)</li>
 </ul>
 
