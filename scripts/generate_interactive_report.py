@@ -49,7 +49,7 @@ ATLAS_ORDER = [
     'scatlas_normal', 'scatlas_cancer',
 ]
 ATLAS_LABELS = [
-    'GTEx', 'TCGA', 'CIMA', 'Inflammation Main',
+    'GTEx', 'TCGA', 'CIMA', 'Inflammation Atlas Main',
     'scAtlas (Normal)', 'scAtlas (Cancer)',
 ]
 
@@ -268,7 +268,7 @@ def prepare_boxplot_data(df):
 
     Uses independence-corrected methodology:
     - GTEx/TCGA: median-of-medians (one rho per target = median across tissues/cancers)
-    - CIMA/Inflammation Main/scAtlas: direct donor_only/tumor_only rho values
+    - CIMA/Inflammation Atlas Main/scAtlas: direct donor_only/tumor_only rho values
     Matched comparison uses 32 shared targets (22 direct + 10 alias-resolved).
 
     Output:
@@ -507,7 +507,7 @@ def prepare_method_comparison_boxplot(df):
     """Prepare rho arrays for section 5.1 boxplot — 10-way method comparison.
 
     Loads pre-computed comparison data (ridge regression on pseudobulk)
-    for 4 combined atlases: CIMA, Inflammation Main, scAtlas Normal/Cancer.
+    for 4 combined atlases: CIMA, Inflammation Atlas Main, scAtlas Normal/Cancer.
 
     Ten methods:
       1. CytoSig — 43 cytokines, 4,881 curated genes (global)
@@ -534,7 +534,7 @@ def prepare_method_comparison_boxplot(df):
     # Map atlas keys in JSON to display labels
     atlas_key_to_label = {
         'CIMA': 'CIMA',
-        'Inflammation Atlas': 'Inflammation Main',
+        'Inflammation Atlas': 'Inflammation Atlas Main',
         'scAtlas Normal': 'scAtlas (Normal)',
         'scAtlas Cancer': 'scAtlas (Cancer)',
     }
@@ -688,7 +688,7 @@ def prepare_levels_data(df):
 
     configs = [
         ('cima', ['donor_only', 'donor_l1', 'donor_l2', 'donor_l3', 'donor_l4'], 'CIMA'),
-        ('inflammation_main', ['donor_only', 'donor_l1', 'donor_l2'], 'Inflammation Main'),
+        ('inflammation_main', ['donor_only', 'donor_l1', 'donor_l2'], 'Inflammation Atlas Main'),
         ('scatlas_normal', ['donor_organ', 'donor_organ_celltype1', 'donor_organ_celltype2'], 'scAtlas Normal'),
         ('scatlas_cancer', ['tumor_only', 'tumor_by_cancer', 'tumor_by_cancer_celltype1'], 'scAtlas Cancer'),
     ]
@@ -817,7 +817,7 @@ def prepare_bulk_validation_data(df):
         'gtex': 'GTEx',
         'tcga': 'TCGA',
         'cima': 'CIMA',
-        'inflammation_main': 'Inflammation Main',
+        'inflammation_main': 'Inflammation Atlas Main',
         'scatlas_normal': 'scAtlas (Normal)',
         'scatlas_cancer': 'scAtlas (Cancer)',
     }
@@ -886,7 +886,7 @@ def prepare_scatter_data():
         'GTEx': 'gtex_cytosig.json',
         'TCGA': 'tcga_cytosig.json',
         'CIMA': 'cima_cytosig.json',
-        'Inflammation Main': 'inflammation_main_cytosig.json',
+        'Inflammation Atlas Main': 'inflammation_main_cytosig.json',
         'scAtlas (Normal)': 'scatlas_normal_cytosig.json',
         'scAtlas (Cancer)': 'scatlas_cancer_cytosig.json',
     }
@@ -894,7 +894,7 @@ def prepare_scatter_data():
         'GTEx': 'gtex_secact.json',
         'TCGA': 'tcga_secact.json',
         'CIMA': 'cima_secact.json',
-        'Inflammation Main': 'inflammation_main_secact.json',
+        'Inflammation Atlas Main': 'inflammation_main_secact.json',
         'scAtlas (Normal)': 'scatlas_normal_secact.json',
         'scAtlas (Cancer)': 'scatlas_cancer_secact.json',
     }
@@ -961,7 +961,7 @@ def prepare_celltype_comparison(df):
     scatter = {}
     for cat in categories:
         key = cat['key']
-        label = cat['label'].replace('Inflammation Atlas', 'Inflammation Main')
+        label = cat['label'].replace('Inflammation Atlas', 'Inflammation Atlas Main')
         points = []
         for lin_target, mapping in matched.items():
             cyto_target = mapping.get('cytosig')
@@ -1067,7 +1067,7 @@ def prepare_celltype_comparison(df):
     atlas_summary = []
     for cat in categories:
         key = cat['key']
-        label = cat['label'].replace('Inflammation Atlas', 'Inflammation Main')
+        label = cat['label'].replace('Inflammation Atlas', 'Inflammation Atlas Main')
         diffs_cyto, diffs_sec = [], []
         for lin_target, mapping in matched.items():
             cyto_target = mapping.get('cytosig')
@@ -1134,7 +1134,7 @@ def prepare_level_comparison_data():
 
     result = {}
     for atlas_raw, levels in raw.items():
-        atlas = atlas_raw.replace('Inflammation Atlas', 'Inflammation Main')
+        atlas = atlas_raw.replace('Inflammation Atlas', 'Inflammation Atlas Main')
         atlas_data = []
         for lv in levels:
             entry = {
@@ -1172,7 +1172,7 @@ def prepare_good_bad_data(df):
 
     Data source:
         Merged correlation CSVs at donor level. 6 atlases: GTEx, TCGA, CIMA,
-        Inflammation Main, scAtlas Normal, scAtlas Cancer. Two signature
+        Inflammation Atlas Main, scAtlas Normal, scAtlas Cancer. Two signature
         types: CytoSig and SecAct.
     Method:
         For each atlas x signature: deduplicate by target (keep first),
@@ -1186,7 +1186,7 @@ def prepare_good_bad_data(df):
         ('gtex', 'donor_only', 'GTEx'),
         ('tcga', 'donor_only', 'TCGA'),
         ('cima', 'donor_only', 'CIMA'),
-        ('inflammation_main', 'donor_only', 'Inflammation Main'),
+        ('inflammation_main', 'donor_only', 'Inflammation Atlas Main'),
         ('scatlas_normal', 'donor_organ', 'scAtlas (Normal)'),
         ('scatlas_cancer', 'tumor_only', 'scAtlas (Cancer)'),
     ]
@@ -1410,7 +1410,7 @@ def generate_html(summary_table, boxplot_data, consistency_data, heatmap_data,
   <h1>CytoAtlas</h1>
   <div class="subtitle">Pan-Disease Single-Cell Cytokine Activity Atlas</div>
   <div class="meta">
-    <strong>Date:</strong> February 12, 2026
+    <strong>Date:</strong> February 14, 2026
   </div>
 </div>
 
@@ -1425,7 +1425,7 @@ def generate_html(summary_table, boxplot_data, consistency_data, heatmap_data,
   <div class="stat-card"><span class="number">29M</span><span class="label">Total Cells</span></div>
   <div class="stat-card"><span class="number">4</span><span class="label">Datasets</span></div>
   <div class="stat-card"><span class="number">1,213</span><span class="label">Signatures</span></div>
-  <div class="stat-card"><span class="number">6</span><span class="label">Validation Atlases</span></div>
+  <div class="stat-card"><span class="number">6</span><span class="label">Validation Datasets</span></div>
   <div class="stat-card"><span class="number">262</span><span class="label">API Endpoints</span></div>
   <div class="stat-card"><span class="number">12</span><span class="label">Web Pages</span></div>
 </div>
@@ -1433,9 +1433,9 @@ def generate_html(summary_table, boxplot_data, consistency_data, heatmap_data,
 <div class="callout green">
 <p><strong>Key results:</strong></p>
 <ul>
-  <li>1,213 signatures (43 CytoSig + 1,170 SecAct), plus 178 cell-type-specific LinCytoSig variants, validated across 4 independent atlases</li>
+  <li>1,213 signatures (43 CytoSig + 1,170 SecAct), plus 178 cell-type-specific LinCytoSig variants, validated across 6 independent datasets (2 bulk RNA-seq, 4 single-cell)</li>
   <li>Spearman correlations reach &rho;=0.6&ndash;0.9 for well-characterized cytokines (IL1B, TNFA, VEGFA, TGFB family)</li>
-  <li>Cross-atlas consistency demonstrates signatures generalize across CIMA, Inflammation Main, scAtlas, GTEx, and TCGA</li>
+  <li>Cross-dataset consistency demonstrates signatures generalize across CIMA, Inflammation Atlas Main, scAtlas, GTEx, and TCGA</li>
   <li>SecAct achieves the highest correlations in bulk &amp; organ-level analyses (median &rho;=0.40 in GTEx/TCGA)</li>
 </ul>
 </div>
@@ -1511,12 +1511,12 @@ CytoAtlas validates at five levels: donor-level pseudobulk, donor &times; cell-t
   <tr><td>1</td><td><strong>GTEx</strong></td><td>Bulk RNA-seq</td><td>19,788 samples</td><td>946 donors</td><td>&mdash;</td><td>GTEx Consortium, v11</td></tr>
   <tr><td>2</td><td><strong>TCGA</strong></td><td>Bulk RNA-seq</td><td>11,069 samples</td><td>10,274 donors</td><td>&mdash;</td><td>TCGA PanCancer</td></tr>
   <tr><td>3</td><td><strong>CIMA</strong></td><td>scRNA-seq</td><td>6,484,974</td><td>421 donors</td><td>27 L2 / 100+ L3</td><td>J. Yin et al., <em>Science</em>, 2026</td></tr>
-  <tr><td>4</td><td><strong>Inflammation Main</strong></td><td>scRNA-seq</td><td>4,918,140</td><td>817 samples</td><td>66+</td><td>Jimenez-Gracia et al., <em>Nature Medicine</em>, 2026</td></tr>
-  <tr><td>5</td><td><strong>Inflammation Val</strong></td><td>scRNA-seq</td><td>849,922</td><td>144 samples</td><td>66+</td><td>Validation cohort</td></tr>
-  <tr><td>6</td><td><strong>Inflammation Ext</strong></td><td>scRNA-seq</td><td>572,872</td><td>86 samples</td><td>66+</td><td>External cohort</td></tr>
+  <tr><td>4</td><td><strong>Inflammation Atlas Main</strong></td><td>scRNA-seq</td><td>4,918,140</td><td>817 samples</td><td>66+</td><td>Jimenez-Gracia et al., <em>Nature Medicine</em>, 2026</td></tr>
+  <tr><td>5</td><td><strong>Inflammation Atlas Val</strong></td><td>scRNA-seq</td><td>849,922</td><td>144 samples</td><td>66+</td><td>Validation cohort</td></tr>
+  <tr><td>6</td><td><strong>Inflammation Atlas Ext</strong></td><td>scRNA-seq</td><td>572,872</td><td>86 samples</td><td>66+</td><td>External cohort</td></tr>
   <tr><td>7</td><td><strong>scAtlas Normal</strong></td><td>scRNA-seq</td><td>2,293,951</td><td>317 donors</td><td>102 subCluster</td><td>Q. Shi et al., <em>Nature</em>, 2025</td></tr>
   <tr><td>8</td><td><strong>scAtlas Cancer</strong></td><td>scRNA-seq</td><td>4,146,975</td><td>717 donors (601 tumor-only)</td><td>162 cellType1</td><td>Q. Shi et al., <em>Nature</em>, 2025</td></tr>
-  <tr><td>9</td><td><strong>parse_10M</strong></td><td>scRNA-seq</td><td>9,697,974</td><td>12 donors &times; 91 cytokines</td><td>18 PBMC types</td><td>Oesinghaus et al., <em>bioRxiv</em>, 2026</td></tr>
+  <tr><td>9</td><td><strong>parse_10M</strong></td><td>scRNA-seq</td><td>9,697,974</td><td>12 donors &times; 90 cytokines (+PBS control)</td><td>18 PBMC types</td><td>Oesinghaus et al., <em>bioRxiv</em>, 2026</td></tr>
 </table>
 <p><strong>Grand total:</strong> ~29 million single cells + ~31K bulk samples across 9 datasets, 100+ cell types.</p>
 
@@ -1566,9 +1566,9 @@ CytoAtlas validates at five levels: donor-level pseudobulk, donor &times; cell-t
 <h3>3.2 What Scientific Questions Does CytoAtlas Answer?</h3>
 <ol>
   <li><strong>Which cytokines are active in which cell types across diseases?</strong> &mdash; IL1B/TNFA in monocytes/macrophages, IFNG in CD8+ T and NK cells, IL17A in Th17, VEGFA in endothelial/tumor cells, TGFB family in stromal cells &mdash; quantified across 20 diseases, 35 organs, and 15 cancer types.</li>
-  <li><strong>Are cytokine activities consistent across independent cohorts?</strong> &mdash; Yes. IL1B, TNFA, VEGFA, and TGFB family show consistent positive correlations across all 6 validation atlases (Figure 7).</li>
+  <li><strong>Are cytokine activities consistent across independent cohorts?</strong> &mdash; Yes. IL1B, TNFA, VEGFA, and TGFB family show consistent positive correlations across all 6 validation datasets (Figure 7).</li>
   <li><strong>Does cell-type-specific biology matter for cytokine inference?</strong> &mdash; For select immune types, yes: LinCytoSig improves prediction for Basophils (+0.21 &Delta;&rho;), NK cells (+0.19), and DCs (+0.18), but global CytoSig wins overall (Figures 10&ndash;11).</li>
-  <li><strong>Which secreted proteins beyond cytokines show validated activity?</strong> &mdash; SecAct (1,170 targets) achieves the highest correlations across all atlases (median &rho;=0.33&ndash;0.49), with novel validated targets like Activin A (&rho;=0.98), CXCL12 (&rho;=0.92), and BMP family (Figure 12).</li>
+  <li><strong>Which secreted proteins beyond cytokines show validated activity?</strong> &mdash; SecAct (1,170 targets) achieves the highest correlations across all datasets (median &rho;=0.33&ndash;0.49), with novel validated targets like Activin A (&rho;=0.98), CXCL12 (&rho;=0.92), and BMP family (Figure 12).</li>
   <li><strong>Can we predict treatment response from cytokine activity?</strong> &mdash; We are incorporating cytokine-blocking therapy outcomes from bulk RNA-seq to test whether predicted cytokine activity associates with therapy response. Additionally, Inflammation Atlas responder/non-responder labels enable treatment response prediction using cytokine activity profiles as features.</li>
 </ol>
 
@@ -1589,7 +1589,7 @@ CytoAtlas validates at five levels: donor-level pseudobulk, donor &times; cell-t
 
 <div class="callout">
 <p><strong>PRIMARY independent level:</strong> The summary table above reports results at each dataset&rsquo;s PRIMARY independent level &mdash; the aggregation level where samples are fully independent (each donor counted once). This ensures correlation statistics are not inflated by donor duplication. See the &ldquo;Primary Level&rdquo; column for each dataset&rsquo;s level.</p>
-<p><strong>How &ldquo;N Targets&rdquo; is determined:</strong> A target is included in the validation for a given atlas only if (1) the target&rsquo;s signature genes overlap sufficiently with the atlas gene expression matrix, and (2) the target gene itself is expressed in enough samples to compute a meaningful Spearman correlation. Targets whose gene is absent or not detected in a dataset are excluded. CytoSig defines 43 cytokines and SecAct defines 1,170 secreted proteins. Inflammation Main retains only 33 of 43 CytoSig targets and 805 of 1,170 SecAct targets because 10 cytokine genes (BDNF, BMP4, CXCL12, GCSF, IFN1, IL13, IL17A, IL36, IL4, WNT3A) are not sufficiently expressed in these blood/PBMC samples.</p>
+<p><strong>How &ldquo;N Targets&rdquo; is determined:</strong> A target is included in the validation for a given atlas only if (1) the target&rsquo;s signature genes overlap sufficiently with the atlas gene expression matrix, and (2) the target gene itself is expressed in enough samples to compute a meaningful Spearman correlation. Targets whose gene is absent or not detected in a dataset are excluded. CytoSig defines 43 cytokines and SecAct defines 1,170 secreted proteins. Inflammation Atlas Main retains only 33 of 43 CytoSig targets and 805 of 1,170 SecAct targets because 10 cytokine genes (BDNF, BMP4, CXCL12, GCSF, IFN1, IL13, IL17A, IL36, IL4, WNT3A) are not sufficiently expressed in these blood/PBMC samples.</p>
 <p><strong>Stratified levels</strong> (GTEx by_tissue, TCGA primary_by_cancer): Correlations are computed within each tissue/cancer type (ensuring independence), then summarized across groups. N Targets counts unique targets at the &ldquo;all&rdquo; aggregate level. Finer per-tissue or per-cancer breakdowns are available in Section 4.3 below.</p>
 </div>
 
@@ -1602,15 +1602,15 @@ CytoAtlas validates at five levels: donor-level pseudobulk, donor &times; cell-t
     <button class="tab-btn" onclick="renderBoxplot('matched')">Matched</button>
   </div>
   <div id="boxplot-chart" style="height:500px;"></div>
-  <div id="boxplot-caption" class="caption"><strong>Figure 2.</strong> Spearman &rho; distributions across atlases for CytoSig (43 targets) vs SecAct (1,170 targets). Independence-corrected: GTEx/TCGA use median-of-medians. Mann-Whitney U test p-values shown above each atlas.</div>
+  <div id="boxplot-caption" class="caption"><strong>Figure 2.</strong> Spearman &rho; distributions across datasets for CytoSig (43 targets) vs SecAct (1,170 targets). Independence-corrected: GTEx/TCGA use median-of-medians. Mann-Whitney U test p-values shown above each dataset.</div>
 </div>
 
 <div class="callout">
-<p><strong>Why does SecAct appear to underperform CytoSig in the Inflammation Main atlas?</strong></p>
+<p><strong>Why does SecAct appear to underperform CytoSig in Inflammation Atlas Main?</strong></p>
 <p>This is a <strong>composition effect</strong>, not a genuine performance gap, confirmed by two complementary statistical tests:</p>
-<p><strong>Total comparison (Mann&ndash;Whitney U test):</strong> Compares the full &rho; distributions of CytoSig (43 cytokine signatures) vs SecAct (~1,170 secreted protein signatures) using <strong>independence-corrected</strong> values. For GTEx/TCGA, each target&rsquo;s representative &rho; is the median across per-tissue/cancer values (median-of-medians); for other atlases, donor_only/tumor_only &rho; is used directly. SecAct achieves a significantly higher median &rho; in 5 of 6 atlases (GTEx: <em>p</em> = 4.75 &times; 10<sup>&minus;4</sup>; TCGA: <em>p</em> = 2.80 &times; 10<sup>&minus;3</sup>; CIMA: <em>p</em> = 3.18 &times; 10<sup>&minus;2</sup>; scAtlas Normal: <em>p</em> = 1.04 &times; 10<sup>&minus;4</sup>; scAtlas Cancer: <em>p</em> = 1.06 &times; 10<sup>&minus;5</sup>). Inflammation Main is the sole exception (U = 14,101, <em>p</em> = 0.548, not significant) and the only atlas where CytoSig&rsquo;s median &rho; (0.323) exceeds SecAct&rsquo;s (0.173).</p>
-<p><strong>Matched comparison (Wilcoxon signed-rank test):</strong> Restricts to the 32 targets shared between both methods (22 direct + 10 alias-resolved), each target serving as its own control. SecAct&rsquo;s median &rho; is consistently higher across all 6 atlases, reaching significance in 5 (GTEx: <em>p</em> = 3.54 &times; 10<sup>&minus;5</sup>; TCGA: <em>p</em> = 3.24 &times; 10<sup>&minus;6</sup>; CIMA: <em>p</em> = 2.28 &times; 10<sup>&minus;2</sup>; scAtlas Normal: <em>p</em> = 3.54 &times; 10<sup>&minus;5</sup>; scAtlas Cancer: <em>p</em> = 3.54 &times; 10<sup>&minus;5</sup>). Inflammation Main is not significant (<em>p</em> = 0.141).</p>
-<p>Inflammation Main is largely blood-derived, so many SecAct targets that perform well in multi-organ contexts contribute near-zero or negative correlations here. In fact, 99 SecAct targets are negative <em>only</em> in Inflammation Main but positive in all other atlases, reflecting tissue-specific expression limitations rather than inference failure. The &ldquo;Matched&rdquo; tab above demonstrates the fair comparison on equal footing.</p>
+<p><strong>Total comparison (Mann&ndash;Whitney U test):</strong> Compares the full &rho; distributions of CytoSig (43 cytokine signatures) vs SecAct (~1,170 secreted protein signatures) using <strong>independence-corrected</strong> values. For GTEx/TCGA, each target&rsquo;s representative &rho; is the median across per-tissue/cancer values (median-of-medians); for other datasets, donor_only/tumor_only &rho; is used directly. SecAct achieves a significantly higher median &rho; in 5 of 6 datasets (GTEx: <em>p</em> = 4.75 &times; 10<sup>&minus;4</sup>; TCGA: <em>p</em> = 2.80 &times; 10<sup>&minus;3</sup>; CIMA: <em>p</em> = 3.18 &times; 10<sup>&minus;2</sup>; scAtlas Normal: <em>p</em> = 1.04 &times; 10<sup>&minus;4</sup>; scAtlas Cancer: <em>p</em> = 1.06 &times; 10<sup>&minus;5</sup>). Inflammation Atlas Main is the sole exception (U = 14,101, <em>p</em> = 0.548, not significant) and the only dataset where CytoSig&rsquo;s median &rho; (0.323) exceeds SecAct&rsquo;s (0.173).</p>
+<p><strong>Matched comparison (Wilcoxon signed-rank test):</strong> Restricts to the 32 targets shared between both methods (22 direct + 10 alias-resolved), each target serving as its own control. SecAct&rsquo;s median &rho; is consistently higher across all 6 datasets, reaching significance in 5 (GTEx: <em>p</em> = 3.54 &times; 10<sup>&minus;5</sup>; TCGA: <em>p</em> = 3.24 &times; 10<sup>&minus;6</sup>; CIMA: <em>p</em> = 2.28 &times; 10<sup>&minus;2</sup>; scAtlas Normal: <em>p</em> = 3.54 &times; 10<sup>&minus;5</sup>; scAtlas Cancer: <em>p</em> = 3.54 &times; 10<sup>&minus;5</sup>). Inflammation Atlas Main is not significant (<em>p</em> = 0.141).</p>
+<p>Inflammation Atlas Main is largely blood-derived, so many SecAct targets that perform well in multi-organ contexts contribute near-zero or negative correlations here. In fact, 99 SecAct targets are negative <em>only</em> in Inflammation Atlas Main but positive in all other datasets, reflecting tissue-specific expression limitations rather than inference failure. The &ldquo;Matched&rdquo; tab above demonstrates the fair comparison on equal footing.</p>
 </div>
 
 <!-- Per-tissue/per-cancer stratified validation -->
@@ -1651,22 +1651,22 @@ CytoAtlas validates at five levels: donor-level pseudobulk, donor &times; cell-t
     </select>
   </div>
   <div id="goodbad-chart" style="height:700px;"></div>
-  <div class="caption"><strong>Figure 4.</strong> Top 15 (best) and bottom 15 (worst) correlated targets. Select signature type and atlas from dropdowns.</div>
+  <div class="caption"><strong>Figure 4.</strong> Top 15 (best) and bottom 15 (worst) correlated targets. Select signature type and dataset from dropdowns.</div>
 </div>
 
-<p><strong>Consistently well-correlated targets (&rho; &gt; 0.3 across multiple atlases):</strong></p>
+<p><strong>Consistently well-correlated targets (&rho; &gt; 0.3 across multiple datasets):</strong></p>
 <ul>
-  <li><strong>IL1B</strong> (&rho; = 0.67 CIMA, 0.68 Inflammation Main) &mdash; canonical inflammatory cytokine</li>
-  <li><strong>TNFA</strong> (&rho; = 0.63 CIMA, 0.60 Inflammation Main) &mdash; master inflammatory regulator</li>
-  <li><strong>VEGFA</strong> (&rho; = 0.79 Inflammation Main, 0.92 scAtlas) &mdash; angiogenesis factor</li>
-  <li><strong>TGFB1/2/3</strong> (&rho; = 0.35&ndash;0.55 across atlases)</li>
-  <li><strong>BMP2/4</strong> (&rho; = 0.26&ndash;0.92 depending on atlas)</li>
+  <li><strong>IL1B</strong> (&rho; = 0.67 CIMA, 0.68 Inflammation Atlas Main) &mdash; canonical inflammatory cytokine</li>
+  <li><strong>TNFA</strong> (&rho; = 0.63 CIMA, 0.60 Inflammation Atlas Main) &mdash; master inflammatory regulator</li>
+  <li><strong>VEGFA</strong> (&rho; = 0.79 Inflammation Atlas Main, 0.92 scAtlas) &mdash; angiogenesis factor</li>
+  <li><strong>TGFB1/2/3</strong> (&rho; = 0.35&ndash;0.55 across datasets)</li>
+  <li><strong>BMP2/4</strong> (&rho; = 0.26&ndash;0.92 depending on dataset)</li>
 </ul>
 
-<p><strong>Consistently poorly correlated targets (&rho; &lt; 0 in multiple atlases):</strong></p>
+<p><strong>Consistently poorly correlated targets (&rho; &lt; 0 in multiple datasets):</strong></p>
 <ul>
-  <li><strong>CD40L</strong> (&rho; = &minus;0.48 CIMA, &minus;0.56 Inflammation Main) &mdash; membrane-bound, not secreted</li>
-  <li><strong>TRAIL</strong> (&rho; = &minus;0.46 CIMA, &minus;0.55 Inflammation Main) &mdash; apoptosis inducer</li>
+  <li><strong>CD40L</strong> (&rho; = &minus;0.48 CIMA, &minus;0.56 Inflammation Atlas Main) &mdash; membrane-bound, not secreted</li>
+  <li><strong>TRAIL</strong> (&rho; = &minus;0.46 CIMA, &minus;0.55 Inflammation Atlas Main) &mdash; apoptosis inducer</li>
   <li><strong>LTA</strong> (&rho; = &minus;0.33 CIMA), <strong>HGF</strong> (&rho; = &minus;0.25 CIMA)</li>
 </ul>
 
@@ -1704,7 +1704,7 @@ CytoAtlas validates at five levels: donor-level pseudobulk, donor &times; cell-t
 </div>
 
 <div class="callout amber">
-<p><strong>However, SecAct rescues all four targets.</strong> The poor correlations above are <strong>CytoSig-specific</strong>, not universal. SecAct achieves strong positive correlations for every one of these targets (mean &rho; across atlases):</p>
+<p><strong>However, SecAct rescues all four targets.</strong> The poor correlations above are <strong>CytoSig-specific</strong>, not universal. SecAct achieves strong positive correlations for every one of these targets (mean &rho; across datasets):</p>
 <table style="margin:0.5em 0;">
   <tr><th>Target</th><th>CytoSig Gene</th><th>CytoSig Mean &rho;</th><th>SecAct Gene</th><th>SecAct Mean &rho;</th></tr>
   <tr><td>CD40L</td><td>CD40LG</td><td>&minus;0.006</td><td>CD40LG</td><td><strong>+0.420</strong></td></tr>
@@ -1719,7 +1719,7 @@ CytoAtlas validates at five levels: donor-level pseudobulk, donor &times; cell-t
 <h3>4.5 Cross-Atlas Consistency</h3>
 <div class="plotly-container">
   <div id="consistency-chart" style="height:550px;"></div>
-  <div class="caption"><strong>Figure 5.</strong> Key cytokine target correlations tracked across 6 independent atlases (donor-level). Solid lines = CytoSig; dashed lines = SecAct. Lines colored by cytokine family. Click legend entries to show/hide targets.</div>
+  <div class="caption"><strong>Figure 5.</strong> Key cytokine target correlations tracked across 6 independent datasets (donor-level). Solid lines = CytoSig; dashed lines = SecAct. Lines colored by cytokine family. Click legend entries to show/hide targets.</div>
 </div>
 
 <!-- Item 11: Aggregation levels with Total / Matched tabs -->
@@ -1751,7 +1751,7 @@ CytoAtlas validates at five levels: donor-level pseudobulk, donor &times; cell-t
   <tr><td>Donor &times; L2</td><td>Intermediate (CD4_memory, CD8_naive, DC, Mono, etc.)</td><td>28</td></tr>
   <tr><td>Donor &times; L3</td><td>Fine-grained (CD4_Tcm, cMono, Switched_Bm, etc.)</td><td>39</td></tr>
   <tr><td>Donor &times; L4</td><td>Finest marker-annotated (CD4_Th17-like_RORC, cMono_IL1B, etc.)</td><td>73</td></tr>
-  <tr><td rowspan="3"><strong>Inflammation Main</strong></td>
+  <tr><td rowspan="3"><strong>Inflammation Atlas Main</strong></td>
     <td>Donor Only</td><td>Whole-sample pseudobulk per donor</td><td>1 (all)</td></tr>
   <tr><td>Donor &times; L1</td><td>Broad categories (B, DC, Mono, T_CD4/CD8 subsets, etc.)</td><td>18</td></tr>
   <tr><td>Donor &times; L2</td><td>Fine-grained (Th1, Th2, Tregs, NK_adaptive, etc.)</td><td>65</td></tr>
@@ -1792,7 +1792,7 @@ CytoAtlas validates at five levels: donor-level pseudobulk, donor &times; cell-t
     <button class="tab-btn secact" onclick="switchHeatmapTab('secact')">SecAct</button>
   </div>
   <div id="heatmap-chart" style="min-height:500px;"></div>
-  <div class="caption"><strong>Figure 8.</strong> Spearman &rho; heatmap for biologically important targets across all atlases. Switch between signature types. Hover over cells for details.</div>
+  <div class="caption"><strong>Figure 8.</strong> Spearman &rho; heatmap for biologically important targets across all datasets. Switch between signature types. Hover over cells for details.</div>
 </div>
 
 <div class="callout">
@@ -1802,7 +1802,7 @@ CytoAtlas validates at five levels: donor-level pseudobulk, donor &times; cell-t
   <li><strong>Activity inference:</strong> Ridge regression (<code>secactpy.ridge</code>, &lambda;=5&times;10<sup>5</sup>) is applied using the signature matrix (CytoSig: 4,881 genes &times; 43 cytokines; SecAct: 7,919 genes &times; 1,170 targets) to predict activity z-scores for each pseudobulk sample.</li>
   <li><strong>Correlation:</strong> Spearman &rho; is computed between the predicted activity z-score and the original expression of the target gene across all donor-level samples within that atlas. A positive &rho; means higher predicted activity tracks with higher target gene expression.</li>
 </ol>
-<p>GTEx uses per-tissue pseudobulk (median-of-medians across 29 tissues); TCGA uses per-cancer type (median-of-medians across 33 cancers); CIMA/Inflammation Main use donor-only; scAtlas Normal uses donor-only; scAtlas Cancer uses tumor-only.</p>
+<p>GTEx uses per-tissue pseudobulk (median-of-medians across 29 tissues); TCGA uses per-cancer type (median-of-medians across 33 cancers); CIMA/Inflammation Atlas Main use donor-only; scAtlas Normal uses donor-only; scAtlas Cancer uses tumor-only.</p>
 </div>
 
 <!-- Item 13: Interactive comprehensive validation -->
@@ -1814,7 +1814,7 @@ CytoAtlas validates at five levels: donor-level pseudobulk, donor &times; cell-t
       <option value="GTEx">GTEx</option>
       <option value="TCGA">TCGA</option>
       <option value="CIMA">CIMA</option>
-      <option value="Inflammation Main">Inflammation Main</option>
+      <option value="Inflammation Atlas Main">Inflammation Atlas Main</option>
       <option value="scAtlas (Normal)">scAtlas (Normal)</option>
       <option value="scAtlas (Cancer)">scAtlas (Cancer)</option>
     </select>
@@ -1891,15 +1891,15 @@ CytoAtlas validates at five levels: donor-level pseudobulk, donor &times; cell-t
   <div class="controls">
     <label>View:</label>
     <select id="method-boxplot-view" onchange="updateMethodBoxplot()">
-      <option value="all">All Atlases</option>
+      <option value="all">All Datasets</option>
     </select>
   </div>
   <div id="method-boxplot-chart" style="height:600px;"></div>
-  <div class="caption"><strong>Figure 10.</strong> Ten-way signature method comparison at matched (cell type, cytokine) pair level across 4 combined atlases. All 10 methods are evaluated on the <em>same set</em> of matched pairs per atlas (identical n). Use dropdown to view individual atlas boxplots. For LinCytoSig construction, see <a href="methodology.html">LinCytoSig Methodology</a>.</div>
+  <div class="caption"><strong>Figure 10.</strong> Ten-way signature method comparison at matched (cell type, cytokine) pair level across 4 combined datasets. All 10 methods are evaluated on the <em>same set</em> of matched pairs per dataset (identical n). Use dropdown to view individual dataset boxplots. For LinCytoSig construction, see <a href="methodology.html">LinCytoSig Methodology</a>.</div>
 </div>
 
 <div class="callout">
-<p><strong>Ten methods compared on identical matched pairs across 4 combined atlases:</strong></p>
+<p><strong>Ten methods compared on identical matched pairs across 4 combined datasets:</strong></p>
 <ol>
   <li><strong><span style="color:#2563EB">CytoSig</span></strong> &mdash; 43 cytokines, 4,881 curated genes, global (all cell types)</li>
   <li><strong><span style="color:#D97706">LinCytoSig (orig)</span></strong> &mdash; cell-type-matched signatures, all ~20K genes</li>
@@ -1914,12 +1914,12 @@ CytoAtlas validates at five levels: donor-level pseudobulk, donor &times; cell-t
 </ol>
 <p><strong>Key findings:</strong></p>
 <ul>
-  <li><strong>SecAct achieves the highest median &rho;</strong> across all 4 combined atlases, benefiting from spatial-transcriptomics-derived signatures.</li>
+  <li><strong>SecAct achieves the highest median &rho;</strong> across all 4 combined datasets, benefiting from spatial-transcriptomics-derived signatures.</li>
   <li><strong>CytoSig outperforms most LinCytoSig variants</strong> at donor level, with one notable exception: scAtlas Normal Best-orig (0.298) exceeds CytoSig (0.216).</li>
-  <li><strong>Gene filtering improves LinCytoSig</strong> in most atlases (CIMA +102%, Inflammation Main), confirming noise reduction from restricting the gene space.</li>
-  <li><strong>GTEx-selected best</strong> performs comparably to combined-selected in most atlases but slightly better in scAtlas Cancer (0.300 vs 0.275). <strong>TCGA-selected best</strong> generally underperforms other selection strategies, suggesting GTEx&rsquo;s broader tissue coverage provides more generalizable selections.</li>
-  <li><strong>Gene filtering of GTEx/TCGA-selected:</strong> GTEx+filt and TCGA+filt show mixed results &mdash; filtering sometimes improves (e.g., TCGA+filt in Inflammation Main: 0.260 vs TCGA-orig 0.168) but can also reduce performance, indicating the optimal gene space depends on both the selection dataset and atlas context.</li>
-  <li><strong>General ranking:</strong> SecAct &gt; CytoSig &gt; LinCytoSig Best variants &gt; LinCytoSig (filt) &gt; LinCytoSig (orig), though atlas-specific exceptions exist.</li>
+  <li><strong>Gene filtering improves LinCytoSig</strong> in most datasets (CIMA +102%, Inflammation Atlas Main), confirming noise reduction from restricting the gene space.</li>
+  <li><strong>GTEx-selected best</strong> performs comparably to combined-selected in most datasets but slightly better in scAtlas Cancer (0.300 vs 0.275). <strong>TCGA-selected best</strong> generally underperforms other selection strategies, suggesting GTEx&rsquo;s broader tissue coverage provides more generalizable selections.</li>
+  <li><strong>Gene filtering of GTEx/TCGA-selected:</strong> GTEx+filt and TCGA+filt show mixed results &mdash; filtering sometimes improves (e.g., TCGA+filt in Inflammation Atlas Main: 0.260 vs TCGA-orig 0.168) but can also reduce performance, indicating the optimal gene space depends on both the selection dataset and target dataset context.</li>
+  <li><strong>General ranking:</strong> SecAct &gt; CytoSig &gt; LinCytoSig Best variants &gt; LinCytoSig (filt) &gt; LinCytoSig (orig), though dataset-specific exceptions exist.</li>
 </ul>
 </div>
 
@@ -1947,7 +1947,7 @@ CytoAtlas validates at five levels: donor-level pseudobulk, donor &times; cell-t
 <!-- Per-celltype summary table (from method_comparison.json, finest level) -->
 <h4>5.2.3 Which Cell Types Benefit?</h4>
 <div id="celltype-table-container" style="max-height:500px;overflow-y:auto;"></div>
-<p style="font-size:0.9em;color:#6B7280;">Aggregated across all atlases at finest celltype level. Green = LinCytoSig wins more; red = LinCytoSig loses more.</p>
+<p style="font-size:0.9em;color:#6B7280;">Aggregated across all datasets at finest celltype level. Green = LinCytoSig wins more; red = LinCytoSig loses more.</p>
 
 <!-- Per-cytokine summary table -->
 <h4>5.2.4 Which Cytokines Benefit?</h4>
@@ -1958,7 +1958,7 @@ CytoAtlas validates at five levels: donor-level pseudobulk, donor &times; cell-t
 <p><strong>Key finding: Lineage-specific aggregation provides no systematic advantage at any level.</strong></p>
 <ul>
   <li><strong>At every level, LinCytoSig underperforms CytoSig</strong> (mean &Delta;&rho; ranges from &minus;0.08 at coarse L1 to &minus;0.02 at fine L4 in CIMA). Finer cell types reduce the gap slightly but never close it.</li>
-  <li><strong>SecAct wins at every level</strong> in CIMA and scAtlas. In Inflammation Main L2, LinCytoSig is nearly tied with SecAct (&Delta;&rho; = +0.01) but still loses to CytoSig.</li>
+  <li><strong>SecAct wins at every level</strong> in CIMA and scAtlas. In Inflammation Atlas Main L2, LinCytoSig is nearly tied with SecAct (&Delta;&rho; = +0.01) but still loses to CytoSig.</li>
   <li><strong>Per cell type:</strong> Only 5 of 43 cell types show consistent LinCytoSig advantage vs CytoSig (NK Cell, Basophil, DC, Trophoblast, Arterial Endothelial). No cell type beats SecAct.</li>
   <li><strong>Interpretation:</strong> CytoSig&rsquo;s global signature, derived from median log2FC across all cell types, already captures the dominant transcriptional response. Restricting to a single cell type&rsquo;s response introduces noise from small sample sizes without gaining meaningful lineage specificity. The hypothesis that finer resolution should favor LinCytoSig is not supported by the data.</li>
 </ul>
@@ -1975,7 +1975,7 @@ CytoAtlas validates at five levels: donor-level pseudobulk, donor &times; cell-t
 
 <div class="plotly-container">
   <div id="celltype-delta-rho-chart" style="height:900px;"></div>
-  <div class="caption"><strong>Figure 12.</strong> Per-celltype mean &Delta;&rho; (LinCytoSig &minus; CytoSig) aggregated across 4 atlases at donor &times; celltype level. Orange = LinCytoSig advantage; blue = CytoSig advantage. Error bars show SEM.</div>
+  <div class="caption"><strong>Figure 12.</strong> Per-celltype mean &Delta;&rho; (LinCytoSig &minus; CytoSig) aggregated across 4 datasets at donor &times; celltype level. Orange = LinCytoSig advantage; blue = CytoSig advantage. Error bars show SEM.</div>
 </div>
 
 <hr>
@@ -1988,7 +1988,7 @@ CytoAtlas validates at five levels: donor-level pseudobulk, donor &times; cell-t
   <li><strong>Quantitative cytokine activity per cell type per disease</strong> &mdash; 43 CytoSig cytokines + 1,170 SecAct secreted proteins across 29M cells</li>
   <li><strong>Cross-disease comparison</strong> &mdash; same signatures validated across 20 diseases, 35 organs, 15 cancer types</li>
   <li><strong>Independent perturbation comparison</strong> &mdash; parse_10M provides 90 cytokine perturbations &times; 12 donors &times; 18 cell types for independent comparison with CytoSig predictions</li>
-  <li><strong>Multi-level validation</strong> &mdash; donor, donor &times; celltype, bulk RNA-seq (GTEx/TCGA), and resampled bootstrap validation across 6 atlases</li>
+  <li><strong>Multi-level validation</strong> &mdash; donor, donor &times; celltype, bulk RNA-seq (GTEx/TCGA), and resampled bootstrap validation across 6 datasets</li>
 </ol>
 
 <h3>6.2 Limitations</h3>
@@ -2150,9 +2150,9 @@ window.renderBoxplot = function(mode) {{
       }}
     }});
     document.getElementById('boxplot-caption').innerHTML =
-      '<strong>Figure 2.</strong> Spearman \\u03c1 distributions: CytoSig (43 targets) vs SecAct (1,170 targets) across atlases. ' +
+      '<strong>Figure 2.</strong> Spearman \\u03c1 distributions: CytoSig (43 targets) vs SecAct (1,170 targets) across datasets. ' +
       'Independence-corrected: GTEx/TCGA use median-of-medians (one \\u03c1 per target). ' +
-      'Mann-Whitney U test, BH-FDR corrected across 6 atlases. Significance: *** q&lt;0.001, ** q&lt;0.01, * q&lt;0.05, ns = not significant.';
+      'Mann-Whitney U test, BH-FDR corrected across 6 datasets. Significance: *** q&lt;0.001, ** q&lt;0.01, * q&lt;0.05, ns = not significant.';
   }} else {{
     // Matched: CytoSig (32) vs SecAct (32) on shared targets
     var cfgs = [
@@ -2185,7 +2185,7 @@ window.renderBoxplot = function(mode) {{
     }});
     document.getElementById('boxplot-caption').innerHTML =
       '<strong>Figure 2.</strong> Spearman \\u03c1 distributions: CytoSig vs SecAct on 32 matched targets shared between both methods (22 direct + 10 alias-resolved). ' +
-      'Wilcoxon signed-rank test (paired by target), BH-FDR corrected across 6 atlases. Significance: *** q&lt;0.001, ** q&lt;0.01, * q&lt;0.05, ns = not significant.';
+      'Wilcoxon signed-rank test (paired by target), BH-FDR corrected across 6 datasets. Significance: *** q&lt;0.001, ** q&lt;0.01, * q&lt;0.05, ns = not significant.';
   }}
 
   var title = mode === 'total'
@@ -2886,7 +2886,7 @@ updateBulk();
     text: hoverTexts,
     hovertemplate: '%{{text}}<extra></extra>',
   }}], {{
-    title: 'Celltype-Specific \u0394\u03c1: LinCytoSig vs CytoSig<br><span style="font-size:12px;color:#6B7280">Aggregated across 4 atlases at donor \u00d7 celltype level</span>',
+    title: 'Celltype-Specific \u0394\u03c1: LinCytoSig vs CytoSig<br><span style="font-size:12px;color:#6B7280">Aggregated across 4 datasets at donor \u00d7 celltype level</span>',
     xaxis: {{title: 'Mean \u0394\u03c1 (LinCytoSig \u2212 CytoSig) \u00b1 SEM', zeroline: true, zerolinewidth: 2, zerolinecolor: '#000'}},
     yaxis: {{automargin: true, tickfont: {{size: 10}}}},
     margin: {{l: 180, t: 80, b: 60, r: 30}},
