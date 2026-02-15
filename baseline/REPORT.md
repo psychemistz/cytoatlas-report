@@ -234,11 +234,11 @@ This section tests whether expression-activity relationships replicate across me
 
 > **Figure 5** (`fig5_good_bad_correlations_cytosig.png`): Top 15 and bottom 15 targets per atlas.
 
-**Consistently well-correlated targets:** IL1B (ρ 0.3–0.7 across atlases), TNFA (0.3–0.6), VEGFA (0.5–0.9), and the TGFB family (0.3–0.6) — canonical cytokines with strong, well-characterized transcriptional programs that produce clear expression-activity concordance.
+**Consistently well-correlated targets:** IL1B (ρ 0.24–0.72), TNFA (0.26–0.63), VEGFA (0.18–0.79), TGFB1/3 (0.05–0.56, dataset-dependent) — canonical cytokines with strong transcriptional programs.
 
-**Consistently poorly correlated targets:** CD40L (ρ ≈ −0.5), TRAIL (−0.5), LTA (−0.3), HGF (−0.3) — membrane-bound ligands or post-transcriptionally regulated proteins. The negative correlations are **explainable failures**: ridge regression on transcriptomics cannot capture post-translational regulation, and membrane-bound ligands (CD40L/CD154) signal through cell contact rather than secretion. This validates the method's interpretability — failures have biological explanations.
+**Dataset-dependent targets:** CD40L, TRAIL, LTA, and HGF show negative ρ in single-cell datasets (CD40L: −0.48 CIMA, −0.55 Inflammation Main) but positive ρ in bulk (CD40L: +0.57 GTEx, +0.40 TCGA). This platform-dependent pattern suggests pseudobulk aggregation effects rather than universal method failure. SecAct achieves consistently positive ρ across all 6 datasets for these targets (mean ρ: CD40LG +0.46, TNFSF10 +0.44, LTA +0.53, HGF +0.58 vs CytoSig near zero).
 
-**SecAct novel discoveries:** Activin A (ρ up to 0.98 in scAtlas), CXCL12 (0.92), and BMP family members — secreted proteins with strong validated activity-expression correlations that would be missed by CytoSig's 43-cytokine panel. Full per-atlas top-15/bottom-15 lists in [supplement](stats_section_4.1.html#per-tissue-stratified).
+**SecAct novel discoveries:** Activin A/INHBA (ρ up to 0.69 scAtlas Cancer, 0.67 GTEx), CXCL12 (0.76 scAtlas Cancer, 0.70 GTEx), and BMP family — secreted proteins with strong activity-expression correlations missed by CytoSig's 43-target panel. Full per-atlas top-15/bottom-15 lists in [supplement](stats_section_4.1.html#per-tissue-stratified).
 
 ### 4.6 Cross-Atlas Consistency
 

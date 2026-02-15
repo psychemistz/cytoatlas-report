@@ -1661,12 +1661,12 @@ def generate_html(summary_table, boxplot_data, consistency_data, heatmap_data,
 <!-- SECTION 1 -->
 <h2 id="sec1">1. System Architecture and Design Rationale</h2>
 
+<h3>1.1 Architecture and Processing <a href="#sec-arch-detail" style="font-size:0.75em;font-weight:normal;color:var(--blue);text-decoration:none;">[Detailed Architecture &darr;]</a></h3>
+
 <div class="figure">
   <img src="data:image/png;base64,{fig_arch_b64}" alt="System Architecture" style="max-width:100%;">
   <div class="caption"><strong>System Architecture.</strong> CytoAtlas platform: users interact via a React SPA through Nginx and FastAPI (17 routers, JWT auth). The API serves two primary backends &mdash; a Data Query Service (DuckDB, 3 databases, 80+ tables) and an AI Chat Service with dual LLM (Mistral-Small-24B via vLLM + Claude fallback), RAG (LanceDB + MiniLM), and 22 data tools. An offline GPU pipeline (SLURM/A100) performs batch activity inference.</div>
 </div>
-
-<h3>1.1 Architecture and Processing</h3>
 
 <p><strong>Linear interpretability over complex models.</strong>
 Ridge regression (L2-regularized linear regression) was chosen deliberately over methods like autoencoders, graph neural networks, or foundation models. The resulting activity z-scores are <strong>conditional on the specific genes in the signature matrix</strong>, meaning every prediction can be traced to a weighted combination of known gene responses. This is critical for biological interpretation &mdash; a scientist can ask &ldquo;which genes drive the IFNG activity score in this sample?&rdquo; and get a direct answer.</p>
@@ -1900,65 +1900,36 @@ Ridge regression (L2-regularized linear regression) was chosen deliberately over
   <div class="caption"><strong>Figure 5.</strong> Top 15 (best) and bottom 15 (worst) correlated targets. Select signature type and dataset from dropdowns.</div>
 </div>
 
-<p><strong>Consistently well-correlated targets (&rho; &gt; 0.3 across multiple datasets):</strong></p>
+<p><strong>Consistently well-correlated targets:</strong></p>
 <ul>
-  <li><strong>IL1B</strong> (&rho; = 0.67 CIMA, 0.68 Inflammation Atlas Main) &mdash; canonical inflammatory cytokine</li>
-  <li><strong>TNFA</strong> (&rho; = 0.63 CIMA, 0.60 Inflammation Atlas Main) &mdash; master inflammatory regulator</li>
-  <li><strong>VEGFA</strong> (&rho; = 0.79 Inflammation Atlas Main, 0.92 scAtlas) &mdash; angiogenesis factor</li>
-  <li><strong>TGFB1/2/3</strong> (&rho; = 0.35&ndash;0.55 across datasets)</li>
-  <li><strong>BMP2/4</strong> (&rho; = 0.26&ndash;0.92 depending on dataset)</li>
+  <li><strong>IL1B</strong> (&rho; = 0.67 CIMA, 0.68 Inflammation Atlas Main, 0.72 scAtlas Cancer) &mdash; canonical inflammatory cytokine</li>
+  <li><strong>TNFA</strong> (&rho; = 0.63 CIMA, 0.58 Inflammation Atlas Main, 0.55 GTEx) &mdash; master inflammatory regulator</li>
+  <li><strong>VEGFA</strong> (&rho; = 0.79 Inflammation Atlas Main, 0.38 GTEx) &mdash; angiogenesis factor</li>
+  <li><strong>TGFB1/3</strong> (&rho; = 0.05&ndash;0.56, dataset-dependent; TGFB2 not in CytoSig panel)</li>
+  <li><strong>BMP2/4</strong> (&rho; = &minus;0.02&ndash;0.61, dataset-dependent)</li>
 </ul>
 
-<p><strong>Consistently poorly correlated targets (&rho; &lt; 0 in multiple datasets):</strong></p>
+<p><strong>Dataset-dependent targets (negative in single-cell, positive in bulk):</strong></p>
 <ul>
-  <li><strong>CD40L</strong> (&rho; = &minus;0.48 CIMA, &minus;0.56 Inflammation Atlas Main) &mdash; membrane-bound, not secreted</li>
-  <li><strong>TRAIL</strong> (&rho; = &minus;0.46 CIMA, &minus;0.55 Inflammation Atlas Main) &mdash; apoptosis inducer</li>
-  <li><strong>LTA</strong> (&rho; = &minus;0.33 CIMA), <strong>HGF</strong> (&rho; = &minus;0.25 CIMA)</li>
+  <li><strong>CD40L</strong>: &minus;0.48 CIMA, &minus;0.55 Inflammation Atlas Main, but <strong>+0.57 GTEx, +0.40 TCGA</strong></li>
+  <li><strong>TRAIL</strong>: &minus;0.46 CIMA, &minus;0.54 Inflammation Atlas Main, but <strong>+0.58 GTEx, +0.31 TCGA</strong></li>
+  <li><strong>LTA</strong>: &minus;0.33 CIMA, but +0.26 TCGA; <strong>HGF</strong>: &minus;0.25 CIMA, &minus;0.30 Inflammation Atlas Main, but <strong>+0.40 GTEx</strong></li>
 </ul>
-
-<!-- Gene mapping verification and mechanistic analysis -->
-<div class="callout amber">
-<p><strong>Gene mapping verified:</strong> All four targets are correctly mapped (CD40L&rarr;CD40LG, TRAIL&rarr;TNFSF10, LTA&rarr;LTA, HGF&rarr;HGF). No gene ID confusion exists. The poor correlations reflect specific molecular mechanisms:</p>
-</div>
-
-<table>
-  <tr><th>Target</th><th>Gene</th><th>Dominant Mechanism</th><th>Contributing Factors</th></tr>
-  <tr>
-    <td><strong>CD40L</strong></td><td>CD40LG</td>
-    <td>Platelet-derived sCD40L invisible to scRNA-seq (~95% of circulating CD40L); ADAM10-mediated membrane shedding</td>
-    <td>Unstable mRNA (3&prime;-UTR destabilizing element); transient expression kinetics (peak 6&ndash;8h post-activation); paracrine disconnect (T cell &rarr; B cell/DC)</td>
-  </tr>
-  <tr>
-    <td><strong>TRAIL</strong></td><td>TNFSF10</td>
-    <td>Three decoy receptors (DcR1/TNFRSF10C, DcR2/TNFRSF10D, OPG/TNFRSF11B) competitively sequester ligand without signaling</td>
-    <td>Non-functional splice variants (TRAIL-beta, TRAIL-gamma lack exon 3) inflate mRNA counts; cathepsin E-mediated shedding; apoptosis-induced survival bias in scRNA-seq data</td>
-  </tr>
-  <tr>
-    <td><strong>LTA</strong></td><td>LTA</td>
-    <td>Obligate heteromeric complex with LTB: the dominant form (LT&alpha;1&beta;2) requires <em>LTB</em> co-expression and signals through LTBR, not TNFR1/2</td>
-    <td>Mathematical collinearity with TNFA in ridge regression (LTA3 homotrimer binds the same TNFR1/2 receptors as TNF-&alpha;); 7 known splice variants; low/transient expression</td>
-  </tr>
-  <tr>
-    <td><strong>HGF</strong></td><td>HGF</td>
-    <td>Obligate mesenchymal-to-epithelial paracrine topology: HGF produced by fibroblasts/stellate cells, MET receptor on epithelial cells</td>
-    <td>Secreted as inactive pro-HGF requiring proteolytic cleavage by HGFAC/uPA (post-translational activation is rate-limiting); ECM/heparin sequestration creates stored protein pool invisible to transcriptomics</td>
-  </tr>
-</table>
 
 <div class="callout">
-<p><strong>Key insight:</strong> None of these targets have isoforms or subunits mapping to different gene IDs that would cause gene ID confusion. The poor correlations are supposedly driven by <strong>post-translational regulation</strong> (membrane shedding, proteolytic activation, decoy receptor sequestration), <strong>paracrine signaling topology</strong> (producer and responder cells are different cell types), and <strong>heteromeric complex dependence</strong> (LTA requires LTB). These represent fundamental limitations of correlating ligand mRNA abundance and predicted activity as validation strategy of cytokine activity prediction model.</p>
+<p><strong>Platform-dependent pattern:</strong> Gene mapping is verified (CD40L&rarr;CD40LG, TRAIL&rarr;TNFSF10, LTA&rarr;LTA, HGF&rarr;HGF). The negative single-cell correlations likely reflect pseudobulk aggregation effects&mdash;membrane shedding (CD40L), decoy receptor sequestration (TRAIL), heteromeric complex dependence (LTA/LTB), and paracrine topology (HGF: fibroblast&rarr;epithelial) disproportionately affect cell-level inference. Bulk RNA-seq, which averages across tissue, captures the net activity signal and yields positive correlations for the same targets.</p>
 </div>
 
 <div class="callout amber">
-<p><strong>However, SecAct rescues all four targets.</strong> The poor correlations above are <strong>CytoSig-specific</strong>, not universal. SecAct achieves strong positive correlations for every one of these targets (mean &rho; across datasets):</p>
+<p><strong>SecAct achieves consistent positive &rho; across all 6 datasets</strong> for these targets, while CytoSig performance is platform-dependent (mean &rho; across 6 datasets):</p>
 <table style="margin:0.5em 0;">
-  <tr><th>Target</th><th>CytoSig Gene</th><th>CytoSig Mean &rho;</th><th>SecAct Gene</th><th>SecAct Mean &rho;</th></tr>
-  <tr><td>CD40L</td><td>CD40LG</td><td>&minus;0.006</td><td>CD40LG</td><td><strong>+0.420</strong></td></tr>
-  <tr><td>TRAIL</td><td>TNFSF10</td><td>&minus;0.016</td><td>TNFSF10</td><td><strong>+0.418</strong></td></tr>
-  <tr><td>LTA</td><td>LTA</td><td>&minus;0.019</td><td>LTA</td><td><strong>+0.474</strong></td></tr>
-  <tr><td>HGF</td><td>HGF</td><td>+0.034</td><td>HGF</td><td><strong>+0.540</strong></td></tr>
+  <tr><th>Target</th><th>CytoSig Mean &rho;</th><th>SecAct Mean &rho;</th></tr>
+  <tr><td>CD40LG</td><td>+0.02</td><td><strong>+0.46</strong></td></tr>
+  <tr><td>TNFSF10</td><td>&minus;0.00</td><td><strong>+0.44</strong></td></tr>
+  <tr><td>LTA</td><td>&minus;0.02</td><td><strong>+0.53</strong></td></tr>
+  <tr><td>HGF</td><td>+0.06</td><td><strong>+0.58</strong></td></tr>
 </table>
-<p>The key difference is <strong>how the signature matrices are constructed</strong>. CytoSig derives signatures from <strong>log2 fold-change in cytokine stimulation experiments</strong> (in vitro), which fails when the relationship between ligand mRNA and downstream activity is confounded by post-translational regulation, decoy receptors, or paracrine topology. SecAct derives signatures from <strong>spatial co-expression correlations</strong> (Moran&rsquo;s I across 1,000+ Visium spatial transcriptomics datasets), which captures the actual tissue-level gene&ndash;protein relationships regardless of whether the signaling mechanism involves membrane shedding, proteolytic activation, or cross-cell-type paracrine signaling. Select &ldquo;SecAct&rdquo; in the dropdown above to verify these correlations interactively.</p>
+<p>SecAct&rsquo;s spatial co-expression signatures (Moran&rsquo;s I from Visium data) capture tissue-level gene&ndash;protein relationships regardless of membrane shedding, proteolytic activation, or paracrine topology. Select &ldquo;SecAct&rdquo; in the dropdown to verify interactively.</p>
 </div>
 
 <!-- Item 10: Interactive consistency plot -->
