@@ -36,10 +36,10 @@ Files must stay in sync across three locations. After editing any synced file, c
 
 | File | Owner | Since | Notes |
 |------|-------|-------|-------|
-| `scripts/generate_interactive_report.py` | — | — | §4 restructured, synced |
+| `scripts/generate_interactive_report.py` | — | — | §4.4 stats added, synced |
 | `scripts/generate_report_figures.py` | — | — | Figure 1 updated, synced |
 | `baseline/index.html` | — | — | Regenerated and synced |
-| `baseline/REPORT.md` | — | — | §4 restructured: §4.3.1→§4.4, renumbered §4.4-4.6→§4.5-4.7 |
+| `baseline/REPORT.md` | — | — | §4.4 stats description added |
 | `baseline/stats_section_4.*.html` | Session A | 2026-02-14 | Adding SecAct (matched) rows to all 4.1 tables |
 | `CLAUDE.md` | — | — | Report Sections table updated |
 | `SESSION_HANDOFF.md` | — | — | |

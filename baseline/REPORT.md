@@ -220,7 +220,7 @@ Four datasets have per-stratum breakdowns:
 
 > **Figure 4c** (`fig4c_cross_platform_concordance.png`): Cross-platform concordance scatter (GTEx vs scAtlas Normal, TCGA vs scAtlas Cancer).
 
-This section tests whether expression-activity relationships replicate across measurement technologies. For each matching tissue or cancer type, per-target Spearman ρ from bulk RNA-seq is compared to the same target's ρ from single-cell pseudobulk.
+This section tests whether expression-activity relationships replicate across measurement technologies. For each matching tissue or cancer type, per-target Spearman ρ from bulk RNA-seq is compared to the same target's ρ from single-cell pseudobulk. Per-stratum Wilcoxon signed-rank tests (paired by target) with BH-FDR correction are used to test whether ρ values differ systematically between platforms.
 
 **GTEx vs scAtlas Normal** (13 matching tissues: Blood, Breast, Colon, Esophagus, Heart, Kidney, Liver, Lung, Ovary, Skin, Small Intestine, Spleen, Uterus): Per-tissue CytoSig concordance ranges from ρ = −0.10 (Uterus) to 0.49 (Breast, Liver), with most tissues showing moderate positive concordance.
 

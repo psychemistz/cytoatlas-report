@@ -883,11 +883,13 @@ def prepare_cross_platform_data(df):
 
     Compares bulk RNA-seq (GTEx/TCGA) vs single-cell pseudobulk (scAtlas)
     for matching tissues/cancer types. For each pair, computes per-target
-    Spearman ρ and returns side-by-side distributions.
+    Spearman ρ distributions, concordance, and Wilcoxon signed-rank tests
+    (paired by target) with BH-FDR correction.
 
     GTEx by_tissue vs scAtlas Normal donor_organ: matching tissues
     TCGA primary_by_cancer vs scAtlas Cancer tumor_by_cancer: matching cancers
     """
+    from statsmodels.stats.multitest import multipletests
     # Tissue name mapping: GTEx name → scAtlas Normal name
     TISSUE_MAP = {
         'Blood': 'Blood', 'Breast': 'Breast', 'Colon': 'Colon',
@@ -960,7 +962,31 @@ def prepare_cross_platform_data(df):
                         'concordance_rho': round(float(rho_corr), 3),
                         'n_shared': int(len(merged)),
                     }
+
+                # Wilcoxon signed-rank test: bulk vs SC ρ (paired by target)
+                if len(merged) >= 6:
+                    _, wilcox_p = scipy_stats.wilcoxon(
+                        merged['rho_bulk'].values, merged['rho_sc'].values,
+                        alternative='two-sided')
+                    entry[f'{sig}_stats'] = {
+                        'test': 'Wilcoxon signed-rank',
+                        'p_raw': round(float(wilcox_p), 6),
+                        'n_paired': int(len(merged)),
+                    }
             comp_data['data'][display_name] = entry
+
+        # BH-FDR correction per signature across strata
+        for sig in ['cytosig', 'secact']:
+            stats_key = f'{sig}_stats'
+            strata_with_stats = [s for s in comp_data['strata']
+                                 if stats_key in comp_data['data'][s]]
+            if strata_with_stats:
+                pvals = [comp_data['data'][s][stats_key]['p_raw']
+                         for s in strata_with_stats]
+                _, qvals, _, _ = multipletests(pvals, method='fdr_bh')
+                for i, s in enumerate(strata_with_stats):
+                    comp_data['data'][s][stats_key]['q_bh'] = round(
+                        float(qvals[i]), 6)
 
         result[comparison] = comp_data
 
@@ -1766,7 +1792,7 @@ Ridge regression (L2-regularized linear regression) was chosen deliberately over
 </div>
 
 <div class="callout">
-<p><strong>Cross-platform concordance:</strong> This section tests whether expression-activity relationships replicate across measurement technologies. For each tissue (GTEx) or cancer type (TCGA), we compute per-target Spearman &rho; from bulk RNA-seq data and compare it to the same target&rsquo;s &rho; from single-cell pseudobulk data (scAtlas). High concordance between platforms would indicate that cytokine activity inference is robust to the underlying measurement technology.</p>
+<p><strong>Cross-platform concordance:</strong> This section tests whether expression-activity relationships replicate across measurement technologies. For each tissue (GTEx) or cancer type (TCGA), we compute per-target Spearman &rho; from bulk RNA-seq data and compare it to the same target&rsquo;s &rho; from single-cell pseudobulk data (scAtlas). Per-stratum Wilcoxon signed-rank tests (paired by target) with BH-FDR correction assess whether &rho; values differ systematically between platforms. High concordance between platforms would indicate that cytokine activity inference is robust to the underlying measurement technology.</p>
 </div>
 
 <h3>4.5 Best and Worst Correlated Targets</h3>
@@ -2447,6 +2473,7 @@ window.renderCrossPlatform = function(sig) {{
 
   var bulkKey = sig + '_bulk';
   var scKey = sig + '_sc';
+  var statsKey = sig + '_stats';
 
   // Build grouped boxplot traces
   var bulkY = [], bulkX = [], scY = [], scX = [];
@@ -2474,6 +2501,21 @@ window.renderCrossPlatform = function(sig) {{
     }},
   ];
 
+  // Significance annotations — anchored to right margin
+  var annotations = [];
+  strata.forEach(function(s) {{
+    var entry = d[s];
+    if (!entry) return;
+    var st = entry[statsKey];
+    if (st && st.q_bh !== undefined && st.q_bh !== null) {{
+      annotations.push({{
+        x: 1.01, y: s, xref: 'paper', yref: 'y',
+        text: sigStars(st.q_bh), showarrow: false,
+        font: {{size: 9, color: '#374151'}}, xanchor: 'left',
+      }});
+    }}
+  }});
+
   var height = Math.max(400, strata.length * 55 + 140);
   document.getElementById('crossplat-chart').style.height = height + 'px';
 
@@ -2485,12 +2527,14 @@ window.renderCrossPlatform = function(sig) {{
     boxmode: 'group',
     legend: {{orientation: 'h', y: 1.05, x: 0.5, xanchor: 'center'}},
     margin: {{t: 60, l: 200, b: 50, r: 50}},
+    annotations: annotations,
   }}, PLOTLY_CONFIG);
 
   document.getElementById('crossplat-caption').innerHTML =
     '<strong>Figure 4.</strong> Cross-platform concordance (' + sigLabel + '): per-target Spearman \\u03c1 from ' +
     labelBulk + ' (bulk RNA-seq) vs ' + labelSC + ' (single-cell pseudobulk) for matching ' +
-    (comp.indexOf('GTEx') >= 0 ? 'tissues' : 'cancer types') + '.';
+    (comp.indexOf('GTEx') >= 0 ? 'tissues' : 'cancer types') +
+    '. Wilcoxon signed-rank test (paired by target), BH-FDR corrected. Significance: *** q&lt;0.001, ** q&lt;0.01, * q&lt;0.05.';
 }};
 renderCrossPlatform('cytosig');
 
