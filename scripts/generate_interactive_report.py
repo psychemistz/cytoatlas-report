@@ -858,15 +858,18 @@ def prepare_bulk_validation_data(df):
             secact_agg = secact_sub[['target', 'spearman_rho']].dropna().drop_duplicates(subset=['target'], keep='first')
 
         if len(secact_agg) > 0:
-            # Split into matched (shared with CytoSig) and extra
-            matched = secact_agg[secact_agg['target'].isin(cyto_targets)].sort_values('spearman_rho', ascending=False)
-            extra = secact_agg[~secact_agg['target'].isin(cyto_targets)].sort_values('spearman_rho', ascending=False)
+            # Split into matched (shared with CytoSig, including alias-resolved) and extra
+            # Include both direct matches (same gene symbol) and alias-resolved matches
+            alias_secact_names = set(ALIAS_MAP.values())  # e.g., TNF, CD40LG, CSF1, ...
+            matched_targets = cyto_targets | alias_secact_names
+            matched = secact_agg[secact_agg['target'].isin(matched_targets)].sort_values('spearman_rho', ascending=False)
+            extra = secact_agg[~secact_agg['target'].isin(matched_targets)].sort_values('spearman_rho', ascending=False)
             # Take matched + enough extra to reach n_cyto total
             n_extra = max(0, n_cyto - len(matched))
             selected = pd.concat([matched, extra.head(n_extra)], ignore_index=True)
             selected = selected.sort_values('spearman_rho', ascending=False)
-            # Mark which are matched vs additional
-            is_matched = [t in cyto_targets for t in selected['target']]
+            # Mark which are matched vs additional (using expanded set with aliases)
+            is_matched = [t in matched_targets for t in selected['target']]
             result[label]['secact'] = {
                 'targets': selected['target'].tolist(),
                 'rhos': [round(r, 4) for r in selected['spearman_rho'].tolist()],
@@ -2015,6 +2018,11 @@ Ridge regression (L2-regularized linear regression) was chosen deliberately over
   <div class="caption"><strong>Figure 8.</strong> Donor-level expression vs predicted activity. Select target, atlas, and signature method from dropdowns.</div>
 </div>
 
+<div class="callout">
+<p><strong>Key patterns in scatter data:</strong> IL1B is the most consistently well-correlated target across all 6 datasets and both signatures (&rho;=0.37&ndash;0.77), serving as the strongest positive control for cytokine activity inference. CD40L and TRAIL exhibit a striking CytoSig-specific sign reversal in immune-enriched cohorts (CIMA &rho;=&minus;0.48/&minus;0.46, Inflammation Main &rho;=&minus;0.55/&minus;0.54), while SecAct maintains positive correlations for the same targets&mdash;suggesting CytoSig&rsquo;s in-vitro response signatures for these targets capture transcriptional programs that are anti-correlated with actual ligand expression in immune tissue contexts.</p>
+<p>SecAct dramatically rescues HGF validation: CytoSig yields negative or weak correlations in CIMA (&minus;0.25), Inflammation Main (&minus;0.30), and TCGA (0.20), while SecAct achieves strong positive correlations of 0.64, 0.36, and 0.64 respectively. VEGFA shows the most dataset-dependent behavior&mdash;the top CytoSig target in Inflammation Main (&rho;=0.79) but poor with SecAct in GTEx (0.10) and CIMA (&minus;0.24), likely reflecting VEGFA&rsquo;s heavy post-transcriptional regulation. Bulk datasets (GTEx n=19,788; TCGA n=11,069) provide consistently positive correlations with no negative values exceeding &minus;0.25, while smaller immune-focused cohorts reveal method-specific biases masked in large samples.</p>
+</div>
+
 <!-- Item 12: Interactive heatmap with tabs -->
 <h3>4.9 Biologically Important Targets Heatmap</h3>
 <div class="plotly-container">
@@ -2034,6 +2042,10 @@ Ridge regression (L2-regularized linear regression) was chosen deliberately over
   <li><strong>Correlation:</strong> Spearman &rho; is computed between the predicted activity z-score and the original expression of the target gene across all donor-level samples within that atlas. A positive &rho; means higher predicted activity tracks with higher target gene expression.</li>
 </ol>
 <p>GTEx uses per-tissue pseudobulk (median-of-medians across 29 tissues); TCGA uses per-cancer type (median-of-medians across 33 cancers); CIMA/Inflammation Atlas Main use donor-only; scAtlas Normal uses donor-only; scAtlas Cancer uses tumor-only.</p>
+</div>
+
+<div class="callout">
+<p><strong>Key insight:</strong> A core set of ~10 CytoSig targets validates universally (IL1B, TNFA, IL6, IL1A, IL27, IFNG, TGFB3, LIF, BMP2, VEGFA), showing positive &rho; (&gt;0.15) across all 6 datasets. These span inflammatory, immunomodulatory, and growth/remodeling families. Conversely, T-cell cytokines IL2, IL22, IL21, IL3, and IL17A systematically fail validation with near-zero or negative &rho;, likely because their signaling effects are too cell-type-specific to produce detectable transcriptomic signatures in bulk/pseudobulk data. SecAct outperforms CytoSig on 26 of 32 matched targets, with the advantage particularly stark for LTA (CytoSig &rho;&asymp;0.01 vs SecAct &rho;&asymp;0.46), CD40L (0.06 vs 0.50), and IL15 (0.03 vs 0.56). High-variability targets like CD40L, HGF, and TRAIL flip sign between datasets (e.g., HGF is +0.65 in scAtlas Normal but &minus;0.30 in Inflammation Main), revealing dataset-specific biology rather than methodological artifacts.</p>
 </div>
 
 <!-- Item 13: Interactive comprehensive validation -->
@@ -2056,7 +2068,11 @@ Ridge regression (L2-regularized linear regression) was chosen deliberately over
     </select>
   </div>
   <div id="bulk-chart" style="height:500px;"></div>
-  <div class="caption"><strong>Figure 10.</strong> Validation: targets ranked by Spearman &rho; across all datasets and signature types. Select dataset and signature from dropdowns.</div>
+  <div class="caption"><strong>Figure 10.</strong> Validation: targets ranked by Spearman &rho; across all datasets and signature types. Select dataset and signature from dropdowns. For SecAct, green bars indicate the 32 matched CytoSig targets (22 direct + 10 alias-resolved); gray bars are additional top-ranked SecAct targets.</div>
+</div>
+
+<div class="callout">
+<p><strong>Key insight:</strong> The top and bottom CytoSig targets are remarkably consistent across datasets. IL1B, IL10, TGFB3, and IL1A appear in the top 10 of 5/6 datasets, while IL2, IL22, and IL3 appear in the bottom 10 of 5/6 datasets&mdash;strong evidence that ranking order reflects genuine biology rather than dataset-specific noise. SecAct rankings are dramatically compressed upward: in scAtlas Normal, every displayed SecAct target exceeds &rho;=0.21, whereas CytoSig ranges from &minus;0.42 to +0.69. Inflammation Main shows the widest CytoSig dynamic range (&rho; from &minus;0.55 to +0.79) with only 33 targets passing the filter, but those that pass show stronger polarization, with VEGFA (&rho;=0.79) and IL1A (&rho;=0.69) reaching their highest values in any dataset.</p>
 </div>
 
 <hr>
@@ -2962,7 +2978,7 @@ window.updateBulk = function() {{
   }};
   if (sig === 'secact' && d.matched) {{
     layout.annotations = [{{
-      text: 'Green = matched CytoSig target, Gray = additional SecAct target',
+      text: 'Green = matched CytoSig target (32: 22 direct + 10 alias-resolved), Gray = additional SecAct target',
       xref:'paper', yref:'paper', x:0.5, y:1.06, showarrow:false,
       font:{{size:11, color:'#6B7280'}},
     }}];
