@@ -38,10 +38,10 @@ Files must stay in sync across three locations. After editing any synced file, c
 
 | File | Owner | Since | Notes |
 |------|-------|-------|-------|
-| `scripts/generate_interactive_report.py` | — | — | Section 5 links to lincytosig_issues.html added |
+| `scripts/generate_interactive_report.py` | — | — | §5 restructured: 3 focused subsections, 7-target comparison |
 | `scripts/generate_report_figures.py` | — | — | fig_system_architecture() redesigned as top-to-bottom system design diagram |
-| `baseline/index.html` | — | — | Regenerated with Section 5 links |
-| `baseline/lincytosig_issues.html` | — | — | 7-target donor + celltype comparison sections added |
+| `baseline/index.html` | — | — | Regenerated with new §5 (Figures 11-12) |
+| `baseline/lincytosig_issues.html` | — | — | Old §5.1-5.3 content archived as static sections |
 | `baseline/REPORT.md` | — | — | §4.5 tables fixed: +Activin A, +MCSF, remaining 5 noted |
 | `baseline/stats_section_4.*.html` | — | — | §4.4 matched-target control tables added |
 | `CLAUDE.md` | — | — | Report Sections table updated |
@@ -51,6 +51,7 @@ Files must stay in sync across three locations. After editing any synced file, c
 ## Messages
 
 <!-- Newest first. Format: [A->B] or [B->A] -->
+- [F 2026-02-15] Restructured Section 5: replaced 10-way method comparison (§5.1), aggregation level analysis (§5.2), SecAct breadth (§5.3) with focused 3-subsection structure: §5.1 Donor-Level 7 Representative Targets (Figure 11), §5.2 Celltype-Level Evaluation (Figure 12), §5.3 Limitations narrative. Old content archived to lincytosig_issues.html. Removed ~376 lines from script, removed Figure 13.
 - [E 2026-02-15] Added two new sections to lincytosig_issues.html: (1) "7-Target Donor-Level Comparison" — per-target and median rho across all 6 datasets for CytoSig/LinCytoSig/SecAct on 7 representative pairs. LinCytoSig wins median in 2/6 datasets, wins 15/42 per-target. (2) "7-Target Celltype-Level Comparison" — matched celltype pseudobulk across 4 SC datasets. LinCytoSig wins IL6/VEGFA/IL2 in scAtlas Normal, loses TNFA/TGFB1 everywhere. CIMA/Inflam Main use Myeloid/Mono proxies with footnotes. Updated stat cards and core answer.
 - [D 2026-02-15] Updated Issue 3 in lincytosig_issues.html: replaced preliminary TGFB1-only table with 8 representative celltype-cytokine pairs (IL6×macrophage, VEGFA×Endothelial, IL2×CD8T, IFNG×macrophage, IFNG×Monocyte, IL10×macrophage, TNFA×macrophage, TGFB1×Fibroblast). Added IFNG paradox section showing donor-level advantage does not transfer to celltype level. Winners first: LinCytoSig 3/8, Tie 3/8, CytoSig 2/8. Changed Issue 3 badge OPEN→PARTIAL. Updated stat card 5/43→3/8.
 - [C 2026-02-15] Created baseline/lincytosig_issues.html (standalone issues document with 6 issues: selection circularity, case studies, celltype-level evaluation, gene space effect, PBMC paradox, cross-validation design). Added 3 links from Section 5 of interactive report. Regenerated HTML, synced all 3 locations.

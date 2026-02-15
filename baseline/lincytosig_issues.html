@@ -233,6 +233,9 @@
     <li><a href="#donor7">7-Target Donor-Level Comparison</a> <span class="badge">NEW</span></li>
     <li><a href="#celltype7">7-Target Celltype-Level Comparison</a> <span class="badge">NEW</span></li>
     <li><a href="#restructure">Proposed Section 5 Restructuring</a></li>
+    <li><a href="#full10way">Full 10-Way Method Comparison</a> <span class="badge">ARCHIVED</span></li>
+    <li><a href="#levelanalysis">Aggregation Level Analysis</a> <span class="badge">ARCHIVED</span></li>
+    <li><a href="#deltarho">Per-Celltype &Delta;&rho; Summary</a> <span class="badge">ARCHIVED</span></li>
   </ul>
 </div>
 
@@ -1933,6 +1936,106 @@
 <div class="callout amber">
 <p><strong>Overall conclusion:</strong> At the celltype level, LinCytoSig&rsquo;s value is <strong>target-specific and dataset-dependent</strong>. It excels for IL6 and VEGFA in normal tissue (scAtlas Normal), where the biological match between signature origin (macrophage, HUVEC) and evaluation target (macrophage, endothelial pseudobulk) is strongest. However, it consistently loses for TNFA and TGFB1 &mdash; suggesting that for these cytokines, CytoSig&rsquo;s broader gene set captures the signaling response better than the cell-type-restricted signature, even when evaluated on the &ldquo;right&rdquo; cell type.</p>
 </div>
+
+<hr>
+
+<!-- ======================================================================== -->
+<!-- ARCHIVED: Full 10-Way Method Comparison (from old §5.1) -->
+<!-- ======================================================================== -->
+<h2 id="full10way">Full 10-Way Method Comparison <span class="badge">ARCHIVED</span></h2>
+
+<p class="subtitle">Moved from interactive report &sect;5.1. This section compares all 10 signature methods on identical matched pairs across 4 combined datasets (CIMA, Inflammation Atlas Main, scAtlas Normal, scAtlas Cancer).</p>
+
+<h3>Method Overview</h3>
+<table>
+  <tr>
+    <th>Method</th><th>Targets</th><th>Genes</th><th>Specificity</th><th>Selection</th>
+  </tr>
+  <tr><td><strong>CytoSig</strong></td><td>43 cytokines</td><td>4,881 curated</td><td>Global (all cell types)</td><td>&mdash;</td></tr>
+  <tr><td><strong>LinCytoSig (orig)</strong></td><td>178 (45 CT &times; cytokines)</td><td>All ~20K</td><td>Cell-type specific</td><td>Matched cell type</td></tr>
+  <tr><td><strong>LinCytoSig (gene-filtered)</strong></td><td>178</td><td>4,881 (CytoSig overlap)</td><td>Cell-type specific</td><td>Matched cell type</td></tr>
+  <tr><td><strong>LinCytoSig Best (combined)</strong></td><td>43 (1 per cytokine)</td><td>All ~20K</td><td>Best CT per cytokine</td><td>Max combined GTEx+TCGA &rho;</td></tr>
+  <tr><td><strong>LinCytoSig Best (comb+filt)</strong></td><td>43 (1 per cytokine)</td><td>4,881 (CytoSig overlap)</td><td>Best CT per cytokine</td><td>Max combined &rho; (filtered)</td></tr>
+  <tr><td><strong>LinCytoSig Best (GTEx)</strong></td><td>43 (1 per cytokine)</td><td>All ~20K</td><td>Best CT per cytokine</td><td>Max GTEx &rho;</td></tr>
+  <tr><td><strong>LinCytoSig Best (TCGA)</strong></td><td>43 (1 per cytokine)</td><td>All ~20K</td><td>Best CT per cytokine</td><td>Max TCGA &rho;</td></tr>
+  <tr><td><strong>LinCytoSig Best (GTEx+filt)</strong></td><td>43 (1 per cytokine)</td><td>4,881 (CytoSig overlap)</td><td>Best CT per cytokine</td><td>Max GTEx &rho; (filtered)</td></tr>
+  <tr><td><strong>LinCytoSig Best (TCGA+filt)</strong></td><td>43 (1 per cytokine)</td><td>4,881 (CytoSig overlap)</td><td>Best CT per cytokine</td><td>Max TCGA &rho; (filtered)</td></tr>
+  <tr><td><strong>SecAct</strong></td><td>1,170 secreted proteins</td><td>Spatial Moran&rsquo;s I</td><td>Global (all cell types)</td><td>&mdash;</td></tr>
+</table>
+<p style="font-size:0.85rem;color:var(--muted);">
+  <strong>Gene filter:</strong> LinCytoSig signatures restricted from ~20K to CytoSig&rsquo;s 4,881 curated genes.
+  <strong>Best selection:</strong> For each cytokine, test all cell-type-specific LinCytoSig signatures and select the one with the highest bulk RNA-seq correlation.
+</p>
+
+<h3>Key Findings</h3>
+<div class="callout">
+<ul>
+  <li><strong>SecAct achieves the highest median &rho;</strong> across all 4 combined datasets.</li>
+  <li><strong>CytoSig outperforms most LinCytoSig variants</strong> at donor level, with one notable exception: scAtlas Normal Best-orig (0.298) exceeds CytoSig (0.216).</li>
+  <li><strong>Gene filtering improves LinCytoSig</strong> in most datasets (CIMA +102%, Inflammation Atlas Main).</li>
+  <li><strong>GTEx-selected best</strong> performs comparably to combined-selected in most datasets but slightly better in scAtlas Cancer (0.300 vs 0.275).</li>
+  <li><strong>General ranking:</strong> SecAct &gt; CytoSig &gt; LinCytoSig Best variants &gt; LinCytoSig (filt) &gt; LinCytoSig (orig), though dataset-specific exceptions exist.</li>
+</ul>
+</div>
+
+<hr>
+
+<!-- ======================================================================== -->
+<!-- ARCHIVED: Aggregation Level Analysis (from old §5.2) -->
+<!-- ======================================================================== -->
+<h2 id="levelanalysis">Aggregation Level Analysis <span class="badge">ARCHIVED</span></h2>
+
+<p class="subtitle">Moved from interactive report &sect;5.2. At each cell-type aggregation level (CIMA: L1&ndash;L4; Inflammation: L1&ndash;L2; scAtlas: CT1&ndash;CT2), CytoSig, LinCytoSig, and SecAct are compared on identical matched pairs.</p>
+
+<h3>Summary</h3>
+<div class="callout amber">
+<p><strong>Key finding: Lineage-specific aggregation provides no systematic advantage at any level.</strong></p>
+<ul>
+  <li><strong>At every level, LinCytoSig underperforms CytoSig</strong> (mean &Delta;&rho; ranges from &minus;0.08 at coarse L1 to &minus;0.02 at fine L4 in CIMA). Finer cell types reduce the gap slightly but never close it.</li>
+  <li><strong>SecAct wins at every level</strong> in CIMA and scAtlas. In Inflammation Atlas Main L2, LinCytoSig is nearly tied with SecAct (&Delta;&rho; = +0.01) but still loses to CytoSig.</li>
+  <li><strong>Per cell type:</strong> Only 5 of 43 cell types show consistent LinCytoSig advantage vs CytoSig (NK Cell, Basophil, DC, Trophoblast, Arterial Endothelial). No cell type beats SecAct.</li>
+  <li><strong>Summary:</strong> LinCytoSig does not outperform CytoSig at any aggregation level tested. The gap narrows at finer levels but does not close.</li>
+</ul>
+</div>
+
+<p style="font-size:0.85rem;color:var(--muted);">Source: <code>level_comparison.json</code>. All methods evaluated on identical matched pairs per level. n = number of three-way matched pairs.</p>
+
+<hr>
+
+<!-- ======================================================================== -->
+<!-- ARCHIVED: Per-Celltype Δρ Summary (from old §5.3) -->
+<!-- ======================================================================== -->
+<h2 id="deltarho">Per-Celltype &Delta;&rho; Summary <span class="badge">ARCHIVED</span></h2>
+
+<p class="subtitle">Moved from interactive report &sect;5.3 (SecAct: Breadth Over Depth). Per-celltype mean &Delta;&rho; (LinCytoSig &minus; CytoSig) aggregated across 4 datasets at donor &times; celltype level.</p>
+
+<h3>Top 5 LinCytoSig-Advantaged Cell Types</h3>
+<table>
+  <tr><th>Cell Type</th><th>Mean &Delta;&rho;</th><th>Win/Loss (vs CytoSig)</th></tr>
+  <tr><td>Basophil</td><td style="color:#059669;font-weight:600;">+0.21</td><td>Favors LinCytoSig</td></tr>
+  <tr><td>NK Cell</td><td style="color:#059669;font-weight:600;">+0.19</td><td>Favors LinCytoSig</td></tr>
+  <tr><td>DC</td><td style="color:#059669;font-weight:600;">+0.18</td><td>Favors LinCytoSig</td></tr>
+  <tr><td>Trophoblast</td><td style="color:#059669;font-weight:600;">+0.09</td><td>Favors LinCytoSig</td></tr>
+  <tr><td>Arterial Endothelial</td><td style="color:#059669;font-weight:600;">+0.05</td><td>Favors LinCytoSig</td></tr>
+</table>
+
+<h3>Top 5 CytoSig-Advantaged Cell Types</h3>
+<table>
+  <tr><th>Cell Type</th><th>Mean &Delta;&rho;</th><th>Win/Loss (vs CytoSig)</th></tr>
+  <tr><td>Fibroblast</td><td style="color:#DC2626;font-weight:600;">&minus;0.28</td><td>Favors CytoSig</td></tr>
+  <tr><td>Hepatocyte</td><td style="color:#DC2626;font-weight:600;">&minus;0.22</td><td>Favors CytoSig</td></tr>
+  <tr><td>Smooth Muscle</td><td style="color:#DC2626;font-weight:600;">&minus;0.18</td><td>Favors CytoSig</td></tr>
+  <tr><td>Breast Cancer Line</td><td style="color:#DC2626;font-weight:600;">&minus;0.15</td><td>Favors CytoSig</td></tr>
+  <tr><td>Epithelial</td><td style="color:#DC2626;font-weight:600;">&minus;0.12</td><td>Favors CytoSig</td></tr>
+</table>
+
+<h3>SecAct Breadth</h3>
+<ul>
+  <li><strong>Highest median &rho;</strong> in single-cell datasets (scAtlas Normal: 0.455, Cancer: 0.399, independence-corrected)</li>
+  <li><strong>Highest median &rho;</strong> in bulk RNA-seq (GTEx: 0.314, TCGA: 0.357, independence-corrected median-of-medians)</li>
+  <li><strong>95.8% positive correlation</strong> in TCGA (independence-corrected)</li>
+  <li><strong>Wins decisively at celltype level</strong> against both CytoSig and LinCytoSig in scAtlas (19/3 wins vs CytoSig in scAtlas Normal, 20/2 in Cancer)</li>
+</ul>
 
 <hr>
 

@@ -41,7 +41,6 @@ LINCYTO_FILT_DIR = BASE / 'results' / 'lincytosig_gene_filter'
 BEST_SELECTION = VIZ_DIR / 'best_lincytosig_selection.json'
 SCATTER_DONOR = VIZ_DIR / 'donor_scatter'
 SCATTER_CT = VIZ_DIR / 'celltype_scatter'
-LEVEL_COMPARISON_PATH = VIZ_DIR / 'level_comparison.json'
 REPORT_DIR = BASE / 'report'
 
 # ─── Atlas ordering (item 9): bulk, CIMA, Inflammation, scAtlas ───────────────
@@ -114,11 +113,6 @@ def load_all_correlations():
     merged = pd.concat(dfs, ignore_index=True)
     merged = merged.drop_duplicates(subset=['target', 'celltype', 'atlas', 'level', 'signature'])
     return merged
-
-
-def load_method_comparison():
-    with open(VIZ_DIR / 'method_comparison.json') as f:
-        return json.load(f)
 
 
 def load_scatter(directory, filename):
@@ -501,62 +495,6 @@ def prepare_stratified_data(df):
             'data': strata_data,
         }
 
-    return result
-
-
-def prepare_method_comparison_boxplot(df):
-    """Prepare rho arrays for section 5.1 boxplot — 10-way method comparison.
-
-    Loads pre-computed comparison data (ridge regression on pseudobulk)
-    for 4 combined atlases: CIMA, Inflammation Atlas Main, scAtlas Normal/Cancer.
-
-    Ten methods:
-      1. CytoSig — 43 cytokines, 4,881 curated genes (global)
-      2. LinCytoSig (orig) — cell-type-matched signatures, all ~20K genes
-      3. LinCytoSig (gene-filtered) — cell-type-matched, restricted to CytoSig 4,881 genes
-      4. LinCytoSig (best-bulk, orig) — best per cytokine via combined GTEx+TCGA, all genes
-      5. LinCytoSig (best-bulk, filtered) — best combined bulk, CytoSig genes only
-      6. LinCytoSig (best GTEx) — best per cytokine via GTEx only, all genes
-      7. LinCytoSig (best TCGA) — best per cytokine via TCGA only, all genes
-      8. LinCytoSig (best GTEx, filtered) — GTEx-selected, CytoSig genes only
-      9. LinCytoSig (best TCGA, filtered) — TCGA-selected, CytoSig genes only
-     10. SecAct — 1,170 secreted proteins
-    """
-    eightway_path = VIZ_DIR / 'method_comparison_8way_all.json'
-    if not eightway_path.exists():
-        eightway_path = VIZ_DIR / 'method_comparison_6way_all.json'
-    if not eightway_path.exists():
-        print(f'  WARNING: no comparison JSON found — falling back to empty')
-        return {}
-
-    with open(eightway_path) as f:
-        data = json.load(f)
-
-    # Map atlas keys in JSON to display labels
-    atlas_key_to_label = {
-        'CIMA': 'CIMA',
-        'Inflammation Atlas': 'Inflammation Atlas Main',
-        'scAtlas Normal': 'scAtlas (Normal)',
-        'scAtlas Cancer': 'scAtlas (Cancer)',
-    }
-
-    # Method keys match the JSON keys directly
-    method_keys = ['cytosig', 'lincyto_orig', 'lincyto_filt',
-                   'lincyto_best_orig', 'lincyto_best_filt',
-                   'lincyto_best_gtex', 'lincyto_best_tcga',
-                   'lincyto_best_gtex_filt', 'lincyto_best_tcga_filt', 'secact']
-
-    result = {}
-    for src_key, label in atlas_key_to_label.items():
-        if src_key not in data:
-            continue
-        atlas_data = data[src_key]
-        entry = {}
-        for key in method_keys:
-            vals = atlas_data.get(key, [])
-            if vals:
-                entry[key] = [round(v, 4) for v in vals]
-        result[label] = entry
     return result
 
 
@@ -1093,236 +1031,6 @@ def prepare_scatter_data():
     return result
 
 
-def prepare_celltype_comparison(df):
-    """Prepare three-way celltype-level comparison: LinCytoSig vs CytoSig vs SecAct.
-
-    Returns:
-      - scatter: per-atlas LinCytoSig vs CytoSig scatter points (for interactive chart)
-      - celltype_table: per-celltype win/loss summary (Δρ vs CytoSig and vs SecAct)
-      - cytokine_table: per-cytokine win/loss summary
-      - overall: aggregate win/loss counts and mean Δρ
-    """
-    mc = load_method_comparison()
-    if not mc:
-        return {}
-    categories = mc.get('categories', [])
-    matched = mc.get('matched_targets', {})
-    cyto_rhos = mc.get('cytosig', {}).get('rhos', {})
-    lin_rhos = mc.get('lincytosig', {}).get('rhos', {})
-    sec_rhos = mc.get('secact', {}).get('rhos', {})
-
-    cat_keys = [c['key'] for c in categories]
-
-    # 1) Per-atlas scatter data (LinCytoSig vs CytoSig)
-    scatter = {}
-    for cat in categories:
-        key = cat['key']
-        label = cat['label'].replace('Inflammation Atlas', 'Inflammation Atlas Main')
-        points = []
-        for lin_target, mapping in matched.items():
-            cyto_target = mapping.get('cytosig')
-            if not cyto_target:
-                continue
-            cyto_val = cyto_rhos.get(cyto_target, {}).get(key)
-            lin_val = lin_rhos.get(lin_target, {}).get(key)
-            if cyto_val is not None and lin_val is not None:
-                points.append({
-                    'target': lin_target,
-                    'cytosig': round(float(cyto_val), 4),
-                    'lincytosig': round(float(lin_val), 4),
-                })
-        n_lin_win = sum(1 for p in points if p['lincytosig'] > p['cytosig'])
-        n_cyto_win = sum(1 for p in points if p['cytosig'] > p['lincytosig'])
-        scatter[label] = {
-            'points': points,
-            'n_lin_win': n_lin_win,
-            'n_cyto_win': n_cyto_win,
-            'n_tie': len(points) - n_lin_win - n_cyto_win,
-        }
-
-    # 2) Per-celltype table (aggregated across all atlases)
-    from collections import defaultdict
-    ct_vs_cyto = defaultdict(list)
-    ct_vs_sec = defaultdict(list)
-    for lin_target, mapping in matched.items():
-        parts = lin_target.split('__')
-        if len(parts) != 2:
-            continue
-        ct, cyto = parts
-        cyto_target = mapping.get('cytosig')
-        sec_target = mapping.get('secact')
-        for key in cat_keys:
-            lin_val = lin_rhos.get(lin_target, {}).get(key)
-            if lin_val is not None and cyto_target and cyto_target in cyto_rhos:
-                cyto_val = cyto_rhos[cyto_target].get(key)
-                if cyto_val is not None:
-                    ct_vs_cyto[ct].append(lin_val - cyto_val)
-            if lin_val is not None and sec_target and sec_target in sec_rhos:
-                sec_val = sec_rhos[sec_target].get(key)
-                if sec_val is not None:
-                    ct_vs_sec[ct].append(lin_val - sec_val)
-
-    celltype_table = []
-    for ct in sorted(ct_vs_cyto, key=lambda c: sum(1 for d in ct_vs_cyto[c] if d > 0) / max(len(ct_vs_cyto[c]), 1), reverse=True):
-        diffs_cyto = ct_vs_cyto[ct]
-        diffs_sec = ct_vs_sec.get(ct, [])
-        sem_cyto = float(np.std(diffs_cyto) / np.sqrt(len(diffs_cyto))) if len(diffs_cyto) > 1 else 0.0
-        sem_sec = float(np.std(diffs_sec) / np.sqrt(len(diffs_sec))) if len(diffs_sec) > 1 else 0.0
-        celltype_table.append({
-            'celltype': ct,
-            'vs_cyto_mean': round(float(sum(diffs_cyto) / len(diffs_cyto)), 4) if diffs_cyto else None,
-            'vs_cyto_sem': round(sem_cyto, 4),
-            'vs_cyto_win': sum(1 for d in diffs_cyto if d > 0),
-            'vs_cyto_loss': sum(1 for d in diffs_cyto if d < 0),
-            'vs_cyto_n': len(diffs_cyto),
-            'vs_sec_mean': round(float(sum(diffs_sec) / len(diffs_sec)), 4) if diffs_sec else None,
-            'vs_sec_sem': round(sem_sec, 4),
-            'vs_sec_win': sum(1 for d in diffs_sec if d > 0),
-            'vs_sec_loss': sum(1 for d in diffs_sec if d < 0),
-            'vs_sec_n': len(diffs_sec),
-        })
-
-    # 3) Per-cytokine table
-    cyto_vs_cyto = defaultdict(list)
-    cyto_vs_sec = defaultdict(list)
-    for lin_target, mapping in matched.items():
-        parts = lin_target.split('__')
-        if len(parts) != 2:
-            continue
-        ct, cyto = parts
-        cyto_target = mapping.get('cytosig')
-        sec_target = mapping.get('secact')
-        for key in cat_keys:
-            lin_val = lin_rhos.get(lin_target, {}).get(key)
-            if lin_val is not None and cyto_target and cyto_target in cyto_rhos:
-                cyto_val = cyto_rhos[cyto_target].get(key)
-                if cyto_val is not None:
-                    cyto_vs_cyto[cyto].append(lin_val - cyto_val)
-            if lin_val is not None and sec_target and sec_target in sec_rhos:
-                sec_val = sec_rhos[sec_target].get(key)
-                if sec_val is not None:
-                    cyto_vs_sec[cyto].append(lin_val - sec_val)
-
-    cytokine_table = []
-    for cyto in sorted(cyto_vs_cyto, key=lambda c: sum(cyto_vs_cyto[c]) / max(len(cyto_vs_cyto[c]), 1), reverse=True):
-        diffs_cyto = cyto_vs_cyto[cyto]
-        diffs_sec = cyto_vs_sec.get(cyto, [])
-        cytokine_table.append({
-            'cytokine': cyto,
-            'vs_cyto_mean': round(float(sum(diffs_cyto) / len(diffs_cyto)), 4) if diffs_cyto else None,
-            'vs_cyto_win': sum(1 for d in diffs_cyto if d > 0),
-            'vs_cyto_loss': sum(1 for d in diffs_cyto if d < 0),
-            'vs_cyto_n': len(diffs_cyto),
-            'vs_sec_mean': round(float(sum(diffs_sec) / len(diffs_sec)), 4) if diffs_sec else None,
-            'vs_sec_win': sum(1 for d in diffs_sec if d > 0),
-            'vs_sec_loss': sum(1 for d in diffs_sec if d < 0),
-            'vs_sec_n': len(diffs_sec),
-        })
-
-    # 4) Per-atlas summary
-    atlas_summary = []
-    for cat in categories:
-        key = cat['key']
-        label = cat['label'].replace('Inflammation Atlas', 'Inflammation Atlas Main')
-        diffs_cyto, diffs_sec = [], []
-        for lin_target, mapping in matched.items():
-            cyto_target = mapping.get('cytosig')
-            sec_target = mapping.get('secact')
-            lin_val = lin_rhos.get(lin_target, {}).get(key)
-            if lin_val is not None and cyto_target and cyto_target in cyto_rhos:
-                cyto_val = cyto_rhos[cyto_target].get(key)
-                if cyto_val is not None:
-                    diffs_cyto.append(lin_val - cyto_val)
-            if lin_val is not None and sec_target and sec_target in sec_rhos:
-                sec_val = sec_rhos[sec_target].get(key)
-                if sec_val is not None:
-                    diffs_sec.append(lin_val - sec_val)
-        atlas_summary.append({
-            'atlas': label,
-            'vs_cyto_mean': round(float(sum(diffs_cyto) / len(diffs_cyto)), 4) if diffs_cyto else None,
-            'vs_cyto_win': sum(1 for d in diffs_cyto if d > 0),
-            'vs_cyto_loss': sum(1 for d in diffs_cyto if d < 0),
-            'vs_cyto_n': len(diffs_cyto),
-            'vs_sec_mean': round(float(sum(diffs_sec) / len(diffs_sec)), 4) if diffs_sec else None,
-            'vs_sec_win': sum(1 for d in diffs_sec if d > 0),
-            'vs_sec_loss': sum(1 for d in diffs_sec if d < 0),
-            'vs_sec_n': len(diffs_sec),
-        })
-
-    # 5) Overall
-    all_cyto = [d for diffs in ct_vs_cyto.values() for d in diffs]
-    all_sec = [d for diffs in ct_vs_sec.values() for d in diffs]
-    overall = {
-        'vs_cyto_mean': round(float(sum(all_cyto) / len(all_cyto)), 4) if all_cyto else None,
-        'vs_cyto_win': sum(1 for d in all_cyto if d > 0),
-        'vs_cyto_loss': sum(1 for d in all_cyto if d < 0),
-        'vs_cyto_n': len(all_cyto),
-        'vs_sec_mean': round(float(sum(all_sec) / len(all_sec)), 4) if all_sec else None,
-        'vs_sec_win': sum(1 for d in all_sec if d > 0),
-        'vs_sec_loss': sum(1 for d in all_sec if d < 0),
-        'vs_sec_n': len(all_sec),
-    }
-
-    return {
-        'scatter': scatter,
-        'celltypeTable': celltype_table,
-        'cytokineTable': cytokine_table,
-        'atlasSummary': atlas_summary,
-        'overall': overall,
-    }
-
-
-def prepare_level_comparison_data():
-    """Prepare data for section 5.2: Effect of Aggregation Level.
-
-    Loads pre-computed three-way matched comparison at each celltype
-    aggregation level. Downsamples rho arrays for boxplot rendering.
-    """
-    if not LEVEL_COMPARISON_PATH.exists():
-        print(f'  WARNING: {LEVEL_COMPARISON_PATH} not found')
-        return {}
-
-    with open(LEVEL_COMPARISON_PATH) as f:
-        raw = json.load(f)
-
-    rng = np.random.default_rng(42)
-    max_pts = 500
-
-    result = {}
-    for atlas_raw, levels in raw.items():
-        atlas = atlas_raw.replace('Inflammation Atlas', 'Inflammation Atlas Main')
-        atlas_data = []
-        for lv in levels:
-            entry = {
-                'level': lv['level'],
-                'n': lv['n_matched_3way'],
-                'n_2way': lv['n_matched_2way'],
-                'vs_cyto_win': lv['vs_cyto_win'],
-                'vs_cyto_loss': lv['vs_cyto_loss'],
-                'vs_cyto_mean': round(lv['vs_cyto_mean'], 4),
-                'cyto_median': round(lv['cyto_median'], 4),
-                'lin_median': round(lv['lin_median'], 4),
-            }
-            if lv.get('vs_sec_win') is not None:
-                entry['vs_sec_win'] = lv['vs_sec_win']
-                entry['vs_sec_loss'] = lv['vs_sec_loss']
-                entry['vs_sec_mean'] = round(lv['vs_sec_mean'], 4)
-                entry['sec_median'] = round(lv['sec_median'], 4)
-
-            # Subsample rho arrays for boxplots (keep size manageable)
-            for key, method in [('cyto_rhos', 'cytosig'), ('lin_rhos', 'lincytosig'), ('sec_rhos', 'secact')]:
-                arr = lv.get(key, [])
-                if len(arr) > max_pts:
-                    idx = rng.choice(len(arr), max_pts, replace=False)
-                    arr = [arr[int(i)] for i in sorted(idx)]
-                entry[method] = [round(v, 4) for v in arr]
-
-            atlas_data.append(entry)
-        result[atlas] = atlas_data
-
-    return result
-
-
 def prepare_good_bad_data(df):
     """Prepare top/bottom correlated targets per atlas for CytoSig and SecAct.
 
@@ -1367,14 +1075,128 @@ def prepare_good_bad_data(df):
     return result
 
 
+def prepare_7target_data(df):
+    """Prepare data for Section 5: 7 representative targets comparison.
+
+    Extracts donor-level and celltype-level rho values for 7 biologically
+    motivated celltype-cytokine pairs comparing CytoSig, LinCytoSig, and SecAct.
+    """
+    TARGETS = ['IL6', 'VEGFA', 'IL2', 'IFNG', 'IL10', 'TNFA', 'TGFB1']
+    LC_VARIANTS = [
+        'Macrophage__IL6', 'HUVEC__VEGFA', 'T_Cell__IL2',
+        'Macrophage__IFNG', 'Macrophage__IL10', 'Macrophage__TNFA',
+        'Fibroblast__TGFB1',
+    ]
+    SECACT_MAP = {'TNFA': 'TNF'}
+    CT_PATTERNS = {
+        'IL6': 'macrophage', 'VEGFA': 'endothelial', 'IL2': 'cd8',
+        'IFNG': 'macrophage', 'IL10': 'macrophage', 'TNFA': 'macrophage',
+        'TGFB1': 'fibroblast',
+    }
+
+    # ── Donor-level: 7 targets × 6 datasets × 3 methods ──
+    donor = {
+        'datasets': list(ATLAS_LABELS),
+        'targets': TARGETS,
+        'lc_variants': LC_VARIANTS,
+        'cytosig': {}, 'lincytosig': {}, 'secact': {},
+    }
+
+    for atlas_key, atlas_label in zip(ATLAS_ORDER, ATLAS_LABELS):
+        level = LEVEL_MAP[atlas_key]
+        cs_vals, lc_vals, sa_vals = [], [], []
+        for i, target in enumerate(TARGETS):
+            # CytoSig
+            row = df[(df['signature'] == 'cytosig') & (df['target'] == target)
+                     & (df['atlas'] == atlas_key) & (df['level'] == level)]
+            cs_vals.append(round(float(row['spearman_rho'].values[0]), 4) if len(row) > 0 else None)
+
+            # LinCytoSig
+            lc_target = LC_VARIANTS[i]
+            row = df[(df['signature'] == 'lincytosig') & (df['target'] == lc_target)
+                     & (df['atlas'] == atlas_key) & (df['level'] == level)]
+            lc_vals.append(round(float(row['spearman_rho'].values[0]), 4) if len(row) > 0 else None)
+
+            # SecAct
+            sa_target = SECACT_MAP.get(target, target)
+            row = df[(df['signature'] == 'secact') & (df['target'] == sa_target)
+                     & (df['atlas'] == atlas_key) & (df['level'] == level)]
+            sa_vals.append(round(float(row['spearman_rho'].values[0]), 4) if len(row) > 0 else None)
+
+        donor['cytosig'][atlas_label] = cs_vals
+        donor['lincytosig'][atlas_label] = lc_vals
+        donor['secact'][atlas_label] = sa_vals
+
+    # Compute per-dataset medians across 7 targets
+    donor['medians'] = {'cytosig': [], 'lincytosig': [], 'secact': []}
+    for atlas_label in ATLAS_LABELS:
+        for method in ['cytosig', 'lincytosig', 'secact']:
+            vals = [v for v in donor[method][atlas_label] if v is not None]
+            donor['medians'][method].append(
+                round(float(np.median(vals)), 4) if vals else None)
+
+    # ── Celltype-level: 7 targets × scAtlas Normal/Cancer × 3 methods ──
+    celltype = {}
+    ct_configs = [
+        ('scatlas_normal', 'donor_organ_celltype1', 'scAtlas (Normal)'),
+        ('scatlas_cancer', 'tumor_by_cancer_celltype1', 'scAtlas (Cancer)'),
+    ]
+    for atlas_key, ct_level, ct_label in ct_configs:
+        ct_data = {
+            'targets': TARGETS, 'celltypes': [], 'n': [],
+            'cytosig': [], 'lincytosig': [], 'secact': [],
+        }
+        for i, target in enumerate(TARGETS):
+            pattern = CT_PATTERNS[target]
+            lc_target = LC_VARIANTS[i]
+            sa_target = SECACT_MAP.get(target, target)
+
+            # Find best-matching celltype by largest n
+            cs_sub = df[(df['atlas'] == atlas_key) & (df['level'] == ct_level)
+                        & (df['signature'] == 'cytosig') & (df['target'] == target)]
+            cs_match = cs_sub[cs_sub['celltype'].str.lower().str.contains(pattern, na=False)]
+            cs_match = cs_match[cs_match['celltype'] != 'all']
+
+            if len(cs_match) > 0:
+                best_row = cs_match.loc[cs_match['n_samples'].idxmax()]
+                ct_name = best_row['celltype']
+                n_val = int(best_row['n_samples'])
+                cs_rho = round(float(best_row['spearman_rho']), 4)
+            else:
+                ct_name = pattern
+                n_val = 0
+                cs_rho = None
+
+            # LinCytoSig on same celltype
+            lc_sub = df[(df['atlas'] == atlas_key) & (df['level'] == ct_level)
+                        & (df['signature'] == 'lincytosig') & (df['target'] == lc_target)
+                        & (df['celltype'] == ct_name)]
+            lc_rho = round(float(lc_sub['spearman_rho'].values[0]), 4) if len(lc_sub) > 0 else None
+
+            # SecAct on same celltype
+            sa_sub = df[(df['atlas'] == atlas_key) & (df['level'] == ct_level)
+                        & (df['signature'] == 'secact') & (df['target'] == sa_target)
+                        & (df['celltype'] == ct_name)]
+            sa_rho = round(float(sa_sub['spearman_rho'].values[0]), 4) if len(sa_sub) > 0 else None
+
+            ct_data['celltypes'].append(ct_name)
+            ct_data['n'].append(n_val)
+            ct_data['cytosig'].append(cs_rho)
+            ct_data['lincytosig'].append(lc_rho)
+            ct_data['secact'].append(sa_rho)
+
+        celltype[ct_label] = ct_data
+
+    return {'donor': donor, 'celltype': celltype}
+
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # HTML GENERATION
 # ═══════════════════════════════════════════════════════════════════════════════
 
 def generate_html(summary_table, boxplot_data, consistency_data, heatmap_data,
                   levels_data, bulk_data, scatter_data, good_bad_data,
-                  method_boxplot_data, celltype_comparison_data,
-                  level_comparison_data, stratified_data, cross_platform_data):
+                  seven_target_data, stratified_data, cross_platform_data):
 
     # Serialize all data as JSON for embedding
     data_json = json.dumps({
@@ -1390,9 +1212,7 @@ def generate_html(summary_table, boxplot_data, consistency_data, heatmap_data,
         'atlasLabels': ATLAS_LABELS,
         'sigColors': SIG_COLORS,
         'familyColors': FAMILY_COLORS,
-        'methodBoxplot': method_boxplot_data,
-        'celltypeComp': celltype_comparison_data,
-        'levelComp': level_comparison_data,
+        'sevenTarget': seven_target_data,
         'crossPlatform': cross_platform_data,
     }, separators=(',', ':'))
 
@@ -1778,8 +1598,8 @@ Ridge regression (L2-regularized linear regression) was chosen deliberately over
 <ol>
   <li><strong>Which cytokines are active in which cell types across diseases?</strong> &mdash; IL1B/TNFA in monocytes/macrophages, IFNG in CD8+ T and NK cells, IL17A in Th17, VEGFA in endothelial/tumor cells, TGFB family in stromal cells &mdash; quantified across 19 diseases, 35 organs, and 15 cancer types.</li>
   <li><strong>Are cytokine activities consistent across independent cohorts?</strong> &mdash; Yes. IL1B, TNFA, VEGFA, and TGFB family show consistent positive correlations across all 6 validation datasets (Figure 8).</li>
-  <li><strong>Does cell-type-specific biology matter for cytokine inference?</strong> &mdash; For select immune types, yes: LinCytoSig improves prediction for Basophils (+0.21 &Delta;&rho;), NK cells (+0.19), and DCs (+0.18), but global CytoSig wins overall (Figures 11&ndash;12).</li>
-  <li><strong>Which secreted proteins beyond cytokines show validated activity?</strong> &mdash; SecAct (1,170 targets) achieves the highest correlations in 5 of 6 datasets (median &rho;=0.19&ndash;0.46), with novel validated targets like INHBA/Activin A (&rho;=0.91 in TCGA Colon), CXCL12 (&rho;=0.94 in scAtlas Normal Fibroblast), and BMP family (Figure 13).</li>
+  <li><strong>Does cell-type-specific biology matter for cytokine inference?</strong> &mdash; For select targets, yes: LinCytoSig improves IL6&times;Macrophage, VEGFA&times;Endothelial, and IL2&times;CD8T prediction in normal tissue, but global CytoSig wins overall and the advantage does not transfer to cancer (Figures 11&ndash;12).</li>
+  <li><strong>Which secreted proteins beyond cytokines show validated activity?</strong> &mdash; SecAct (1,170 targets) achieves the highest correlations in 5 of 6 datasets (median &rho;=0.19&ndash;0.46), with novel validated targets like INHBA/Activin A (&rho;=0.91 in TCGA Colon), CXCL12 (&rho;=0.94 in scAtlas Normal Fibroblast), and BMP family.</li>
   <li><strong>Can we predict treatment response from cytokine activity?</strong> &mdash; We are incorporating cytokine-blocking therapy outcomes from bulk RNA-seq to test whether predicted cytokine activity associates with therapy response. Additionally, Inflammation Atlas responder/non-responder labels enable treatment response prediction using cytokine activity profiles as features.</li>
 </ol>
 
@@ -2079,154 +1899,71 @@ Ridge regression (L2-regularized linear regression) was chosen deliberately over
 
 <!-- SECTION 5 -->
 <h2 id="sec5">5. CytoSig vs LinCytoSig vs SecAct Comparison</h2>
-<p style="margin-top:-0.5em;margin-bottom:1em;"><a href="lincytosig_issues.html" style="font-size:0.85em;color:#2563EB;">[Open Issues &amp; Analysis &rarr;]</a></p>
-
-<h3>5.1 Method Overview</h3>
-
-<table>
-  <tr>
-    <th>Method</th><th>Targets</th><th>Genes</th><th>Specificity</th><th>Selection</th>
-  </tr>
-  <tr>
-    <td><span class="badge blue">CytoSig</span></td>
-    <td>43 cytokines</td><td>4,881 curated</td><td>Global (all cell types)</td><td>&mdash;</td>
-  </tr>
-  <tr>
-    <td><span class="badge amber">LinCytoSig (orig)</span></td>
-    <td>178 (45 CT &times; cytokines)</td><td>All ~20K</td><td>Cell-type specific</td><td>Matched cell type</td>
-  </tr>
-  <tr>
-    <td><span style="background:#F59E0B;color:#fff;padding:1px 8px;border-radius:3px;font-size:0.85em">LinCytoSig (gene-filtered)</span></td>
-    <td>178</td><td>4,881 (CytoSig overlap)</td><td>Cell-type specific</td><td>Matched cell type</td>
-  </tr>
-  <tr>
-    <td><span style="background:#B45309;color:#fff;padding:1px 8px;border-radius:3px;font-size:0.85em">LinCytoSig Best (combined)</span></td>
-    <td>43 (1 per cytokine)</td><td>All ~20K</td><td>Best CT per cytokine</td><td>Max combined GTEx+TCGA &rho;</td>
-  </tr>
-  <tr>
-    <td><span style="background:#92400E;color:#fff;padding:1px 8px;border-radius:3px;font-size:0.85em">LinCytoSig Best (comb+filt)</span></td>
-    <td>43 (1 per cytokine)</td><td>4,881 (CytoSig overlap)</td><td>Best CT per cytokine</td><td>Max combined &rho; (filtered)</td>
-  </tr>
-  <tr>
-    <td><span style="background:#7C3AED;color:#fff;padding:1px 8px;border-radius:3px;font-size:0.85em">LinCytoSig Best (GTEx)</span></td>
-    <td>43 (1 per cytokine)</td><td>All ~20K</td><td>Best CT per cytokine</td><td>Max GTEx &rho;</td>
-  </tr>
-  <tr>
-    <td><span style="background:#EC4899;color:#fff;padding:1px 8px;border-radius:3px;font-size:0.85em">LinCytoSig Best (TCGA)</span></td>
-    <td>43 (1 per cytokine)</td><td>All ~20K</td><td>Best CT per cytokine</td><td>Max TCGA &rho;</td>
-  </tr>
-  <tr>
-    <td><span style="background:#A78BFA;color:#fff;padding:1px 8px;border-radius:3px;font-size:0.85em">LinCytoSig Best (GTEx+filt)</span></td>
-    <td>43 (1 per cytokine)</td><td>4,881 (CytoSig overlap)</td><td>Best CT per cytokine</td><td>Max GTEx &rho; (filtered)</td>
-  </tr>
-  <tr>
-    <td><span style="background:#F9A8D4;color:#333;padding:1px 8px;border-radius:3px;font-size:0.85em">LinCytoSig Best (TCGA+filt)</span></td>
-    <td>43 (1 per cytokine)</td><td>4,881 (CytoSig overlap)</td><td>Best CT per cytokine</td><td>Max TCGA &rho; (filtered)</td>
-  </tr>
-  <tr>
-    <td><span class="badge green">SecAct</span></td>
-    <td>1,170 secreted proteins</td><td>Spatial Moran&rsquo;s I</td><td>Global (all cell types)</td><td>&mdash;</td>
-  </tr>
-</table>
-<p style="margin-top:0.5em;font-size:0.9em;color:#6B7280;">
-  <strong>Gene filter:</strong> LinCytoSig signatures restricted from ~20K to CytoSig&rsquo;s 4,881 curated genes.
-  <strong>Best selection:</strong> For each cytokine, test all cell-type-specific LinCytoSig signatures and select the one with the highest bulk RNA-seq correlation. &ldquo;Combined&rdquo; uses pooled GTEx+TCGA; &ldquo;GTEx&rdquo; and &ldquo;TCGA&rdquo; select independently per bulk dataset.
-  &ldquo;+filt&rdquo; variants apply the same cell-type selection but restrict to CytoSig gene space.
-  See <a href="methodology.html">LinCytoSig Methodology</a> for details.
+<p style="margin-top:-0.5em;margin-bottom:1em;">
+  <a href="lincytosig_issues.html" style="font-size:0.85em;color:#2563EB;">[Open Issues &amp; Analysis &rarr;]</a>
+  &nbsp;&nbsp;
+  <a href="lincytosig_issues.html#full10way" style="font-size:0.85em;color:#6B7280;">[Full 10-Way Method Comparison &rarr;]</a>
 </p>
+
+<p>Can cell-type-specific signatures outperform global CytoSig for specific targets? We test 7 biologically motivated celltype&ndash;cytokine pairs (Macrophage&times;IL6, HUVEC&times;VEGFA, T&nbsp;Cell&times;IL2, Macrophage&times;IFNG, Macrophage&times;IL10, Macrophage&times;TNFA, Fibroblast&times;TGFB1) across all 6 datasets, comparing <span class="badge blue">CytoSig</span>, <span class="badge amber">LinCytoSig</span>, and <span class="badge green">SecAct</span>.</p>
+
+<h3>5.1 Donor-Level: 7 Representative Targets</h3>
 
 <div class="plotly-container">
   <div class="controls">
     <label>View:</label>
-    <select id="method-boxplot-view" onchange="updateMethodBoxplot()">
-      <option value="all">All Datasets</option>
+    <select id="seven-target-donor-view" onchange="render7TargetDonor()">
+      <option value="all">All Datasets (median &rho; across 7 targets)</option>
     </select>
   </div>
-  <div id="method-boxplot-chart" style="height:600px;"></div>
-  <div class="caption"><strong>Figure 11.</strong> Ten-way signature method comparison at matched (cell type, cytokine) pair level across 4 combined datasets. All 10 methods are evaluated on the <em>same set</em> of matched pairs per dataset (identical n). Use dropdown to view individual dataset boxplots. For LinCytoSig construction, see <a href="methodology.html">LinCytoSig Methodology</a>.</div>
+  <div id="seven-target-donor-chart" style="height:500px;"></div>
+  <div class="caption"><strong>Figure 11.</strong> CytoSig vs LinCytoSig vs SecAct for 7 representative celltype&ndash;cytokine pairs at donor level. &ldquo;All Datasets&rdquo; shows per-dataset median &rho; across 7 targets; individual dataset views show per-target &rho; values. LinCytoSig uses the biologically matched cell-type signature (e.g., Macrophage__IL6 for IL6).</div>
 </div>
 
 <div class="callout">
-<p><strong>Ten methods compared on identical matched pairs across 4 combined datasets:</strong></p>
-<ol>
-  <li><strong><span style="color:#2563EB">CytoSig</span></strong> &mdash; 43 cytokines, 4,881 curated genes, global (all cell types)</li>
-  <li><strong><span style="color:#D97706">LinCytoSig (orig)</span></strong> &mdash; cell-type-matched signatures, all ~20K genes</li>
-  <li><strong><span style="color:#F59E0B">LinCytoSig (gene-filtered)</span></strong> &mdash; cell-type-matched signatures, restricted to CytoSig&rsquo;s 4,881 genes</li>
-  <li><strong><span style="color:#B45309">LinCytoSig Best (combined)</span></strong> &mdash; best cell-type signature per cytokine (selected by combined GTEx+TCGA bulk &rho;), all ~20K genes</li>
-  <li><strong><span style="color:#92400E">LinCytoSig Best (comb+filt)</span></strong> &mdash; best combined bulk signature, restricted to 4,881 genes</li>
-  <li><strong><span style="color:#7C3AED">LinCytoSig Best (GTEx)</span></strong> &mdash; best per cytokine selected by GTEx-only bulk &rho;, all ~20K genes</li>
-  <li><strong><span style="color:#EC4899">LinCytoSig Best (TCGA)</span></strong> &mdash; best per cytokine selected by TCGA-only bulk &rho;, all ~20K genes</li>
-  <li><strong><span style="color:#A78BFA">LinCytoSig Best (GTEx+filt)</span></strong> &mdash; GTEx-selected best, restricted to 4,881 genes</li>
-  <li><strong><span style="color:#F9A8D4">LinCytoSig Best (TCGA+filt)</span></strong> &mdash; TCGA-selected best, restricted to 4,881 genes</li>
-  <li><strong><span style="color:#059669">SecAct</span></strong> &mdash; 1,170 secreted proteins (Moran&rsquo;s I), subset matching CytoSig targets</li>
-</ol>
-<p><strong>Key findings:</strong></p>
+<p><strong>Key findings (donor-level, 7 targets):</strong></p>
 <ul>
-  <li><strong>SecAct achieves the highest median &rho;</strong> across all 4 combined datasets.</li>
-  <li><strong>CytoSig outperforms most LinCytoSig variants</strong> at donor level, with one notable exception: scAtlas Normal Best-orig (0.298) exceeds CytoSig (0.216).</li>
-  <li><strong>Gene filtering improves LinCytoSig</strong> in most datasets (CIMA +102%, Inflammation Atlas Main).</li>
-  <li><strong>GTEx-selected best</strong> performs comparably to combined-selected in most datasets but slightly better in scAtlas Cancer (0.300 vs 0.275). <strong>TCGA-selected best</strong> generally underperforms other selection strategies.</li>
-  <li><strong>Gene filtering of GTEx/TCGA-selected:</strong> GTEx+filt and TCGA+filt show mixed results &mdash; filtering sometimes improves (e.g., TCGA+filt in Inflammation Atlas Main: 0.260 vs TCGA-orig 0.168) but can also reduce performance, indicating the optimal gene space depends on both the selection dataset and target dataset context.</li>
-  <li><strong>General ranking:</strong> SecAct &gt; CytoSig &gt; LinCytoSig Best variants &gt; LinCytoSig (filt) &gt; LinCytoSig (orig), though dataset-specific exceptions exist.</li>
+  <li><strong>LinCytoSig wins the median in 2 of 6 datasets</strong> (Inflammation Atlas Main, scAtlas Normal) &mdash; datasets with rich immune cell diversity.</li>
+  <li><strong>Per-target:</strong> LinCytoSig wins 15/42 comparisons vs CytoSig&rsquo;s 11/42 (SecAct: 16/42). IL2 and IFNG are LinCytoSig&rsquo;s strongest targets; Fibroblast__TGFB1 is the main drag.</li>
+  <li><strong>SecAct wins the median in 4 of 6 datasets</strong> (GTEx, TCGA, CIMA, scAtlas Cancer), driven by its broad coverage of secreted proteins.</li>
 </ul>
+<p style="font-size:0.9em;color:#6B7280;"><a href="lincytosig_issues.html#donor7">Full per-target analysis &rarr;</a></p>
 </div>
 
-<p style="font-size:0.9em;color:#6B7280;">For detailed issue analysis including selection circularity, case studies (IFNG, TGFB1, IL1B), and cross-validation design, see the <a href="lincytosig_issues.html">LinCytoSig Open Issues &amp; Analysis</a> companion document.</p>
+<h3>5.2 Celltype-Level Evaluation</h3>
 
-<h3>5.2 Effect of Aggregation Level</h3>
-
-<div class="callout amber">
-<p><strong>Methodology:</strong> At each cell-type aggregation level (CIMA: L1&ndash;L4 = 7&ndash;73 cell types; Inflammation: L1&ndash;L2; scAtlas: CT1&ndash;CT2 = coarse/fine), we match CytoSig, LinCytoSig, and SecAct on identical (cytokine, cell type) pairs &mdash; using the <em>exact same pseudobulk samples</em> and <em>identical n</em> for all three methods. For each pair, Spearman &rho; measures agreement between predicted activity and target gene expression. If lineage-specific aggregation helps, LinCytoSig should increasingly outperform CytoSig as cell-type resolution increases (L1 &rarr; L4).</p>
-</div>
-
-<h4>5.2.1 Distribution at Each Level</h4>
 <div class="plotly-container">
   <div class="controls">
-    <label>Atlas:</label>
-    <select id="level-comp-atlas" onchange="updateLevelComp()">
+    <label>Dataset:</label>
+    <select id="seven-target-ct-view" onchange="render7TargetCelltype()">
     </select>
   </div>
-  <div id="level-comp-chart" style="height:550px;"></div>
-  <div class="caption"><strong>Figure 12.</strong> Distribution of Spearman &rho; at each cell-type aggregation level. All three methods evaluated on identical matched pairs per level. Finer levels (more cell types) should theoretically favor lineage-specific methods.</div>
+  <div id="seven-target-ct-chart" style="height:450px;"></div>
+  <div class="caption"><strong>Figure 12.</strong> CytoSig vs LinCytoSig vs SecAct evaluated on matched cell-type pseudobulk (e.g., IL6 on macrophage pseudobulk) in scAtlas Normal and scAtlas Cancer. Only these two datasets have sufficient cell-type diversity for all 7 targets.</div>
 </div>
-
-<h4>5.2.2 Summary</h4>
-<div id="level-summary-container"></div>
-<p style="font-size:0.9em;color:#6B7280;">n = number of three-way matched pairs. &Delta;&rho; = LinCytoSig &minus; competitor (negative = LinCytoSig underperforms).</p>
-
-<!-- Per-celltype summary table (from method_comparison.json, finest level) -->
-<h4>5.2.3 Which Cell Types Benefit?</h4>
-<div id="celltype-table-container" style="max-height:500px;overflow-y:auto;"></div>
-<p style="font-size:0.9em;color:#6B7280;">Aggregated across all datasets at finest celltype level. Green = LinCytoSig wins more; red = LinCytoSig loses more.</p>
-
-<!-- Per-cytokine summary table -->
-<h4>5.2.4 Which Cytokines Benefit?</h4>
-<div id="cytokine-table-container" style="max-height:500px;overflow-y:auto;"></div>
-<p style="font-size:0.9em;color:#6B7280;">Sorted by mean &Delta;&rho; vs CytoSig (best to worst).</p>
 
 <div class="callout">
-<p><strong>Key finding: Lineage-specific aggregation provides no systematic advantage at any level.</strong></p>
+<p><strong>Key findings (celltype-level):</strong></p>
 <ul>
-  <li><strong>At every level, LinCytoSig underperforms CytoSig</strong> (mean &Delta;&rho; ranges from &minus;0.08 at coarse L1 to &minus;0.02 at fine L4 in CIMA). Finer cell types reduce the gap slightly but never close it.</li>
-  <li><strong>SecAct wins at every level</strong> in CIMA and scAtlas. In Inflammation Atlas Main L2, LinCytoSig is nearly tied with SecAct (&Delta;&rho; = +0.01) but still loses to CytoSig.</li>
-  <li><strong>Per cell type:</strong> Only 5 of 43 cell types show consistent LinCytoSig advantage vs CytoSig (NK Cell, Basophil, DC, Trophoblast, Arterial Endothelial). No cell type beats SecAct.</li>
-  <li><strong>Summary:</strong> LinCytoSig does not outperform CytoSig at any aggregation level tested. The gap narrows at finer levels (L1 &Delta;&rho; = &minus;0.08 &rarr; L4 &Delta;&rho; = &minus;0.02 in CIMA) but does not close.</li>
+  <li><strong>LinCytoSig excels where biology matches:</strong> IL6&times;Macrophage, VEGFA&times;Endothelial, and IL2&times;CD8T in scAtlas Normal &mdash; cytokines with strong cell-type specificity to the tested cell type.</li>
+  <li><strong>Advantage does NOT transfer to cancer:</strong> LinCytoSig loses for IL6 and VEGFA in scAtlas Cancer, likely because tumor-associated cells have different transcriptional programs.</li>
+  <li><strong>CytoSig wins TNFA and TGFB1 consistently</strong> across all datasets at celltype level &mdash; the global signature captures these signaling responses better even on the &ldquo;right&rdquo; cell type.</li>
 </ul>
-<p style="font-size:0.9em;color:#6B7280;">See <a href="lincytosig_issues.html#issue3">Issue 3: Celltype-Level Evaluation</a> for a matched celltype-level analysis where LinCytoSig is tested on its intended target (e.g., Fibroblast__TGFB1 on fibroblast pseudobulk).</p>
+<p style="font-size:0.9em;color:#6B7280;">CIMA and Inflammation Atlas Main lack macrophage, endothelial, and fibroblast annotations &mdash; only 2&ndash;3 of 7 targets evaluable using Myeloid/Mono proxies. <a href="lincytosig_issues.html#celltype7">Full celltype analysis &rarr;</a></p>
 </div>
 
-<h3>5.3 SecAct: Breadth Over Depth</h3>
+<h3>5.3 Limitations: Experimental Bias in the CytoSig Database</h3>
+
+<p>The CytoSig database has systematic experimental bias: it preferentially acquires specific cell types (macrophage, fibroblast, cancer lines) and specific cytokines (IFNG, TGFB1, IL6). Cell types with fewer than 10 experiments per cytokine produce noisy signatures, making it difficult to systematically select the &ldquo;best&rdquo; cell-type-specific signature for each target.</p>
 
 <ul>
-  <li><strong>Highest median &rho;</strong> in single-cell datasets (scAtlas Normal: 0.455, Cancer: 0.399, independence-corrected)</li>
-  <li><strong>Highest median &rho;</strong> in bulk RNA-seq (GTEx: 0.314, TCGA: 0.357, independence-corrected median-of-medians)</li>
-  <li><strong>95.8% positive correlation</strong> in TCGA (independence-corrected)</li>
-  <li><strong>Wins decisively at celltype level</strong> against both CytoSig and LinCytoSig in scAtlas (19/3 wins vs CytoSig in scAtlas Normal, 20/2 in Cancer)</li>
+  <li><strong>45% of cytokines get different &ldquo;best&rdquo; cell type</strong> depending on the selection dataset (GTEx vs TCGA), indicating that best-selection is unstable (see <a href="lincytosig_issues.html#issue1">Issue 1</a>).</li>
+  <li><strong>The approach cannot be validated generally</strong> with current data &mdash; but shows promise for specific high-quality targets where the biological match between signature origin and evaluation context is strong.</li>
 </ul>
 
-<div class="plotly-container">
-  <div id="celltype-delta-rho-chart" style="height:900px;"></div>
-  <div class="caption"><strong>Figure 13.</strong> Per-celltype mean &Delta;&rho; (LinCytoSig &minus; CytoSig) aggregated across 4 datasets at donor &times; celltype level. Orange = LinCytoSig advantage; blue = CytoSig advantage. Error bars show SEM.</div>
+<div class="callout amber">
+<p><strong>The cell-type-specific approach has merit for well-characterized targets (IL6&times;Macrophage, VEGFA&times;Endothelial, IFNG&times;Macrophage) but the current CytoSig database cannot support systematic evaluation.</strong> Future work could use perturbation data (parse_10M: 90 cytokines &times; 12 donors &times; 18 cell types) or expanded cell-type databases to revisit this question.</p>
+<p style="font-size:0.9em;margin-top:0.5em;"><a href="lincytosig_issues.html">Full Issues &amp; Analysis &rarr;</a></p>
 </div>
 
 <hr>
@@ -2988,90 +2725,105 @@ window.updateBulk = function() {{
 updateBulk();
 
 // ═══════════════════════════════════════════════════════════════════════════
-// 5.1 METHOD COMPARISON BOXPLOT (10-way with dropdown for per-atlas view)
+// 5.1 SEVEN-TARGET DONOR-LEVEL COMPARISON (Figure 11)
 // ═══════════════════════════════════════════════════════════════════════════
 (function() {{
-  var mb = DATA.methodBoxplot;
-  if (!mb) return;
-  var allAtlases = Object.keys(mb);
-  var sigConfigs = [
-    {{key:'cytosig',                name:'CytoSig',                      color:'#2563EB'}},
-    {{key:'lincyto_orig',           name:'LinCytoSig (orig)',             color:'#D97706'}},
-    {{key:'lincyto_filt',           name:'LinCytoSig (gene-filtered)',    color:'#F59E0B'}},
-    {{key:'lincyto_best_orig',      name:'LinCytoSig Best (combined)',    color:'#B45309'}},
-    {{key:'lincyto_best_filt',      name:'LinCytoSig Best (comb+filt)',   color:'#92400E'}},
-    {{key:'lincyto_best_gtex',      name:'LinCytoSig Best (GTEx)',        color:'#7C3AED'}},
-    {{key:'lincyto_best_tcga',      name:'LinCytoSig Best (TCGA)',        color:'#EC4899'}},
-    {{key:'lincyto_best_gtex_filt', name:'LinCytoSig Best (GTEx+filt)',   color:'#A78BFA'}},
-    {{key:'lincyto_best_tcga_filt', name:'LinCytoSig Best (TCGA+filt)',   color:'#F9A8D4'}},
-    {{key:'secact',                 name:'SecAct',                        color:'#059669'}},
+  var st = DATA.sevenTarget;
+  if (!st || !st.donor) return;
+  var d = st.donor;
+  var datasets = d.datasets;
+  var targets = d.targets;
+  var methodCfg = [
+    {{key: 'cytosig', name: 'CytoSig', color: '#2563EB'}},
+    {{key: 'lincytosig', name: 'LinCytoSig', color: '#D97706'}},
+    {{key: 'secact', name: 'SecAct', color: '#059669'}},
   ];
 
-  // Populate dropdown
-  var sel = document.getElementById('method-boxplot-view');
-  allAtlases.forEach(function(a) {{
+  // Populate dropdown with individual datasets
+  var sel = document.getElementById('seven-target-donor-view');
+  datasets.forEach(function(ds) {{
     var opt = document.createElement('option');
-    opt.value = a; opt.textContent = a;
+    opt.value = ds; opt.textContent = ds;
     sel.appendChild(opt);
   }});
 
-  window.updateMethodBoxplot = function() {{
+  window.render7TargetDonor = function() {{
     var view = sel.value;
-    var atlasesToShow = (view === 'all') ? allAtlases : [view];
-    var isSingle = (view !== 'all');
     var traces = [];
 
-    sigConfigs.forEach(function(cfg) {{
-      var y = [], x = [];
-      atlasesToShow.forEach(function(a) {{
-        if (mb[a] && mb[a][cfg.key] && mb[a][cfg.key].length > 0) {{
-          mb[a][cfg.key].forEach(function(v) {{
-            y.push(v);
-            x.push(isSingle ? cfg.name : a);
-          }});
-        }}
-      }});
-      if (y.length > 0) {{
-        var n = mb[atlasesToShow[0]][cfg.key] ? mb[atlasesToShow[0]][cfg.key].length : 0;
-        traces.push({{
-          type: 'box', y: y, x: x,
-          name: cfg.name + (isSingle ? '' : ' (n=' + n + ')'),
-          marker: {{color: cfg.color}},
-          boxpoints: isSingle ? 'all' : false,
-          jitter: 0.3, pointpos: 0,
-          line: {{width: 1.5}},
-          showlegend: !isSingle,
+    if (view === 'all') {{
+      // All Datasets view: 6 groups (datasets) × 3 bars (methods), showing medians
+      methodCfg.forEach(function(cfg) {{
+        var x = [], y = [];
+        datasets.forEach(function(ds, i) {{
+          x.push(ds);
+          y.push(d.medians[cfg.key][i]);
         }});
-      }}
-    }});
-
-    var title = isSingle
-      ? view + ' \u2014 10-Way Method Comparison (n=' + (mb[view].cytosig ? mb[view].cytosig.length : 0) + ' matched pairs)'
-      : '10-Way Signature Method Comparison (Expression\u2013Activity Correlation)';
-
-    Plotly.newPlot('method-boxplot-chart', traces, {{
-      title: title,
-      yaxis: {{title: 'Spearman \\u03c1', zeroline: true, zerolinecolor: '#ccc'}},
-      boxmode: 'group',
-      legend: {{orientation:'h', y:1.25, x:0.5, xanchor:'center', font:{{size:9}}}},
-      margin: {{t:isSingle ? 80 : 140, b:isSingle ? 120 : 80}},
-    }}, PLOTLY_CONFIG);
+        traces.push({{
+          type: 'bar', x: x, y: y, name: cfg.name,
+          marker: {{color: cfg.color, opacity: 0.85}},
+          hovertemplate: '<b>%{{x}}</b><br>' + cfg.name + ': \\u03c1 = %{{y:.3f}}<extra></extra>',
+        }});
+      }});
+      Plotly.newPlot('seven-target-donor-chart', traces, {{
+        title: 'Median \\u03c1 Across 7 Targets by Dataset',
+        yaxis: {{title: 'Median Spearman \\u03c1', range: [-0.1, 0.7]}},
+        barmode: 'group',
+        legend: {{orientation: 'h', y: 1.12, x: 0.5, xanchor: 'center'}},
+        margin: {{t: 80, b: 80}},
+      }}, PLOTLY_CONFIG);
+    }} else {{
+      // Per-dataset view: 7 groups (targets) × 3 bars
+      methodCfg.forEach(function(cfg) {{
+        var x = [], y = [], colors = [];
+        targets.forEach(function(t, i) {{
+          x.push(t);
+          var val = d[cfg.key][view] ? d[cfg.key][view][i] : null;
+          y.push(val);
+          // Highlight best method per target
+          var cs = d.cytosig[view] ? d.cytosig[view][i] : null;
+          var lc = d.lincytosig[view] ? d.lincytosig[view][i] : null;
+          var sa = d.secact[view] ? d.secact[view][i] : null;
+          var vals = [{{m:'cytosig',v:cs}}, {{m:'lincytosig',v:lc}}, {{m:'secact',v:sa}}].filter(function(x){{return x.v !== null;}});
+          var best = vals.length > 0 ? vals.reduce(function(a,b){{return a.v > b.v ? a : b;}}).m : '';
+          colors.push(best === cfg.key ? cfg.color : cfg.color + '80');
+        }});
+        var lcNames = d.lc_variants;
+        traces.push({{
+          type: 'bar', x: x, y: y, name: cfg.name,
+          marker: {{color: colors}},
+          hovertemplate: targets.map(function(t, i) {{
+            if (cfg.key === 'lincytosig') return '<b>' + lcNames[i] + '</b><br>\\u03c1 = %{{y:.3f}}<extra></extra>';
+            return '<b>' + t + '</b><br>' + cfg.name + ': \\u03c1 = %{{y:.3f}}<extra></extra>';
+          }}),
+        }});
+      }});
+      Plotly.newPlot('seven-target-donor-chart', traces, {{
+        title: view + ' \u2014 Per-Target \\u03c1 (7 Representative Targets)',
+        yaxis: {{title: 'Spearman \\u03c1'}},
+        barmode: 'group',
+        legend: {{orientation: 'h', y: 1.12, x: 0.5, xanchor: 'center'}},
+        margin: {{t: 80, b: 80}},
+      }}, PLOTLY_CONFIG);
+    }}
   }};
-  updateMethodBoxplot();
+  render7TargetDonor();
 }})();
 
 // ═══════════════════════════════════════════════════════════════════════════
-// 5.2 EFFECT OF AGGREGATION LEVEL
+// 5.2 SEVEN-TARGET CELLTYPE-LEVEL COMPARISON (Figure 12)
 // ═══════════════════════════════════════════════════════════════════════════
 (function() {{
-  var lc = DATA.levelComp;
-  if (!lc) return;
+  var st = DATA.sevenTarget;
+  if (!st || !st.celltype) return;
+  var ct = st.celltype;
+  var ctNames = Object.keys(ct);
+  if (ctNames.length === 0) return;
 
-  var atlasNames = Object.keys(lc);
-  var sel = document.getElementById('level-comp-atlas');
-  atlasNames.forEach(function(a) {{
+  var sel = document.getElementById('seven-target-ct-view');
+  ctNames.forEach(function(ds) {{
     var opt = document.createElement('option');
-    opt.value = a; opt.textContent = a;
+    opt.value = ds; opt.textContent = ds;
     sel.appendChild(opt);
   }});
 
@@ -3081,172 +2833,49 @@ updateBulk();
     {{key: 'secact', name: 'SecAct', color: '#059669'}},
   ];
 
-  window.updateLevelComp = function() {{
-    var atlas = sel.value;
-    var levels = lc[atlas];
-    if (!levels || levels.length === 0) {{
-      Plotly.newPlot('level-comp-chart', [], {{title: 'No data for ' + atlas}}, PLOTLY_CONFIG);
-      return;
-    }}
+  window.render7TargetCelltype = function() {{
+    var dsName = sel.value;
+    var data = ct[dsName];
+    if (!data) return;
+    var targets = data.targets;
+    var celltypes = data.celltypes;
+    var ns = data.n;
     var traces = [];
+
     methodCfg.forEach(function(cfg) {{
-      var y = [], x = [];
-      levels.forEach(function(lv) {{
-        var arr = lv[cfg.key] || [];
-        arr.forEach(function(v) {{
-          y.push(v);
-          x.push(lv.level + ' (n=' + lv.n + ')');
-        }});
+      var y = [], x = [], hoverTexts = [];
+      targets.forEach(function(t, i) {{
+        var val = data[cfg.key][i];
+        if (val === null) return;
+        y.push(t + ' (' + celltypes[i] + ', n=' + ns[i] + ')');
+        x.push(val);
+        // Compute Δρ vs CytoSig
+        var delta = '';
+        if (cfg.key !== 'cytosig' && data.cytosig[i] !== null) {{
+          var d = val - data.cytosig[i];
+          delta = '<br>\\u0394\\u03c1 vs CytoSig: ' + (d > 0 ? '+' : '') + d.toFixed(3);
+        }}
+        hoverTexts.push('<b>' + t + '</b> on ' + celltypes[i] + '<br>' + cfg.name + ': \\u03c1 = ' + val.toFixed(3) + delta);
       }});
-      if (y.length > 0) {{
-        traces.push({{
-          type: 'box', y: y, x: x,
-          name: cfg.name,
-          marker: {{color: cfg.color}},
-          boxpoints: false,
-          line: {{width: 1.5}},
-        }});
-      }}
+      traces.push({{
+        type: 'bar', y: y, x: x, name: cfg.name,
+        orientation: 'h',
+        marker: {{color: cfg.color, opacity: 0.85}},
+        text: hoverTexts,
+        hovertemplate: '%{{text}}<extra></extra>',
+      }});
     }});
-    Plotly.newPlot('level-comp-chart', traces, {{
-      title: atlas + ' \u2014 CytoSig vs LinCytoSig vs SecAct by Aggregation Level',
-      yaxis: {{title: 'Spearman \\u03c1', zeroline: true, zerolinecolor: '#ccc'}},
-      boxmode: 'group',
+
+    Plotly.newPlot('seven-target-ct-chart', traces, {{
+      title: dsName + ' \u2014 Celltype-Level \\u03c1 (7 Targets on Matched Pseudobulk)',
+      xaxis: {{title: 'Spearman \\u03c1'}},
+      yaxis: {{automargin: true, tickfont: {{size: 11}}}},
+      barmode: 'group',
       legend: {{orientation: 'h', y: 1.15, x: 0.5, xanchor: 'center'}},
-      margin: {{t: 80, b: 80}},
+      margin: {{l: 250, t: 80, b: 60, r: 30}},
     }}, PLOTLY_CONFIG);
   }};
-  updateLevelComp();
-
-  // 5.2.2 Summary table (all atlases × all levels)
-  var html = '<table><tr><th>Atlas</th><th>Level</th><th>n (3-way)</th>';
-  html += '<th>CytoSig med &rho;</th><th>LinCytoSig med &rho;</th><th>SecAct med &rho;</th>';
-  html += '<th>vs CytoSig (W/L)</th><th>&Delta;&rho;</th>';
-  html += '<th>vs SecAct (W/L)</th><th>&Delta;&rho;</th></tr>';
-  atlasNames.forEach(function(atlas) {{
-    var levels = lc[atlas];
-    levels.forEach(function(lv, i) {{
-      var cBg = lv.vs_cyto_mean > 0 ? '#D1FAE5' : '#FEE2E2';
-      var sBg = lv.vs_sec_mean !== undefined ? (lv.vs_sec_mean > 0 ? '#D1FAE5' : '#FEE2E2') : '';
-      html += '<tr>';
-      if (i === 0) html += '<td rowspan="' + levels.length + '"><strong>' + atlas + '</strong></td>';
-      html += '<td>' + lv.level + '</td>';
-      html += '<td>' + lv.n + '</td>';
-      html += '<td>' + lv.cyto_median + '</td>';
-      html += '<td>' + lv.lin_median + '</td>';
-      html += '<td>' + (lv.sec_median !== undefined ? lv.sec_median : '\u2014') + '</td>';
-      html += '<td style="background:' + cBg + '">' + lv.vs_cyto_win + '/' + lv.vs_cyto_loss + '</td>';
-      html += '<td style="background:' + cBg + '">' + (lv.vs_cyto_mean > 0 ? '+' : '') + lv.vs_cyto_mean + '</td>';
-      if (lv.vs_sec_win !== undefined) {{
-        html += '<td style="background:' + sBg + '">' + lv.vs_sec_win + '/' + lv.vs_sec_loss + '</td>';
-        html += '<td style="background:' + sBg + '">' + (lv.vs_sec_mean > 0 ? '+' : '') + lv.vs_sec_mean + '</td>';
-      }} else {{
-        html += '<td colspan="2">\u2014</td>';
-      }}
-      html += '</tr>';
-    }});
-  }});
-  html += '</table>';
-  document.getElementById('level-summary-container').innerHTML = html;
-}})();
-
-// 5.2.3-5.2.4 CELLTYPE & CYTOKINE DETAIL TABLES (from celltypeComp)
-(function() {{
-  var cc = DATA.celltypeComp;
-  if (!cc) return;
-
-  // 5.2.3 Celltype summary table
-  var ct = cc.celltypeTable || [];
-  var ctHtml = '<table><tr><th>Cell Type</th><th colspan="3">vs CytoSig</th><th colspan="3">vs SecAct</th></tr>';
-  ctHtml += '<tr><th></th><th>Win/Loss</th><th>Mean &Delta;&rho;</th><th>n</th><th>Win/Loss</th><th>Mean &Delta;&rho;</th><th>n</th></tr>';
-  ct.forEach(function(r) {{
-    var cBg = r.vs_cyto_mean > 0 ? '#D1FAE5' : (r.vs_cyto_mean < -0.15 ? '#FEE2E2' : '');
-    var sBg = r.vs_sec_mean !== null ? (r.vs_sec_mean > 0 ? '#D1FAE5' : (r.vs_sec_mean < -0.15 ? '#FEE2E2' : '')) : '';
-    ctHtml += '<tr><td><strong>' + r.celltype.replace(/_/g, ' ') + '</strong></td>';
-    ctHtml += '<td style="background:' + cBg + '">' + r.vs_cyto_win + '/' + r.vs_cyto_loss + '</td>';
-    ctHtml += '<td style="background:' + cBg + '">' + (r.vs_cyto_mean > 0 ? '+' : '') + r.vs_cyto_mean + '</td>';
-    ctHtml += '<td>' + r.vs_cyto_n + '</td>';
-    if (r.vs_sec_n > 0) {{
-      ctHtml += '<td style="background:' + sBg + '">' + r.vs_sec_win + '/' + r.vs_sec_loss + '</td>';
-      ctHtml += '<td style="background:' + sBg + '">' + (r.vs_sec_mean > 0 ? '+' : '') + r.vs_sec_mean + '</td>';
-      ctHtml += '<td>' + r.vs_sec_n + '</td>';
-    }} else {{
-      ctHtml += '<td colspan="3" style="color:#9CA3AF">No matched SecAct target</td>';
-    }}
-    ctHtml += '</tr>';
-  }});
-  ctHtml += '</table>';
-  document.getElementById('celltype-table-container').innerHTML = ctHtml;
-
-  // 5.2.4 Cytokine summary table
-  var cyto = cc.cytokineTable || [];
-  var cyHtml = '<table><tr><th>Cytokine</th><th colspan="3">vs CytoSig</th><th colspan="3">vs SecAct</th></tr>';
-  cyHtml += '<tr><th></th><th>Win/Loss</th><th>Mean &Delta;&rho;</th><th>n</th><th>Win/Loss</th><th>Mean &Delta;&rho;</th><th>n</th></tr>';
-  cyto.forEach(function(r) {{
-    var cBg = r.vs_cyto_mean > 0 ? '#D1FAE5' : (r.vs_cyto_mean < -0.15 ? '#FEE2E2' : '');
-    var sBg = r.vs_sec_mean !== null ? (r.vs_sec_mean > 0 ? '#D1FAE5' : (r.vs_sec_mean < -0.15 ? '#FEE2E2' : '')) : '';
-    cyHtml += '<tr><td><strong>' + r.cytokine + '</strong></td>';
-    cyHtml += '<td style="background:' + cBg + '">' + r.vs_cyto_win + '/' + r.vs_cyto_loss + '</td>';
-    cyHtml += '<td style="background:' + cBg + '">' + (r.vs_cyto_mean > 0 ? '+' : '') + r.vs_cyto_mean + '</td>';
-    cyHtml += '<td>' + r.vs_cyto_n + '</td>';
-    if (r.vs_sec_n > 0) {{
-      cyHtml += '<td style="background:' + sBg + '">' + r.vs_sec_win + '/' + r.vs_sec_loss + '</td>';
-      cyHtml += '<td style="background:' + sBg + '">' + (r.vs_sec_mean > 0 ? '+' : '') + r.vs_sec_mean + '</td>';
-      cyHtml += '<td>' + r.vs_sec_n + '</td>';
-    }} else {{
-      cyHtml += '<td colspan="3" style="color:#9CA3AF">No matched SecAct target</td>';
-    }}
-    cyHtml += '</tr>';
-  }});
-  cyHtml += '</table>';
-  document.getElementById('cytokine-table-container').innerHTML = cyHtml;
-}})();
-
-// ═══════════════════════════════════════════════════════════════════════════
-// 5.3 CELLTYPE Δρ BAR CHART (Figure 13)
-// ═══════════════════════════════════════════════════════════════════════════
-(function() {{
-  var cc = DATA.celltypeComp;
-  if (!cc || !cc.celltypeTable) return;
-
-  // Sort by mean Δρ descending
-  var ct = cc.celltypeTable.slice().sort(function(a, b) {{ return a.vs_cyto_mean - b.vs_cyto_mean; }});
-
-  var names = ct.map(function(r) {{ return r.celltype.replace(/_/g, ' '); }});
-  var means = ct.map(function(r) {{ return r.vs_cyto_mean; }});
-  var sems = ct.map(function(r) {{ return r.vs_cyto_sem || 0; }});
-  var colors = means.map(function(v) {{ return v > 0 ? '#D97706' : '#2563EB'; }});
-  var hoverTexts = ct.map(function(r) {{
-    return '<b>' + r.celltype.replace(/_/g, ' ') + '</b><br>' +
-      'Mean \u0394\u03c1: ' + (r.vs_cyto_mean > 0 ? '+' : '') + r.vs_cyto_mean +
-      ' \u00b1 ' + (r.vs_cyto_sem || 0) + '<br>' +
-      'Win/Loss: ' + r.vs_cyto_win + '/' + r.vs_cyto_loss +
-      ' (n=' + r.vs_cyto_n + ')';
-  }});
-
-  var nPos = means.filter(function(v) {{ return v > 0; }}).length;
-
-  Plotly.newPlot('celltype-delta-rho-chart', [{{
-    type: 'bar',
-    y: names,
-    x: means,
-    orientation: 'h',
-    marker: {{color: colors, opacity: 0.85}},
-    error_x: {{type: 'data', array: sems, visible: true, thickness: 1, width: 3}},
-    text: hoverTexts,
-    hovertemplate: '%{{text}}<extra></extra>',
-  }}], {{
-    title: 'Celltype-Specific \u0394\u03c1: LinCytoSig vs CytoSig<br><span style="font-size:12px;color:#6B7280">Aggregated across 4 datasets at donor \u00d7 celltype level</span>',
-    xaxis: {{title: 'Mean \u0394\u03c1 (LinCytoSig \u2212 CytoSig) \u00b1 SEM', zeroline: true, zerolinewidth: 2, zerolinecolor: '#000'}},
-    yaxis: {{automargin: true, tickfont: {{size: 10}}}},
-    margin: {{l: 180, t: 80, b: 60, r: 30}},
-    annotations: [{{
-      text: nPos + '/' + ct.length + ' cell types favor LinCytoSig<br>Orange = LinCytoSig better, Blue = CytoSig better',
-      xref: 'paper', yref: 'paper', x: 0.98, y: 0.02,
-      showarrow: false, font: {{size: 11}}, align: 'right',
-      bgcolor: '#FEF3C7', borderpad: 4,
-    }}],
-  }}, PLOTLY_CONFIG);
+  render7TargetCelltype();
 }})();
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -3380,20 +3009,15 @@ def main():
     good_bad_data = prepare_good_bad_data(df)
     print(f'  Good/bad data: {len(good_bad_data)} signature types')
 
-    method_boxplot_data = prepare_method_comparison_boxplot(df)
-    print(f'  Method comparison boxplot: {len(method_boxplot_data)} atlases')
-
-    celltype_comparison_data = prepare_celltype_comparison(df)
-    print(f'  Celltype comparison: {len(celltype_comparison_data.get("celltypeTable", []))} cell types')
-
-    level_comparison_data = prepare_level_comparison_data()
-    print(f'  Level comparison: {len(level_comparison_data)} atlases')
+    seven_target_data = prepare_7target_data(df)
+    print(f'  7-target data: {len(seven_target_data["donor"]["datasets"])} datasets, '
+          f'{len(seven_target_data["celltype"])} celltype datasets')
 
     print('\nGenerating HTML...')
     html = generate_html(summary_table, boxplot_data, consistency_data,
                          heatmap_data, levels_data, bulk_data, scatter_data,
-                         good_bad_data, method_boxplot_data, celltype_comparison_data,
-                         level_comparison_data, stratified_data, cross_platform_data)
+                         good_bad_data, seven_target_data, stratified_data,
+                         cross_platform_data)
 
     output_path = REPORT_DIR / 'REPORT.html'
     output_path.write_text(html, encoding='utf-8')
