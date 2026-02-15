@@ -350,7 +350,7 @@ def fig1_dataset_overview():
                         TOP - val_content_h) - GROUP_PAD
 
     # Set y-limits tightly around content (title at top, global_bottom at bottom)
-    ax.set_ylim(global_bottom - 0.5, 13.2)
+    ax.set_ylim(global_bottom - 0.5, 12.9)
 
     # ═══ COLUMN 1: Data Sources (x=0.3–4.7) ═══
     col1_x, col1_w = 0.3, 4.4
@@ -494,7 +494,7 @@ def fig1_dataset_overview():
 
     # ═══ Title ═══
     fig.suptitle('CytoAtlas: Pan-Disease Single-Cell Cytokine Activity Atlas',
-                 fontsize=15, fontweight='bold', y=0.99, color='#0F172A')
+                 fontsize=15, fontweight='bold', y=0.96, color='#0F172A')
 
     fig.savefig(FIG_DIR / 'fig1_dataset_overview.png')
     fig.savefig(FIG_DIR / 'fig1_dataset_overview.pdf')
