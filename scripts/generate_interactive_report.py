@@ -1582,18 +1582,39 @@ CytoAtlas validates at five levels: donor-level pseudobulk, donor &times; cell-t
 <h2 id="sec4">4. Validation Results</h2>
 
 <!-- Item 5: Embedded summary table instead of figure -->
-<h3>4.1 Overall Performance Summary</h3>
+<h3>4.1 Overall Performance Summary
+    <a href="stats_section_4.1.html" style="font-size:14px;font-weight:400;color:var(--blue);text-decoration:none;">[Full Details]</a></h3>
 
 <div id="summary-table-container"></div>
 
 <div class="callout">
 <p><strong>PRIMARY independent level:</strong> The summary table above reports results at each dataset&rsquo;s PRIMARY independent level &mdash; the aggregation level where samples are fully independent (each donor counted once). This ensures correlation statistics are not inflated by donor duplication. See the &ldquo;Primary Level&rdquo; column for each dataset&rsquo;s level.</p>
 <p><strong>How &ldquo;N Targets&rdquo; is determined:</strong> A target is included in the validation for a given atlas only if (1) the target&rsquo;s signature genes overlap sufficiently with the atlas gene expression matrix, and (2) the target gene itself is expressed in enough samples to compute a meaningful Spearman correlation. Targets whose gene is absent or not detected in a dataset are excluded. CytoSig defines 43 cytokines and SecAct defines 1,170 secreted proteins. Inflammation Main retains only 33 of 43 CytoSig targets and 805 of 1,170 SecAct targets because 10 cytokine genes (BDNF, BMP4, CXCL12, GCSF, IFN1, IL13, IL17A, IL36, IL4, WNT3A) are not sufficiently expressed in these blood/PBMC samples.</p>
-<p><strong>Stratified levels</strong> (GTEx by_tissue, TCGA primary_by_cancer): Correlations are computed within each tissue/cancer type (ensuring independence), then summarized across groups. N Targets counts unique targets at the &ldquo;all&rdquo; aggregate level. Finer per-tissue or per-cancer breakdowns are available in Section 4.2 below.</p>
+<p><strong>Stratified levels</strong> (GTEx by_tissue, TCGA primary_by_cancer): Correlations are computed within each tissue/cancer type (ensuring independence), then summarized across groups. N Targets counts unique targets at the &ldquo;all&rdquo; aggregate level. Finer per-tissue or per-cancer breakdowns are available in Section 4.3 below.</p>
+</div>
+
+<!-- Cross-Dataset Comparison (boxplot) -->
+<h3>4.2 Cross-Dataset Comparison: CytoSig vs SecAct
+    <a href="stats_section_4.2.html" style="font-size:14px;font-weight:400;color:var(--blue);text-decoration:none;">[Statistical Methods]</a></h3>
+<div class="plotly-container">
+  <div class="tab-bar" id="boxplot-tabs">
+    <button class="tab-btn active" onclick="renderBoxplot('total')">Total</button>
+    <button class="tab-btn" onclick="renderBoxplot('matched')">Matched</button>
+  </div>
+  <div id="boxplot-chart" style="height:500px;"></div>
+  <div id="boxplot-caption" class="caption"><strong>Figure 2.</strong> Spearman &rho; distributions across atlases for CytoSig (43 targets) vs SecAct (1,170 targets). Independence-corrected: GTEx/TCGA use median-of-medians. Mann-Whitney U test p-values shown above each atlas.</div>
+</div>
+
+<div class="callout">
+<p><strong>Why does SecAct appear to underperform CytoSig in the Inflammation Main atlas?</strong></p>
+<p>This is a <strong>composition effect</strong>, not a genuine performance gap, confirmed by two complementary statistical tests:</p>
+<p><strong>Total comparison (Mann&ndash;Whitney U test):</strong> Compares the full &rho; distributions of CytoSig (43 cytokine signatures) vs SecAct (~1,170 secreted protein signatures) using <strong>independence-corrected</strong> values. For GTEx/TCGA, each target&rsquo;s representative &rho; is the median across per-tissue/cancer values (median-of-medians); for other atlases, donor_only/tumor_only &rho; is used directly. SecAct achieves a significantly higher median &rho; in 5 of 6 atlases (GTEx: <em>p</em> = 4.75 &times; 10<sup>&minus;4</sup>; TCGA: <em>p</em> = 2.80 &times; 10<sup>&minus;3</sup>; CIMA: <em>p</em> = 3.18 &times; 10<sup>&minus;2</sup>; scAtlas Normal: <em>p</em> = 1.04 &times; 10<sup>&minus;4</sup>; scAtlas Cancer: <em>p</em> = 1.06 &times; 10<sup>&minus;5</sup>). Inflammation Main is the sole exception (U = 14,101, <em>p</em> = 0.548, not significant) and the only atlas where CytoSig&rsquo;s median &rho; (0.323) exceeds SecAct&rsquo;s (0.173).</p>
+<p><strong>Matched comparison (Wilcoxon signed-rank test):</strong> Restricts to the 32 targets shared between both methods (22 direct + 10 alias-resolved), each target serving as its own control. SecAct&rsquo;s median &rho; is consistently higher across all 6 atlases, reaching significance in 5 (GTEx: <em>p</em> = 3.54 &times; 10<sup>&minus;5</sup>; TCGA: <em>p</em> = 3.24 &times; 10<sup>&minus;6</sup>; CIMA: <em>p</em> = 2.28 &times; 10<sup>&minus;2</sup>; scAtlas Normal: <em>p</em> = 3.54 &times; 10<sup>&minus;5</sup>; scAtlas Cancer: <em>p</em> = 3.54 &times; 10<sup>&minus;5</sup>). Inflammation Main is not significant (<em>p</em> = 0.141).</p>
+<p>Inflammation Main is largely blood-derived, so many SecAct targets that perform well in multi-organ contexts contribute near-zero or negative correlations here. In fact, 99 SecAct targets are negative <em>only</em> in Inflammation Main but positive in all other atlases, reflecting tissue-specific expression limitations rather than inference failure. The &ldquo;Matched&rdquo; tab above demonstrates the fair comparison on equal footing.</p>
 </div>
 
 <!-- Per-tissue/per-cancer stratified validation -->
-<h3>4.2 Per-Tissue and Per-Cancer Stratified Validation
+<h3>4.3 Per-Tissue and Per-Cancer Stratified Validation
     <a href="stats_section_4.3.html" style="font-size:14px;font-weight:400;color:var(--blue);text-decoration:none;">[Statistical Methods]</a></h3>
 <div class="plotly-container">
   <div class="tab-bar" id="stratified-tabs">
@@ -1609,31 +1630,12 @@ CytoAtlas validates at five levels: donor-level pseudobulk, donor &times; cell-t
   </div>
   <div id="stratified-chart" style="height:700px;"></div>
   <div id="stratified-caption" class="caption">
-    <strong>Figure 2.</strong> Per-tissue/cancer CytoSig vs SecAct median Spearman &rho; comparison. BH-FDR corrected significance: *** q&lt;0.001, ** q&lt;0.01, * q&lt;0.05.
+    <strong>Figure 3.</strong> Per-tissue/cancer CytoSig vs SecAct median Spearman &rho; comparison. BH-FDR corrected significance: *** q&lt;0.001, ** q&lt;0.01, * q&lt;0.05.
   </div>
 </div>
 
 <div class="callout">
 <p><strong>Stratified validation:</strong> Instead of aggregating tissues/cancers into a single median-of-medians, this view shows the CytoSig vs SecAct comparison <em>within each individual tissue</em> (GTEx) or <em>cancer type</em> (TCGA). Mann-Whitney U test (Total tab: all targets) and Wilcoxon signed-rank test (Matched tab: 32 shared targets) with BH-FDR correction across all strata within each dataset.</p>
-</div>
-
-<!-- Item 6: Interactive boxplot with Total / Matched tabs -->
-<h3>4.3 Cross-Dataset Comparison: CytoSig vs SecAct</h3>
-<div class="plotly-container">
-  <div class="tab-bar" id="boxplot-tabs">
-    <button class="tab-btn active" onclick="renderBoxplot('total')">Total</button>
-    <button class="tab-btn" onclick="renderBoxplot('matched')">Matched</button>
-  </div>
-  <div id="boxplot-chart" style="height:500px;"></div>
-  <div id="boxplot-caption" class="caption"><strong>Figure 3.</strong> Spearman &rho; distributions across atlases for CytoSig (43 targets) vs SecAct (1,170 targets). Independence-corrected: GTEx/TCGA use median-of-medians. Mann-Whitney U test p-values shown above each atlas.</div>
-</div>
-
-<div class="callout">
-<p><strong>Why does SecAct appear to underperform CytoSig in the Inflammation Main atlas?</strong></p>
-<p>This is a <strong>composition effect</strong>, not a genuine performance gap, confirmed by two complementary statistical tests:</p>
-<p><strong>Total comparison (Mann&ndash;Whitney U test):</strong> Compares the full &rho; distributions of CytoSig (43 cytokine signatures) vs SecAct (~1,170 secreted protein signatures) using <strong>independence-corrected</strong> values. For GTEx/TCGA, each target&rsquo;s representative &rho; is the median across per-tissue/cancer values (median-of-medians); for other atlases, donor_only/tumor_only &rho; is used directly. SecAct achieves a significantly higher median &rho; in 5 of 6 atlases (GTEx: <em>p</em> = 4.75 &times; 10<sup>&minus;4</sup>; TCGA: <em>p</em> = 2.80 &times; 10<sup>&minus;3</sup>; CIMA: <em>p</em> = 3.18 &times; 10<sup>&minus;2</sup>; scAtlas Normal: <em>p</em> = 1.04 &times; 10<sup>&minus;4</sup>; scAtlas Cancer: <em>p</em> = 1.06 &times; 10<sup>&minus;5</sup>). Inflammation Main is the sole exception (U = 14,101, <em>p</em> = 0.548, not significant) and the only atlas where CytoSig&rsquo;s median &rho; (0.323) exceeds SecAct&rsquo;s (0.173).</p>
-<p><strong>Matched comparison (Wilcoxon signed-rank test):</strong> Restricts to the 32 targets shared between both methods (22 direct + 10 alias-resolved), each target serving as its own control. SecAct&rsquo;s median &rho; is consistently higher across all 6 atlases, reaching significance in 5 (GTEx: <em>p</em> = 3.54 &times; 10<sup>&minus;5</sup>; TCGA: <em>p</em> = 3.24 &times; 10<sup>&minus;6</sup>; CIMA: <em>p</em> = 2.28 &times; 10<sup>&minus;2</sup>; scAtlas Normal: <em>p</em> = 3.54 &times; 10<sup>&minus;5</sup>; scAtlas Cancer: <em>p</em> = 3.54 &times; 10<sup>&minus;5</sup>). Inflammation Main is not significant (<em>p</em> = 0.141).</p>
-<p>Inflammation Main is largely blood-derived, so many SecAct targets that perform well in multi-organ contexts contribute near-zero or negative correlations here. In fact, 99 SecAct targets are negative <em>only</em> in Inflammation Main but positive in all other atlases, reflecting tissue-specific expression limitations rather than inference failure. The &ldquo;Matched&rdquo; tab above demonstrates the fair comparison on equal footing.</p>
 </div>
 
 <h3>4.4 Best and Worst Correlated Targets</h3>
@@ -2148,7 +2150,7 @@ window.renderBoxplot = function(mode) {{
       }}
     }});
     document.getElementById('boxplot-caption').innerHTML =
-      '<strong>Figure 3.</strong> Spearman \\u03c1 distributions: CytoSig (43 targets) vs SecAct (1,170 targets) across atlases. ' +
+      '<strong>Figure 2.</strong> Spearman \\u03c1 distributions: CytoSig (43 targets) vs SecAct (1,170 targets) across atlases. ' +
       'Independence-corrected: GTEx/TCGA use median-of-medians (one \\u03c1 per target). ' +
       'Mann-Whitney U test, BH-FDR corrected across 6 atlases. Significance: *** q&lt;0.001, ** q&lt;0.01, * q&lt;0.05, ns = not significant.';
   }} else {{
@@ -2182,7 +2184,7 @@ window.renderBoxplot = function(mode) {{
       }}
     }});
     document.getElementById('boxplot-caption').innerHTML =
-      '<strong>Figure 3.</strong> Spearman \\u03c1 distributions: CytoSig vs SecAct on 32 matched targets shared between both methods (22 direct + 10 alias-resolved). ' +
+      '<strong>Figure 2.</strong> Spearman \\u03c1 distributions: CytoSig vs SecAct on 32 matched targets shared between both methods (22 direct + 10 alias-resolved). ' +
       'Wilcoxon signed-rank test (paired by target), BH-FDR corrected across 6 atlases. Significance: *** q&lt;0.001, ** q&lt;0.01, * q&lt;0.05, ns = not significant.';
   }}
 
@@ -2284,7 +2286,7 @@ window.renderStratified = function(mode) {{
     ? 'All targets compared (' + nLabel + '; Mann-Whitney U test, BH-FDR corrected).'
     : 'Matched targets (' + nLabel + '; Wilcoxon signed-rank test, BH-FDR corrected).';
   document.getElementById('stratified-caption').innerHTML =
-    '<strong>Figure 2.</strong> Per-' + dsType +
+    '<strong>Figure 3.</strong> Per-' + dsType +
     ' Spearman \\u03c1 distributions: CytoSig vs SecAct. ' + capMode +
     ' Significance: *** q&lt;0.001, ** q&lt;0.01, * q&lt;0.05.';
 }};
@@ -2297,7 +2299,7 @@ renderStratified('total');
   var gb = DATA.goodBad;
   var atlasSel = document.getElementById('goodbad-atlas-select');
   var sigSel = document.getElementById('goodbad-sig-select');
-  // Populate atlas dropdown in consistent order matching boxplot (Section 4.2)
+  // Populate atlas dropdown in consistent order matching boxplot (Section 4.3)
   var firstSig = Object.keys(gb)[0];
   var availableAtlases = Object.keys(gb[firstSig]);
   DATA.atlasLabels.forEach(function(a) {{

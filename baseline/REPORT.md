@@ -1,19 +1,19 @@
 # CytoAtlas: Pan-Disease Single-Cell Cytokine Activity Atlas
 
-**February 12, 2026**
+**February 14, 2026**
 
 ---
 
 ## Executive Summary
 
-CytoAtlas is a comprehensive computational resource that maps cytokine and secreted protein signaling activity across **~29 million human cells** from four independent single-cell RNA-seq datasets: CIMA (6.5M healthy donor cells), Inflammation Atlas (6.3M disease cells across 3 cohorts), scAtlas (6.4M organ and cancer cells), and parse_10M (9.7M cytokine-perturbed cells). The system uses **linear ridge regression** against experimentally derived signature matrices to infer activity — producing fully interpretable, conditional z-scores rather than black-box predictions. This makes CytoAtlas an orthogonal tool to deep learning approaches: every prediction traces back to a known gene-to-cytokine relationship with a quantifiable confidence interval.
+CytoAtlas is a comprehensive computational resource that maps cytokine and secreted protein signaling activity across **~29 million human cells and ~31,000 bulk RNA-seq samples** from six independent datasets spanning two bulk RNA-seq resources (GTEx, TCGA) and four single-cell compendia: CIMA (6.5M healthy donor cells), Inflammation Atlas (6.3M disease cells across 3 cohorts; Main cohort used for validation), scAtlas (6.4M organ and cancer cells), and parse_10M (9.7M cytokine-perturbed cells). The system uses **linear ridge regression** against experimentally derived signature matrices to infer activity — producing fully interpretable, conditional z-scores rather than black-box predictions. This makes CytoAtlas an orthogonal tool to deep learning approaches: every prediction traces back to a known gene-to-cytokine relationship with a quantifiable confidence interval.
 
 **Key results:**
-- 1,213 signatures (43 CytoSig cytokines + 1,170 SecAct secreted proteins), plus 178 cell-type-specific LinCytoSig variants, validated across 4 independent atlases
+- 1,213 signatures (43 CytoSig cytokines + 1,170 SecAct secreted proteins), plus 178 cell-type-specific LinCytoSig variants, validated across 6 independent datasets (2 bulk RNA-seq, 4 single-cell)
 - Spearman correlations between predicted activity and target gene expression reach ρ=0.6-0.9 for well-characterized cytokines (IL1B, TNFA, VEGFA, TGFB family)
-- Cross-atlas consistency demonstrates that signatures generalize across CIMA, Inflammation Atlas, scAtlas, and parse_10M
+- Cross-dataset consistency demonstrates that signatures generalize across CIMA, Inflammation Atlas Main, scAtlas, GTEx, and TCGA
 - Cell-type-specific signatures (LinCytoSig) improve prediction for select immune cell types (Basophil, NK, DC: +0.18-0.21 Δρ) but generally underperform global CytoSig for non-immune cell types
-- SecAct provides the broadest validated coverage with 1,085-1,132 targets per atlas, achieving the highest correlations in bulk and organ-level analyses (median ρ=0.40 in GTEx/TCGA)
+- SecAct provides the broadest validated coverage with 805–1,161 targets per dataset (varying by gene overlap), achieving the highest correlations in bulk and organ-level analyses (median ρ=0.40 in GTEx/TCGA)
 
 ---
 
@@ -81,12 +81,12 @@ The system is divided into independent bounded contexts:
 | 1 | **GTEx** | Bulk RNA-seq | 19,788 samples | 946 donors | — | GTEx v11 (30 tissues) |
 | 2 | **TCGA** | Bulk RNA-seq | 11,069 samples | 10,274 donors | — | PanCancer (33 cancer types) |
 | 3 | **CIMA** | scRNA-seq | 6,484,974 | 421 donors | 27 L2 / 100+ L3 | Cell Atlas consortium |
-| 4 | **Inflammation Main** | scRNA-seq | 4,918,140 | 817 samples | 66+ | Jimenez-Gracia et al. |
-| 5 | **Inflammation Val** | scRNA-seq | 849,922 | 144 samples | 66+ | Validation cohort |
-| 6 | **Inflammation Ext** | scRNA-seq | 572,872 | 86 samples | 66+ | External cohort |
+| 4 | **Inflammation Atlas Main** | scRNA-seq | 4,918,140 | 817 samples | 66+ | Jimenez-Gracia et al. |
+| 5 | **Inflammation Atlas Val** | scRNA-seq | 849,922 | 144 samples | 66+ | Validation cohort |
+| 6 | **Inflammation Atlas Ext** | scRNA-seq | 572,872 | 86 samples | 66+ | External cohort |
 | 7 | **scAtlas Normal** | scRNA-seq | 2,293,951 | 317 donors | 102 subCluster | 35 organs |
 | 8 | **scAtlas Cancer** | scRNA-seq | 4,146,975 | 717 donors (601 tumor-only) | 162 cellType1 | 29 cancer types |
-| 9 | **parse_10M** | scRNA-seq | 9,697,974 | 12 donors × 91 cytokines | 18 PBMC types | Cytokine perturbation |
+| 9 | **parse_10M** | scRNA-seq | 9,697,974 | 12 donors × 90 cytokines (+PBS control) | 18 PBMC types | Cytokine perturbation |
 
 **Grand total: ~29 million single cells + ~31K bulk samples across 9 datasets, 100+ cell types**
 
@@ -103,7 +103,7 @@ The system is divided into independent bounded contexts:
 - Normal: 35+ human organs (lung, liver, kidney, brain, heart, etc.)
 - Cancer: 15+ types (LUAD, CRC, BRCA, LIHC, PAAD, KIRC, OV, SKCM, GBM, etc.)
 
-**parse_10M perturbations:** 90 cytokines × 12 donors (ground truth for CytoSig validation)
+**parse_10M perturbations:** 90 cytokines × 12 donors (+PBS control; perturbation resource for validation, not ground truth — true ground truth is unattainable for inferential activity scores)
 
 
 ### 2.3 Signature Matrices
@@ -128,7 +128,7 @@ Most single-cell analysis tools use complex models (variational autoencoders, gr
 | **Interpretability** | Every gene's contribution is a coefficient | Feature importance approximated post-hoc |
 | **Conditionality** | Activity conditional on specific gene set | Latent space mixes all features |
 | **Confidence** | Permutation-based z-scores with CI | Often point estimates only |
-| **Generalization** | Tested across 4 independent cohorts | Often tested on held-out splits of same cohort |
+| **Generalization** | Tested across 6 independent datasets (bulk + single-cell) | Often tested on held-out splits of same cohort |
 | **Bias** | Transparent — limited by signature matrix genes | Hidden in architecture and training data |
 
 **The key insight:** CytoAtlas is not trying to replace DNN-based tools. It provides an **orthogonal, complementary signal** that a human scientist can directly inspect. When CytoAtlas says "IFNG activity is elevated in CD8+ T cells from RA patients," you can verify this by checking the IFNG signature genes in those cells.
@@ -136,10 +136,10 @@ Most single-cell analysis tools use complex models (variational autoencoders, gr
 ### 3.2 What Scientific Questions Does CytoAtlas Answer?
 
 1. **Which cytokines are active in which cell types across diseases?** — IL1B/TNFA in monocytes/macrophages, IFNG in CD8+ T and NK cells, IL17A in Th17, VEGFA in endothelial/tumor cells, TGFB family in stromal cells — quantified across 20 diseases, 35 organs, and 15 cancer types.
-2. **Are cytokine activities consistent across independent cohorts?** — Yes. IL1B, TNFA, VEGFA, and TGFB family show consistent positive correlations across all 6 validation atlases (Figure 6).
+2. **Are cytokine activities consistent across independent cohorts?** — Yes. IL1B, TNFA, VEGFA, and TGFB family show consistent positive correlations across all 6 validation datasets (Figure 6).
 3. **Does cell-type-specific biology matter for cytokine inference?** — For select immune types, yes: LinCytoSig improves prediction for Basophils (+0.21 Δρ), NK cells (+0.19), and DCs (+0.18), but global CytoSig wins overall (Figures 11–12).
 4. **Which secreted proteins beyond cytokines show validated activity?** — SecAct (1,170 targets) achieves the highest correlations across all atlases (median ρ=0.33–0.49), with novel validated targets like Activin A (ρ=0.98), CXCL12 (ρ=0.92), and BMP family (Figure 13).
-5. **Can we predict treatment response from cytokine activity?** — We are incorporating cytokine-blocking therapy outcomes from bulk RNA-seq to test whether predicted cytokine activity associates with therapy response. Additionally, Inflammation Atlas responder/non-responder labels enable treatment response prediction using cytokine activity profiles as features.
+5. **Can we predict treatment response from cytokine activity?** — We are incorporating cytokine-blocking therapy outcomes from bulk RNA-seq to test whether predicted cytokine activity associates with therapy response. Additionally, Inflammation Atlas responder/non-responder labels (208 samples across 6 diseases: RA, PS, PSA, CD, UC, SLE) enable treatment response prediction using cytokine activity profiles as features.
 
 ### 3.3 Validation Philosophy
 
