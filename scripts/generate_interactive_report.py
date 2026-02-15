@@ -890,6 +890,7 @@ def prepare_cross_platform_data(df):
     TCGA primary_by_cancer vs scAtlas Cancer tumor_by_cancer: matching cancers
     """
     from statsmodels.stats.multitest import multipletests
+    reverse_alias = {v: k for k, v in ALIAS_MAP.items()}
     # Tissue name mapping: GTEx name → scAtlas Normal name
     TISSUE_MAP = {
         'Blood': 'Blood', 'Breast': 'Breast', 'Colon': 'Colon',
@@ -973,20 +974,56 @@ def prepare_cross_platform_data(df):
                         'p_raw': round(float(wilcox_p), 6),
                         'n_paired': int(len(merged)),
                     }
+
+                # Matched: restrict to 32 shared targets
+                matched_set = (MATCHED_TARGETS if sig == 'cytosig'
+                               else MATCHED_TARGETS_SECACT)
+                bt_m = bulk_sub[(bulk_sub['signature'] == sig) &
+                                (bulk_sub['target'].isin(matched_set))][
+                    ['target', 'spearman_rho']].rename(
+                    columns={'spearman_rho': 'rho_bulk'})
+                st_m = sc_sub[(sc_sub['signature'] == sig) &
+                              (sc_sub['target'].isin(matched_set))][
+                    ['target', 'spearman_rho']].rename(
+                    columns={'spearman_rho': 'rho_sc'})
+                # Normalize SecAct names to CytoSig names for pairing
+                if sig == 'secact':
+                    bt_m = bt_m.copy()
+                    bt_m['target'] = bt_m['target'].map(
+                        lambda t: reverse_alias.get(t, t))
+                    st_m = st_m.copy()
+                    st_m['target'] = st_m['target'].map(
+                        lambda t: reverse_alias.get(t, t))
+                merged_m = bt_m.merge(st_m, on='target')
+                entry[f'{sig}_matched_bulk'] = [round(r, 4)
+                    for r in merged_m['rho_bulk'].tolist()]
+                entry[f'{sig}_matched_sc'] = [round(r, 4)
+                    for r in merged_m['rho_sc'].tolist()]
+                if len(merged_m) >= 6:
+                    _, wilcox_p_m = scipy_stats.wilcoxon(
+                        merged_m['rho_bulk'].values,
+                        merged_m['rho_sc'].values,
+                        alternative='two-sided')
+                    entry[f'{sig}_matched_stats'] = {
+                        'test': 'Wilcoxon signed-rank',
+                        'p_raw': round(float(wilcox_p_m), 6),
+                        'n_paired': int(len(merged_m)),
+                    }
             comp_data['data'][display_name] = entry
 
-        # BH-FDR correction per signature across strata
+        # BH-FDR correction per signature across strata (total + matched)
         for sig in ['cytosig', 'secact']:
-            stats_key = f'{sig}_stats'
-            strata_with_stats = [s for s in comp_data['strata']
-                                 if stats_key in comp_data['data'][s]]
-            if strata_with_stats:
-                pvals = [comp_data['data'][s][stats_key]['p_raw']
-                         for s in strata_with_stats]
-                _, qvals, _, _ = multipletests(pvals, method='fdr_bh')
-                for i, s in enumerate(strata_with_stats):
-                    comp_data['data'][s][stats_key]['q_bh'] = round(
-                        float(qvals[i]), 6)
+            for suffix in ['_stats', '_matched_stats']:
+                stats_key = f'{sig}{suffix}'
+                strata_with_stats = [s for s in comp_data['strata']
+                                     if stats_key in comp_data['data'][s]]
+                if strata_with_stats:
+                    pvals = [comp_data['data'][s][stats_key]['p_raw']
+                             for s in strata_with_stats]
+                    _, qvals, _, _ = multipletests(pvals, method='fdr_bh')
+                    for i, s in enumerate(strata_with_stats):
+                        comp_data['data'][s][stats_key]['q_bh'] = round(
+                            float(qvals[i]), 6)
 
         result[comparison] = comp_data
 
@@ -1771,6 +1808,7 @@ Ridge regression (L2-regularized linear regression) was chosen deliberately over
 
 <div class="callout">
 <p><strong>Stratified validation:</strong> Instead of aggregating tissues/cancers into a single median-of-medians, this view shows the CytoSig vs SecAct comparison <em>within each individual tissue</em> (GTEx) or <em>cancer type</em> (TCGA). Mann-Whitney U test (Total tab: all targets) and Wilcoxon signed-rank test (Matched tab: 32 shared targets) with BH-FDR correction across all strata within each dataset.</p>
+<p><strong>Key insight:</strong> SecAct&rsquo;s advantage holds at the individual tissue/cancer level across the majority of strata, ruling out Simpson&rsquo;s paradox (where an aggregate trend could be driven by a few influential strata while reversing in most others). Tissue context is the key modulator: inflammation-rich tissues (Lung, Liver, Colon) are where CytoSig performs best, because those are the environments its 43 curated cytokine signatures were designed for. SecAct&rsquo;s advantage comes from breadth &mdash; covering ~1,170 secreted proteins that drive signaling in tissues where non-cytokine pathways dominate.</p>
 </div>
 
 <!-- Cross-Platform Comparison: bulk vs pseudobulk -->
@@ -1779,7 +1817,9 @@ Ridge regression (L2-regularized linear regression) was chosen deliberately over
 <div class="plotly-container">
   <div class="tab-bar" id="crossplat-tabs">
     <button class="tab-btn active" onclick="renderCrossPlatform('cytosig')">CytoSig</button>
+    <button class="tab-btn" onclick="renderCrossPlatform('cytosig_matched')">CytoSig (Matched)</button>
     <button class="tab-btn" onclick="renderCrossPlatform('secact')">SecAct</button>
+    <button class="tab-btn" onclick="renderCrossPlatform('secact_matched')">SecAct (Matched)</button>
   </div>
   <div class="controls">
     <label>Comparison:</label>
@@ -2458,10 +2498,14 @@ window.renderCrossPlatform = function(sig) {{
   if (sig) currentCrossPlatSig = sig;
   else sig = currentCrossPlatSig;
 
+  // Parse mode: 'cytosig', 'cytosig_matched', 'secact', 'secact_matched'
+  var isMatched = sig.indexOf('_matched') >= 0;
+  var baseSig = isMatched ? sig.replace('_matched', '') : sig;
+
   document.querySelectorAll('#crossplat-tabs .tab-btn').forEach(function(b) {{ b.classList.remove('active'); }});
   var btns = document.querySelectorAll('#crossplat-tabs .tab-btn');
-  if (sig === 'cytosig') btns[0].classList.add('active');
-  else btns[1].classList.add('active');
+  var tabIdx = sig === 'cytosig' ? 0 : sig === 'cytosig_matched' ? 1 : sig === 'secact' ? 2 : 3;
+  btns[tabIdx].classList.add('active');
 
   var comp = document.getElementById('crossplat-comp-select').value;
   var cpData = DATA.crossPlatform[comp];
@@ -2472,9 +2516,9 @@ window.renderCrossPlatform = function(sig) {{
   var labelBulk = cpData.label_bulk;
   var labelSC = cpData.label_sc;
 
-  var bulkKey = sig + '_bulk';
-  var scKey = sig + '_sc';
-  var statsKey = sig + '_stats';
+  var bulkKey = isMatched ? baseSig + '_matched_bulk' : baseSig + '_bulk';
+  var scKey = isMatched ? baseSig + '_matched_sc' : baseSig + '_sc';
+  var statsKey = isMatched ? baseSig + '_matched_stats' : baseSig + '_stats';
 
   // Build grouped boxplot traces
   var bulkY = [], bulkX = [], scY = [], scX = [];
@@ -2520,9 +2564,10 @@ window.renderCrossPlatform = function(sig) {{
   var height = Math.max(400, strata.length * 55 + 140);
   document.getElementById('crossplat-chart').style.height = height + 'px';
 
-  var sigLabel = sig === 'cytosig' ? 'CytoSig' : 'SecAct';
+  var sigLabel = baseSig === 'cytosig' ? 'CytoSig' : 'SecAct';
+  var modeLabel = isMatched ? ' (32 matched targets)' : '';
   Plotly.newPlot('crossplat-chart', traces, {{
-    title: sigLabel + ': ' + labelBulk + ' (bulk) vs ' + labelSC + ' (pseudobulk)',
+    title: sigLabel + modeLabel + ': ' + labelBulk + ' (bulk) vs ' + labelSC + ' (pseudobulk)',
     xaxis: {{title: 'Spearman \\u03c1', zeroline: true, zerolinecolor: '#ccc'}},
     yaxis: {{automargin: true, tickfont: {{size: 11}}}},
     boxmode: 'group',
@@ -2531,8 +2576,9 @@ window.renderCrossPlatform = function(sig) {{
     annotations: annotations,
   }}, PLOTLY_CONFIG);
 
+  var nDesc = isMatched ? '32 matched targets' : 'all targets';
   document.getElementById('crossplat-caption').innerHTML =
-    '<strong>Figure 4.</strong> Cross-platform concordance (' + sigLabel + '): per-target Spearman \\u03c1 from ' +
+    '<strong>Figure 4.</strong> Cross-platform concordance (' + sigLabel + ', ' + nDesc + '): per-target Spearman \\u03c1 from ' +
     labelBulk + ' (bulk RNA-seq) vs ' + labelSC + ' (single-cell pseudobulk) for matching ' +
     (comp.indexOf('GTEx') >= 0 ? 'tissues' : 'cancer types') +
     '. Wilcoxon signed-rank test (paired by target), BH-FDR corrected. Significance: *** q&lt;0.001, ** q&lt;0.01, * q&lt;0.05.';

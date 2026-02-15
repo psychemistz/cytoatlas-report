@@ -211,9 +211,8 @@ Four datasets have per-stratum breakdowns:
 **Statistical tests per stratum:** Mann-Whitney U (CytoSig vs SecAct total targets within each tissue/cancer) and Wilcoxon signed-rank (32 shared targets). BH-FDR correction applied within each dataset (29 tests for GTEx, 33 for TCGA, etc.). Full per-stratum results with FDR q-values are in the [supplement](stats_section_4.1.html#per-tissue-stratified).
 
 **Key findings:**
-- SecAct significantly outperforms CytoSig in the majority of individual tissues and cancer types
-- Tissue/cancer-specific variation is substantial: GTEx CytoSig ρ ranges widely across tissues, reflecting tissue-specific regulatory contexts
-- Inflammation-rich tissues/cancers (Lung, Liver, Colon) show the highest CytoSig correlations, consistent with the CytoSig signature matrix being derived from cytokine stimulation experiments
+- SecAct significantly outperforms CytoSig in the majority of individual tissues and cancer types, confirming that the aggregate result from Section 4.2 is not an artifact of a few dominant strata (i.e., ruling out Simpson's paradox)
+- Tissue/cancer-specific variation is substantial: inflammation-rich tissues/cancers (Lung, Liver, Colon) show the highest CytoSig correlations, consistent with the CytoSig signature matrix being derived from cytokine stimulation experiments. SecAct's advantage comes from breadth — covering ~1,170 secreted proteins that drive signaling in tissues where non-cytokine pathways dominate
 - scAtlas strata with Tier B sample sizes (<30 donors) are shown with reduced confidence
 
 ### 4.4 Cross-Platform Comparison: Bulk vs Pseudobulk
@@ -222,7 +221,7 @@ Four datasets have per-stratum breakdowns:
 
 This section tests whether expression-activity relationships replicate across measurement technologies. For each matching tissue or cancer type, per-target Spearman ρ from bulk RNA-seq is compared to the same target's ρ from single-cell pseudobulk. Per-stratum Wilcoxon signed-rank tests (paired by target) with BH-FDR correction are used to test whether ρ values differ systematically between platforms.
 
-**GTEx vs scAtlas Normal** (13 matching tissues: Blood, Breast, Colon, Esophagus, Heart, Kidney, Liver, Lung, Ovary, Skin, Small Intestine, Spleen, Uterus): Per-tissue CytoSig concordance ranges from ρ = −0.10 (Uterus) to 0.49 (Breast, Liver), with most tissues showing moderate positive concordance.
+**GTEx vs scAtlas Normal** (13 matching tissues: Blood, Breast, Colon, Esophagus, Heart, Kidney, Liver, Lung, Ovary, Skin, Small Intestine, Spleen, Uterus): Per-tissue CytoSig concordance ranges from ρ = −0.10 (Uterus) to 0.49 (Breast), with most tissues showing moderate positive concordance.
 
 **TCGA vs scAtlas Cancer** (11 matching cancer types: BRCA, CRC, ESCA, HCC, HNSC, KIRC, LUAD, OV, PAAD, PRAD, STAD): Per-cancer concordance is generally stronger, ranging from ρ = 0.23 (OV) to 0.83 (PAAD), suggesting cancer-type-specific activity patterns are more consistent across platforms than normal tissue patterns.
 

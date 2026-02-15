@@ -437,8 +437,47 @@
 </table>
 <p><strong>Summary:</strong> 5 of 11 cancer types significant after FDR correction (CRC, HNSC, HCC, PAAD, STAD). These cancers show systematic differences in per-target &rho; between TCGA bulk and scAtlas pseudobulk.</p>
 
+<h3>Cross-Platform Concordance (Spearman &rho; of &rho; values)</h3>
+<p>In addition to testing for systematic platform differences (Wilcoxon above), we measure <strong>concordance</strong>: the Spearman correlation of per-target &rho; values between bulk and pseudobulk within each tissue/cancer. A high concordance &rho; indicates that the <em>relative ranking</em> of targets is preserved across platforms, even if absolute &rho; values shift.</p>
+
+<h4>GTEx vs scAtlas Normal: CytoSig concordance</h4>
+<table>
+<tr><th>Tissue</th><th>n<sub>shared</sub></th><th>Concordance &rho;</th></tr>
+<tr><td>Breast</td><td>43</td><td>0.486</td></tr>
+<tr><td>Liver</td><td>41</td><td>0.479</td></tr>
+<tr><td>Esophagus</td><td>39</td><td>0.407</td></tr>
+<tr><td>Lung</td><td>43</td><td>0.402</td></tr>
+<tr><td>Colon</td><td>40</td><td>0.363</td></tr>
+<tr><td>Ovary</td><td>35</td><td>0.357</td></tr>
+<tr><td>Small Intestine</td><td>42</td><td>0.333</td></tr>
+<tr><td>Heart</td><td>39</td><td>0.288</td></tr>
+<tr><td>Kidney</td><td>38</td><td>0.275</td></tr>
+<tr><td>Spleen</td><td>42</td><td>0.232</td></tr>
+<tr><td>Blood</td><td>41</td><td>0.219</td></tr>
+<tr><td>Skin</td><td>41</td><td>0.102</td></tr>
+<tr><td>Uterus</td><td>42</td><td>&minus;0.101</td></tr>
+</table>
+<p><strong>Range:</strong> &rho; = &minus;0.10 (Uterus) to 0.49 (Breast). Most tissues show moderate positive concordance, indicating platform-independent target ranking.</p>
+
+<h4>TCGA vs scAtlas Cancer: CytoSig concordance</h4>
+<table>
+<tr><th>Cancer</th><th>n<sub>shared</sub></th><th>Concordance &rho;</th></tr>
+<tr><td>PAAD</td><td>41</td><td>0.831</td></tr>
+<tr><td>PRAD</td><td>37</td><td>0.768</td></tr>
+<tr><td>HNSC</td><td>41</td><td>0.649</td></tr>
+<tr><td>STAD</td><td>39</td><td>0.634</td></tr>
+<tr><td>BRCA</td><td>39</td><td>0.610</td></tr>
+<tr><td>CRC</td><td>41</td><td>0.594</td></tr>
+<tr><td>LUAD</td><td>41</td><td>0.559</td></tr>
+<tr><td>ESCA</td><td>24</td><td>0.520</td></tr>
+<tr><td>KIRC</td><td>41</td><td>0.436</td></tr>
+<tr><td>HCC</td><td>41</td><td>0.417</td></tr>
+<tr><td>OV</td><td>39</td><td>0.232</td></tr>
+</table>
+<p><strong>Range:</strong> &rho; = 0.23 (OV) to 0.83 (PAAD). Cancer-type concordance is generally stronger than normal-tissue concordance, suggesting cancer-specific activity patterns are more consistent across platforms.</p>
+
 <h3>Caveats</h3>
-<p>Several factors may contribute to platform differences: (1) different sample sizes per tissue (GTEx 47&ndash;3,234 vs scAtlas 10&ndash;124), (2) different gene sets (GTEx ~56K vs scAtlas ~22K genes), (3) bulk vs pseudobulk composition (true bulk includes all cell types vs pseudobulk summed from annotated cells), (4) different donor demographics (GTEx post-mortem vs scAtlas surgical/biopsy), and (5) normalization differences (TPM vs pseudobulk counts). CytoSig&rsquo;s smaller target set (~40 targets) has limited power per stratum, while SecAct&rsquo;s ~1,000+ paired targets provide high power, explaining why SecAct detects more significant cross-platform differences.</p>
+<p>Several factors may contribute to platform differences: (1) different sample sizes per tissue (GTEx 47&ndash;3,234 vs scAtlas 10&ndash;124), (2) different gene sets (GTEx 72.9K vs scAtlas 21.8K genes), (3) bulk vs pseudobulk composition (true bulk includes all cell types vs pseudobulk summed from annotated cells), (4) different donor demographics (GTEx post-mortem vs scAtlas surgical/biopsy), and (5) normalization differences (TPM vs pseudobulk counts). CytoSig&rsquo;s smaller target set (~40 targets) has limited power per stratum, while SecAct&rsquo;s ~1,000+ paired targets provide high power, explaining why SecAct detects more significant cross-platform differences.</p>
 
 <h2 id="aggregation-level">9. Effect of Aggregation Level: Statistical Methods</h2>
 <p>Section 4.6 of the interactive report examines how the CytoSig vs SecAct comparison changes across aggregation levels. The same Mann&ndash;Whitney U (total) and Wilcoxon signed-rank (matched) tests are applied at <strong>each aggregation level within each atlas</strong>. BH&ndash;FDR correction is applied across levels within each atlas.</p>
@@ -518,7 +557,7 @@
 </table>
 </details>
 
-<h2>9. Software</h2>
+<h2>10. Software</h2>
 <p>Statistics: <code>scipy.stats</code> (Mann&ndash;Whitney U, Wilcoxon signed-rank, Spearman), <code>statsmodels.stats.multitest</code> (BH-FDR). Boxplots: <code>matplotlib</code>.</p>
 
 </main>
