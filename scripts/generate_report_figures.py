@@ -289,9 +289,8 @@ def fig1_dataset_overview():
     Output:
         fig1_dataset_overview.png, fig1_dataset_overview.pdf
     """
-    fig, ax = plt.subplots(1, 1, figsize=(16, 10))
+    fig, ax = plt.subplots(1, 1, figsize=(16, 8))
     ax.set_xlim(0, 16)
-    ax.set_ylim(0, 13)
     ax.axis('off')
 
     # ── Helper: draw a rounded box (no double-draw, clean single pass) ──
@@ -349,6 +348,9 @@ def fig1_dataset_overview():
     # Global bottom = lowest bottom across columns, with padding for group box
     global_bottom = min(col1_natural_bottom, col2_natural_bottom,
                         TOP - val_content_h) - GROUP_PAD
+
+    # Set y-limits tightly around content (title at top, global_bottom at bottom)
+    ax.set_ylim(global_bottom - 0.5, 13.2)
 
     # ═══ COLUMN 1: Data Sources (x=0.3–4.7) ═══
     col1_x, col1_w = 0.3, 4.4
