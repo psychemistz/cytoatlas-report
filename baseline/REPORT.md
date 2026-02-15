@@ -447,7 +447,7 @@ SecAct covers 1,170 secreted proteins vs CytoSig's 43 cytokines. Key advantages:
 | 15 | `fig15_lincytosig_specificity.png` | LinCytoSig wins vs CytoSig wins |
 | 16 | `fig16_celltype_scatter_examples.png` | Cell-type-level scatter examples |
 
-All figures saved at: `/data/parks34/projects/2cytoatlas/report/figures/`
+All figures saved at: `report/figures/` (in the upstream `2cytoatlas` repository)
 (Both PNG at 300 DPI and PDF vector formats)
 
 ---
@@ -472,5 +472,5 @@ All figures saved at: `/data/parks34/projects/2cytoatlas/report/figures/`
 ### C. Data Availability
 - Web interface: `http://[server]:8000/static/`
 - API documentation: `http://[server]:8000/docs`
-- All results: `/data/parks34/projects/2cytoatlas/results/`
-- DuckDB databases: `/data/parks34/projects/2cytoatlas/cytoatlas-api/`
+- All results: `results/` (in the upstream `2cytoatlas` repository)
+- DuckDB databases: `cytoatlas-api/` (in the upstream `2cytoatlas` repository)

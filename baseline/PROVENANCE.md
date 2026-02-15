@@ -39,7 +39,7 @@ Report generation (this repo)
 └─ scripts/generate_interactive_report.py ───► index.html (self-contained with embedded Plotly.js)
 ```
 
-All paths are relative to `/data/parks34/projects/2cytoatlas/` unless otherwise noted.
+All paths are relative to the upstream `2cytoatlas` repository root unless otherwise noted.
 
 ---
 
@@ -92,7 +92,7 @@ Script numbers refer to `scripts/{num}_*.py` in the main `2cytoatlas` repo.
 
 1. **Find the intermediate file:**
    ```
-   /data/parks34/projects/2cytoatlas/results/cross_sample_validation/correlations/cima_correlations.csv
+   results/cross_sample_validation/correlations/cima_correlations.csv
    ```
 
 2. **Filter to the relevant subset:**
@@ -116,7 +116,7 @@ Script numbers refer to `scripts/{num}_*.py` in the main `2cytoatlas` repo.
 
 1. **Find the intermediate file:**
    ```
-   /data/parks34/projects/2cytoatlas/visualization/data/validation/method_comparison.json
+   visualization/data/validation/method_comparison.json
    ```
 
 2. **Compute from source:**

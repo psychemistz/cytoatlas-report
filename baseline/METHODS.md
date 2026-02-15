@@ -289,7 +289,7 @@ Inline numbers from REPORT.md prose, traced to their data source.
 To regenerate all figures from the intermediate data files:
 
 ```bash
-cd /data/parks34/projects/2cytoatlas
+cd /path/to/2cytoatlas
 source ~/bin/myconda && conda activate secactpy
 
 # Static figures (PNG + PDF)
