@@ -234,11 +234,44 @@ This section tests whether expression-activity relationships replicate across me
 
 > **Figure 5** (`fig5_good_bad_correlations_cytosig.png`): Top 15 and bottom 15 targets per atlas.
 
-**Consistently well-correlated targets:** IL1B (ρ 0.24–0.72), TNFA (0.26–0.63), VEGFA (0.18–0.79), TGFB1/3 (0.05–0.56, dataset-dependent) — canonical cytokines with strong transcriptional programs.
+Of the 29 matched CytoSig targets with data in ≥4 datasets, two categories emerge (mean ρ across 6 datasets):
 
-**Dataset-dependent targets:** CD40L, TRAIL, LTA, and HGF show negative ρ in single-cell datasets (CD40L: −0.48 CIMA, −0.55 Inflammation Main) but positive ρ in bulk (CD40L: +0.57 GTEx, +0.40 TCGA). This platform-dependent pattern suggests pseudobulk aggregation effects rather than universal method failure. SecAct achieves consistently positive ρ across all 6 datasets for these targets (mean ρ: CD40LG +0.46, TNFSF10 +0.44, LTA +0.53, HGF +0.58 vs CytoSig near zero).
+**Consistent in Both CytoSig and SecAct (15 targets, both mean ρ > 0.25):**
 
-**SecAct novel discoveries:** Activin A/INHBA (ρ up to 0.69 scAtlas Cancer, 0.67 GTEx), CXCL12 (0.76 scAtlas Cancer, 0.70 GTEx), and BMP family — secreted proteins with strong activity-expression correlations missed by CytoSig's 43-target panel. Full per-atlas top-15/bottom-15 lists in [supplement](stats_section_4.1.html#per-tissue-stratified).
+| Target | CytoSig Mean ρ | Range | SecAct Mean ρ |
+|--------|----------------|-------|---------------|
+| IL1B | +0.56 | +0.24 to +0.72 | +0.58 |
+| TNFA | +0.50 | +0.26 to +0.63 | +0.46 |
+| IFNG | +0.44 | +0.30 to +0.62 | +0.35 |
+| IL1A | +0.43 | +0.03 to +0.71 | +0.33 |
+| IL27 | +0.43 | +0.19 to +0.56 | +0.40 |
+| TGFB3 | +0.39 | +0.19 to +0.53 | +0.42 |
+| IL6 | +0.38 | +0.17 to +0.53 | +0.48 |
+| OSM | +0.38 | +0.06 to +0.49 | +0.57 |
+| LIF | +0.37 | +0.20 to +0.62 | +0.50 |
+| IL10 | +0.35 | +0.06 to +0.55 | +0.56 |
+| CXCL12 | +0.34 | +0.10 to +0.57 | +0.59 |
+| TGFB1 | +0.34 | +0.05 to +0.56 | +0.41 |
+| BMP4 | +0.33 | −0.02 to +0.61 | +0.43 |
+| BMP2 | +0.31 | +0.19 to +0.41 | +0.45 |
+| GMCSF | +0.26 | +0.01 to +0.46 | +0.37 |
+
+**SecAct-Only: CytoSig Near-Zero, SecAct Rescues (10 targets):**
+
+| Target | CytoSig Mean ρ | Range | SecAct Mean ρ | Δ |
+|--------|----------------|-------|---------------|------|
+| LTA | −0.02 | −0.33 to +0.26 | **+0.53** | +0.55 |
+| HGF | +0.06 | −0.29 to +0.40 | **+0.58** | +0.51 |
+| TWEAK | −0.02 | −0.22 to +0.11 | **+0.44** | +0.47 |
+| IL15 | +0.11 | −0.05 to +0.43 | **+0.57** | +0.47 |
+| BMP6 | +0.04 | −0.40 to +0.26 | **+0.49** | +0.45 |
+| TRAIL | −0.00 | −0.54 to +0.58 | **+0.44** | +0.44 |
+| CD40L | +0.02 | −0.55 to +0.57 | **+0.46** | +0.43 |
+| FGF2 | +0.04 | −0.23 to +0.29 | **+0.46** | +0.42 |
+| IL21 | −0.02 | −0.22 to +0.09 | **+0.22** | +0.24 |
+| BDNF | +0.11 | −0.07 to +0.20 | **+0.33** | +0.21 |
+
+**Key insight:** CytoSig's in-vitro stimulation signatures reliably detect 15 canonical cytokines with strong transcriptional programs. SecAct's Visium-derived spatial signatures additionally rescue 10 targets where CytoSig averages near zero — including membrane-bound (CD40L, TRAIL), paracrine (HGF, FGF2), and heteromeric (LTA) signaling targets that require tissue-level spatial context. TWEAK and IL21 are the clearest cases: CytoSig never exceeds ρ=0.11, while SecAct achieves +0.44 and +0.22. Full per-atlas top-15/bottom-15 lists in [supplement](stats_section_4.1.html#per-tissue-stratified).
 
 ### 4.6 Cross-Atlas Consistency
 
