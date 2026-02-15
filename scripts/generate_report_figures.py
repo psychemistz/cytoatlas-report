@@ -503,6 +503,271 @@ def fig1_dataset_overview():
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
+# SYSTEM ARCHITECTURE: Full Platform Overview (inserted before Figure 1 in §1.1)
+# ═══════════════════════════════════════════════════════════════════════════════
+def fig_system_architecture():
+    """4-column system architecture diagram: Data Sources → GPU Pipeline → Data Services → User Interfaces.
+
+    Data source:
+        Hardcoded values matching §1.1 tables and upstream codebase stats.
+    Method:
+        Schematic — no statistical computation. Reuses FancyBboxPatch style from fig1.
+    Output:
+        fig_system_architecture.png, fig_system_architecture.pdf
+    """
+    fig, ax = plt.subplots(1, 1, figsize=(18, 10))
+    ax.set_xlim(0, 18)
+    ax.set_ylim(0, 10.5)
+    ax.axis('off')
+
+    # ── Colors ──
+    C = {
+        'sc': '#3B82F6',         # blue  (single-cell)
+        'bulk': '#EC4899',       # pink  (bulk)
+        'sig': '#D97706',        # amber (signatures)
+        'pipe': '#059669',       # emerald (pipeline)
+        'storage': '#6366F1',    # indigo
+        'api': '#0891B2',        # teal
+        'dashboard': '#7C3AED',  # purple
+        'chat': '#E11D48',       # rose
+    }
+
+    # ── Helpers (same style as fig1) ──
+    def draw_box(x, y, w, h, color, alpha=0.12, lw=1.5):
+        bg = FancyBboxPatch((x, y), w, h, boxstyle='round,pad=0.08',
+                            facecolor=color, edgecolor='none', alpha=alpha, linewidth=0)
+        ax.add_patch(bg)
+        border = FancyBboxPatch((x, y), w, h, boxstyle='round,pad=0.08',
+                                facecolor='none', edgecolor=color, linewidth=lw, alpha=0.6)
+        ax.add_patch(border)
+
+    def draw_group(x, y, w, h, color, lw=1.2):
+        bg = FancyBboxPatch((x, y), w, h, boxstyle='round,pad=0.12',
+                            facecolor=color, edgecolor='none', alpha=0.04, linewidth=0)
+        ax.add_patch(bg)
+        border = FancyBboxPatch((x, y), w, h, boxstyle='round,pad=0.12',
+                                facecolor='none', edgecolor=color, linewidth=lw, alpha=0.3,
+                                linestyle='--')
+        ax.add_patch(border)
+
+    def draw_arrow(x1, y1, x2, y2, bidir=False):
+        style = '<->' if bidir else '->'
+        ax.annotate('', xy=(x2, y2), xytext=(x1, y1),
+                    arrowprops=dict(arrowstyle=style, color='#64748B', lw=2.5,
+                                    connectionstyle='arc3,rad=0'))
+
+    # ── Layout constants ──
+    CH = 0.55     # card height
+    CG = 0.18     # gap between cards
+    CS = CH + CG  # card step
+    TOP = 9.0     # top of content area (leaves room for column titles)
+    LABEL_FS = 9  # label font size
+    DETAIL_FS = 7.5
+
+    # ═══ COLUMN 1: Data Sources (x=0.2–3.9) ═══
+    c1x, c1w = 0.2, 3.7
+    ax.text(c1x + c1w / 2, TOP + 0.7, 'Data Sources', fontsize=13, fontweight='bold',
+            ha='center', va='center', color='#1E293B')
+
+    # -- Single-cell group --
+    sc_items = [
+        ('CIMA',               '6.5M cells'),
+        ('Inflammation Atlas', '6.3M cells'),
+        ('scAtlas Normal',     '2.3M cells'),
+        ('scAtlas Cancer',     '4.1M cells'),
+        ('parse_10M',          '9.7M cells'),
+    ]
+    sc_top = TOP
+    sc_bot = sc_top - len(sc_items) * CS - 0.1
+    draw_group(c1x, sc_bot, c1w, sc_top - sc_bot + 0.25, C['sc'])
+    ax.text(c1x + 0.15, sc_top + 0.05, 'Single-Cell (29M cells)', fontsize=8.5, fontweight='bold',
+            va='bottom', color='#1E40AF')
+    for i, (name, count) in enumerate(sc_items):
+        by = sc_top - i * CS - CH
+        draw_box(c1x + 0.15, by, c1w - 0.3, CH, C['sc'])
+        ax.text(c1x + 0.35, by + CH / 2, name, fontsize=LABEL_FS, fontweight='bold',
+                va='center', color='#1E293B')
+        ax.text(c1x + c1w - 0.35, by + CH / 2, count, fontsize=DETAIL_FS, fontweight='bold',
+                va='center', ha='right', color=C['sc'])
+
+    # -- Bulk RNA-seq group --
+    bulk_items = [
+        ('GTEx',  '19.8K samples'),
+        ('TCGA',  '11.1K samples'),
+    ]
+    bulk_top = sc_bot - 0.45
+    bulk_bot = bulk_top - len(bulk_items) * CS - 0.1
+    draw_group(c1x, bulk_bot, c1w, bulk_top - bulk_bot + 0.25, C['bulk'])
+    ax.text(c1x + 0.15, bulk_top + 0.05, 'Bulk RNA-seq (31K samples)', fontsize=8.5,
+            fontweight='bold', va='bottom', color='#9D174D')
+    for i, (name, count) in enumerate(bulk_items):
+        by = bulk_top - i * CS - CH
+        draw_box(c1x + 0.15, by, c1w - 0.3, CH, C['bulk'])
+        ax.text(c1x + 0.35, by + CH / 2, name, fontsize=LABEL_FS, fontweight='bold',
+                va='center', color='#1E293B')
+        ax.text(c1x + c1w - 0.35, by + CH / 2, count, fontsize=DETAIL_FS, fontweight='bold',
+                va='center', ha='right', color=C['bulk'])
+
+    # ═══ COLUMN 2: GPU Pipeline (x=4.6–8.5) ═══
+    c2x, c2w = 4.6, 3.9
+    ax.text(c2x + c2w / 2, TOP + 0.7, 'GPU Pipeline', fontsize=13, fontweight='bold',
+            ha='center', va='center', color='#1E293B')
+
+    # -- Signature matrices group --
+    sig_items = [
+        ('CytoSig',    '43 cytokines',           COLORS['cytosig']),
+        ('LinCytoSig', '178 cell-type specific',  COLORS['lincytosig']),
+        ('SecAct',     '1,170 secreted proteins', COLORS['secact']),
+    ]
+    sig_top = TOP
+    sig_bot = sig_top - len(sig_items) * CS - 0.1
+    draw_group(c2x, sig_bot, c2w, sig_top - sig_bot + 0.25, C['sig'])
+    ax.text(c2x + 0.15, sig_top + 0.05, 'Signature Matrices', fontsize=8.5, fontweight='bold',
+            va='bottom', color='#92400E')
+    for i, (name, desc, color) in enumerate(sig_items):
+        by = sig_top - i * CS - CH
+        draw_box(c2x + 0.15, by, c2w - 0.3, CH, color)
+        ax.text(c2x + 0.35, by + CH / 2, name, fontsize=LABEL_FS, fontweight='bold',
+                va='center', color='#1E293B')
+        ax.text(c2x + c2w - 0.35, by + CH / 2, desc, fontsize=DETAIL_FS,
+                va='center', ha='right', color=color)
+
+    # -- Pipeline steps group --
+    pipe_items = [
+        ('SLURM / A100 GPU',        'CuPy-accelerated batches'),
+        ('Pseudobulk aggregation',   'Donor, donor\u00d7celltype'),
+        ('SecActpy ridge regression', '\u03bb=5\u00d710\u2075, z-scored output'),
+        ('Cross-sample correlation',  'Spearman \u03c1 vs target expr.'),
+    ]
+    pipe_top = sig_bot - 0.45
+    pipe_bot = pipe_top - len(pipe_items) * CS - 0.1
+    draw_group(c2x, pipe_bot, c2w, pipe_top - pipe_bot + 0.25, C['pipe'])
+    ax.text(c2x + 0.15, pipe_top + 0.05, 'Pipeline Steps', fontsize=8.5, fontweight='bold',
+            va='bottom', color='#065F46')
+    for i, (step, detail) in enumerate(pipe_items):
+        by = pipe_top - i * CS - CH
+        draw_box(c2x + 0.15, by, c2w - 0.3, CH, C['pipe'])
+        ax.text(c2x + 0.35, by + CH * 0.65, step, fontsize=LABEL_FS - 0.5, fontweight='bold',
+                va='center', color='#1E293B')
+        ax.text(c2x + 0.35, by + CH * 0.25, detail, fontsize=DETAIL_FS - 0.5,
+                va='center', color='#64748B')
+
+    # ═══ COLUMN 3: Data Services (x=9.3–12.8) ═══
+    c3x, c3w = 9.3, 3.5
+    ax.text(c3x + c3w / 2, TOP + 0.7, 'Data Services', fontsize=13, fontweight='bold',
+            ha='center', va='center', color='#1E293B')
+
+    # -- Storage group --
+    store_items = [
+        ('H5AD / CSV',  '~50 GB raw'),
+        ('DuckDB',      '3 DBs, 68 tables'),
+        ('JSON cache',  '7.7 GB precomputed'),
+    ]
+    store_top = TOP
+    store_bot = store_top - len(store_items) * CS - 0.1
+    draw_group(c3x, store_bot, c3w, store_top - store_bot + 0.25, C['storage'])
+    ax.text(c3x + 0.15, store_top + 0.05, 'Storage', fontsize=8.5, fontweight='bold',
+            va='bottom', color='#4338CA')
+    for i, (name, detail) in enumerate(store_items):
+        by = store_top - i * CS - CH
+        draw_box(c3x + 0.15, by, c3w - 0.3, CH, C['storage'])
+        ax.text(c3x + 0.35, by + CH / 2, name, fontsize=LABEL_FS, fontweight='bold',
+                va='center', color='#1E293B')
+        ax.text(c3x + c3w - 0.35, by + CH / 2, detail, fontsize=DETAIL_FS,
+                va='center', ha='right', color=C['storage'])
+
+    # -- API group --
+    api_top = store_bot - 0.45
+    api_bot = api_top - 1 * CS - 0.1
+    draw_group(c3x, api_bot, c3w, api_top - api_bot + 0.25, C['api'])
+    ax.text(c3x + 0.15, api_top + 0.05, 'API Layer', fontsize=8.5, fontweight='bold',
+            va='bottom', color='#155E75')
+    by = api_top - CH
+    draw_box(c3x + 0.15, by, c3w - 0.3, CH, C['api'])
+    ax.text(c3x + 0.35, by + CH * 0.65, 'FastAPI', fontsize=LABEL_FS, fontweight='bold',
+            va='center', color='#1E293B')
+    ax.text(c3x + 0.35, by + CH * 0.25, '262 endpoints, 17 routers', fontsize=DETAIL_FS,
+            va='center', color='#64748B')
+    # Store API box center for bidirectional arrow
+    api_center_y = by + CH / 2
+
+    # ═══ COLUMN 4: User Interfaces (x=13.6–17.8) ═══
+    c4x, c4w = 13.6, 4.2
+    ax.text(c4x + c4w / 2, TOP + 0.7, 'User Interfaces', fontsize=13, fontweight='bold',
+            ha='center', va='center', color='#1E293B')
+
+    # -- Dashboard group --
+    dash_items = [
+        ('React 19 + TypeScript',  '11.4K lines'),
+        ('12 interactive pages',   'Plotly + D3'),
+        ('Interactive Report',     '13 MB HTML'),
+    ]
+    dash_top = TOP
+    dash_bot = dash_top - len(dash_items) * CS - 0.1
+    draw_group(c4x, dash_bot, c4w, dash_top - dash_bot + 0.25, C['dashboard'])
+    ax.text(c4x + 0.15, dash_top + 0.05, 'Interactive Dashboard', fontsize=8.5,
+            fontweight='bold', va='bottom', color='#5B21B6')
+    for i, (name, detail) in enumerate(dash_items):
+        by = dash_top - i * CS - CH
+        draw_box(c4x + 0.15, by, c4w - 0.3, CH, C['dashboard'])
+        ax.text(c4x + 0.35, by + CH / 2, name, fontsize=LABEL_FS, fontweight='bold',
+                va='center', color='#1E293B')
+        ax.text(c4x + c4w - 0.35, by + CH / 2, detail, fontsize=DETAIL_FS,
+                va='center', ha='right', color=C['dashboard'])
+
+    # -- AI Chat Assistant group (rose highlight, thicker border) --
+    chat_items = [
+        ('Mistral-Small-24B',       'vLLM, primary LLM'),
+        ('Claude Sonnet',            'Complex query fallback'),
+        ('RAG: LanceDB + MiniLM',   'Semantic doc retrieval'),
+        ('16 data tools',            'DuckDB, activity, genes'),
+        ('Security layer',           'Input/output guardrails'),
+    ]
+    chat_top = dash_bot - 0.45
+    chat_bot = chat_top - len(chat_items) * CS - 0.1
+    draw_group(c4x, chat_bot, c4w, chat_top - chat_bot + 0.25, C['chat'], lw=2.0)
+    ax.text(c4x + 0.15, chat_top + 0.05, 'AI Chat Assistant', fontsize=8.5, fontweight='bold',
+            va='bottom', color='#9F1239')
+    for i, (name, detail) in enumerate(chat_items):
+        by = chat_top - i * CS - CH
+        draw_box(c4x + 0.15, by, c4w - 0.3, CH, C['chat'])
+        ax.text(c4x + 0.35, by + CH * 0.65, name, fontsize=LABEL_FS, fontweight='bold',
+                va='center', color='#1E293B')
+        ax.text(c4x + 0.35, by + CH * 0.25, detail, fontsize=DETAIL_FS,
+                va='center', color='#64748B')
+    # Store chat group center for bidirectional arrow
+    chat_center_y = (chat_top + chat_bot) / 2
+
+    # ═══ ARROWS ═══
+    col_mid_y = 5.0  # vertical midpoint for forward arrows
+
+    # Col 1 → Col 2
+    draw_arrow(c1x + c1w + 0.05, col_mid_y, c2x - 0.05, col_mid_y)
+    # Col 2 → Col 3
+    draw_arrow(c2x + c2w + 0.05, col_mid_y, c3x - 0.05, col_mid_y)
+    # Col 3 → Col 4 (forward)
+    draw_arrow(c3x + c3w + 0.05, col_mid_y, c4x - 0.05, col_mid_y)
+    # API ↔ Chat (bidirectional — tool calling)
+    draw_arrow(c3x + c3w + 0.05, api_center_y, c4x - 0.05,
+               chat_center_y, bidir=True)
+    # Label on bidirectional arrow
+    bidi_mid_x = (c3x + c3w + c4x) / 2
+    bidi_mid_y = (api_center_y + chat_center_y) / 2
+    ax.text(bidi_mid_x + 0.1, bidi_mid_y + 0.25, 'tool calls', fontsize=7.5,
+            ha='center', va='center', color='#475569', fontstyle='italic',
+            bbox=dict(boxstyle='round,pad=0.15', facecolor='white', edgecolor='none', alpha=0.8))
+
+    # ═══ Title ═══
+    fig.suptitle('CytoAtlas System Architecture', fontsize=15, fontweight='bold',
+                 y=0.97, color='#0F172A')
+
+    fig.savefig(FIG_DIR / 'fig_system_architecture.png')
+    fig.savefig(FIG_DIR / 'fig_system_architecture.pdf')
+    plt.close(fig)
+    print('  ✓ System Architecture diagram')
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # FIGURE 2: Correlation Summary Across All Atlases (Boxplot)
 # ═══════════════════════════════════════════════════════════════════════════════
 def fig2_correlation_summary(df):
@@ -2114,6 +2379,7 @@ def main():
 
     print('\nGenerating figures...')
     # Section 1
+    fig_system_architecture()
     fig1_dataset_overview()
     # Section 4: Validation Results
     fig15_summary_table(df)           # Now Fig 2: Summary statistics table
