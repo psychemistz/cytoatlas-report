@@ -199,6 +199,81 @@ def load_lincyto_best_data():
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
+# FIGURE 0: Dataset Summary Bar Chart (for dataset_analytics.html)
+# ═══════════════════════════════════════════════════════════════════════════════
+def fig0_dataset_summary():
+    """Bar-chart summary of datasets, signatures, and validation layers.
+
+    Used in dataset_analytics.html. Separates single-cell and bulk datasets
+    into two sub-panels with appropriate scales.
+    Output:
+        fig0_dataset_summary.png, fig0_dataset_summary.pdf
+    """
+    fig = plt.figure(figsize=(16, 5.5))
+    gs = gridspec.GridSpec(1, 4, width_ratios=[3, 2, 3, 3], wspace=0.35)
+
+    # Panel A1: Single-cell datasets (millions)
+    ax1 = fig.add_subplot(gs[0])
+    sc_names = ['parse_10M', 'scAtlas', 'CIMA', 'Inflammation\nAtlas']
+    sc_vals = [9.7, 6.4, 6.5, 6.3]
+    sc_colors = ['#F59E0B', '#10B981', '#3B82F6', '#EF4444']
+    bars = ax1.barh(sc_names, sc_vals, color=sc_colors, edgecolor='white', linewidth=0.5)
+    for bar, v in zip(bars, sc_vals):
+        ax1.text(bar.get_width() + 0.15, bar.get_y() + bar.get_height() / 2,
+                 f'{v}M', va='center', fontsize=9, fontweight='bold')
+    ax1.set_xlabel('Cells (millions)')
+    ax1.set_title('A. Single-Cell Datasets', fontweight='bold')
+    ax1.set_xlim(0, 13)
+
+    # Panel A2: Bulk RNA-seq datasets (thousands)
+    ax2 = fig.add_subplot(gs[1])
+    bulk_names = ['GTEx', 'TCGA']
+    bulk_vals = [19.8, 11.1]
+    bulk_colors = ['#6366F1', '#EC4899']
+    bars = ax2.barh(bulk_names, bulk_vals, color=bulk_colors, edgecolor='white', linewidth=0.5)
+    for bar, v in zip(bars, bulk_vals):
+        ax2.text(bar.get_width() + 0.3, bar.get_y() + bar.get_height() / 2,
+                 f'{v}K', va='center', fontsize=9, fontweight='bold')
+    ax2.set_xlabel('Samples (thousands)')
+    ax2.set_title('B. Bulk RNA-seq', fontweight='bold')
+    ax2.set_xlim(0, 28)
+
+    # Panel B: Signature matrices
+    ax3 = fig.add_subplot(gs[2])
+    sig_types = ['CytoSig\n(43)', 'LinCytoSig\n(178)', 'SecAct\n(1,170)']
+    counts = [43, 178, 1170]
+    sig_colors = [COLORS['cytosig'], COLORS['lincytosig'], COLORS['secact']]
+    bars = ax3.bar(sig_types, counts, color=sig_colors, edgecolor='white', linewidth=0.5)
+    for bar, v in zip(bars, counts):
+        ax3.text(bar.get_x() + bar.get_width() / 2, bar.get_height() + 20,
+                 f'{v:,}', ha='center', fontsize=9, fontweight='bold')
+    ax3.set_ylabel('Signatures')
+    ax3.set_title('C. Signature Matrices (1,391 total)', fontweight='bold')
+
+    # Panel C: Validation layers
+    ax4 = fig.add_subplot(gs[3])
+    layers = ['Bulk RNA-seq\n(GTEx/TCGA)', 'Pseudobulk\n(donor)', 'Pseudobulk\n(donor×celltype)',
+              'Single-cell\n(per cell)']
+    layer_counts = [2, 8, 8, 6]
+    layer_colors = ['#8B5CF6', '#3B82F6', '#10B981', '#F59E0B']
+    bars = ax4.barh(layers, layer_counts, color=layer_colors, edgecolor='white')
+    for bar, v in zip(bars, layer_counts):
+        ax4.text(bar.get_width() + 0.15, bar.get_y() + bar.get_height() / 2,
+                 str(v), va='center', fontsize=9, fontweight='bold')
+    ax4.set_xlabel('Dataset × Level Combinations')
+    ax4.set_title('D. Validation Layers', fontweight='bold')
+    ax4.set_xlim(0, 12)
+
+    fig.suptitle('Dataset Overview: ~29M Single Cells + ~31K Bulk RNA-seq Samples',
+                 fontsize=13, fontweight='bold', y=1.02)
+    plt.tight_layout()
+    fig.savefig(FIG_DIR / 'fig0_dataset_summary.png')
+    fig.savefig(FIG_DIR / 'fig0_dataset_summary.pdf')
+    plt.close(fig)
+    print('  ✓ Figure 0: Dataset summary (bar chart)')
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # FIGURE 1: Dataset Overview
 # ═══════════════════════════════════════════════════════════════════════════════
 def fig1_dataset_overview():
