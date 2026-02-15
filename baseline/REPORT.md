@@ -176,7 +176,7 @@ Validation uses a simple, conservative principle: if a method predicts high acti
 
 - Inflammation Val (144 samples) and Ext (86 samples) replicate directionally; full results in [supplement](stats_section_4.1.html)
 
-### 4.2 Cross-Dataset Comparison: CytoSig vs SecAct ([statistical methods](stats_section_4.2.html))
+### 4.2 Cross-Dataset Comparison: CytoSig vs SecAct ([statistical methods](stats_section_4.1.html#cross-dataset-comparison))
 
 > **Figure 3** (`fig3_cross_dataset_boxplot.png`): CytoSig vs SecAct Spearman ρ distributions across atlases, with Total/Matched tabs.
 

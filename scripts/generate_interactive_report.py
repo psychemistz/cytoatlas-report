@@ -1614,7 +1614,7 @@ Ridge regression (L2-regularized linear regression) was chosen deliberately over
 
 <!-- Cross-Dataset Comparison (boxplot) -->
 <h3>4.2 Cross-Dataset Comparison: CytoSig vs SecAct
-    <a href="stats_section_4.2.html" style="font-size:14px;font-weight:400;color:var(--blue);text-decoration:none;">[Statistical Methods]</a></h3>
+    <a href="stats_section_4.1.html#cross-dataset-comparison" style="font-size:14px;font-weight:400;color:var(--blue);text-decoration:none;">[Statistical Methods]</a></h3>
 <div class="plotly-container">
   <div class="tab-bar" id="boxplot-tabs">
     <button class="tab-btn active" onclick="renderBoxplot('total')">Total</button>
